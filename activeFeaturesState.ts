@@ -1,5 +1,5 @@
 import { Action, AnyAction } from 'redux';
-import { EditorStateBlock } from './api';
+import { AppStateBlock } from './api';
 
 export interface FeatureToggleSet {
     [name: string]: boolean;
@@ -15,7 +15,7 @@ export interface UpdateActiveFeaturesAction extends Action {
 
 const UPDATE_ACTIVE_FEATURES_ACTION = '$activeFeatures/update';
 
-export const contributeActiveFeaturesState = (): EditorStateBlock => {
+export const contributeActiveFeaturesState = (): AppStateBlock => {
     return {
         name: '$activeFeatures',
         reducer: activeFeaturesReducer

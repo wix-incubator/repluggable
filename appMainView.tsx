@@ -1,17 +1,17 @@
 import React, { SFC } from 'react';
 import { connect } from 'react-redux';
-import { EditorHost, SlotKey, ExtensionSlot } from './api';
+import { AppHost, SlotKey, ExtensionSlot } from './api';
 import { HostContext } from './hostContext';
 import { renderSlotComponents } from './renderSlotComponents';
-import { mainViewSlotKey, stateSlotKey } from './editorHost';
+import { mainViewSlotKey, stateSlotKey } from './appHost';
 import { ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState';
 
-export type EditorMainViewProps = {
-    host: EditorHost
+export type AppMainViewProps = {
+    host: AppHost
 };
 
 type SfcProps = {
-    host: EditorHost,
+    host: AppHost,
     activeFeatures: FeatureToggleSet
 };
 
@@ -23,9 +23,9 @@ const sfc: SFC<SfcProps> = (props) => {
     return contextProviderElement;
 };
 
-const mapStateToProps = (state: any, ownProps: EditorMainViewProps): SfcProps => ({
+const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
     activeFeatures: ActiveFeaturesSelectors.getActiveFeatureSet(state),
     host: ownProps.host
 });
 
-export const EditorMainView = connect(mapStateToProps)(sfc);
+export const AppMainView = connect(mapStateToProps)(sfc);

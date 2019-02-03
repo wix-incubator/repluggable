@@ -1,13 +1,13 @@
 export {
-    EditorFeature,
-    EditorHost,
+    FeatureLifecycle,
+    AppHost,
     FeatureContext,
     ExtensionSlot,
     ExtensionItem,
     AnySlotKey,
     SlotKey,
     HostConnectorCallback,
-    EditorStateBlock,
+    AppStateBlock,
     ReactComponentContributor,
     SoloReactComponentContributor,
     ReduxStateContributor
@@ -18,15 +18,15 @@ export {
 } from './hostContext';
 
 export {
-    EditorMainView
-} from './editorMainView';
+    AppMainView
+} from './appMainView';
 
 export { 
-    createEditorHost,
+    createAppHost,
     makeLazyFeature,
     mainViewSlotKey,
     stateSlotKey
-} from './editorHost';
+} from './appHost';
 
 export { 
     renderSlotComponents,

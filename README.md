@@ -13,15 +13,15 @@
   - 
 
 
-- Why EditorHost? We can just use static imports across the packages.
+- Why AppHost? We can just use static imports across the packages.
 
 
 
-- Why should EditorHost hold my extension slots? My feature can hold them privately instead. 
+- Why should AppHost hold my extension slots? My feature can hold them privately instead. 
 
 
 
-- Why should I always lookup APIs and slots through EditorHost? I can lookup once in the build time, then cache privately.
+- Why should I always lookup APIs and slots through AppHost? I can lookup once in the build time, then cache privately.
 
 
 

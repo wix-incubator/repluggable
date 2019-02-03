@@ -1,10 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { ExtensionSlot, ReactComponentContributor, EditorHost, ExtensionItem } from './api';
+import { ExtensionSlot, ReactComponentContributor, AppHost, ExtensionItem } from './api';
 import { HostContext } from './hostContext';
 import { ErrorBoundary } from './errorBoundary';
 
-export function renderSlotComponents(host: EditorHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
+export function renderSlotComponents(host: AppHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
     return slot
         .getItems()
         .map((item, index) => (
@@ -14,7 +14,7 @@ export function renderSlotComponents(host: EditorHost, slot: ExtensionSlot<React
         )); // index is the key prop
 }
 
-export function renderSlotComponentsConnected(host: EditorHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
+export function renderSlotComponentsConnected(host: AppHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
     return slot
         .getItems(true)
         .map((item, index) => (
@@ -48,7 +48,7 @@ const PredicateHoc: React.FunctionComponent<PredicateHocProps> = (props) => (
 type connectedPredicateHocProps = {
     index: number;
     item: ExtensionItem<ReactComponentContributor>;
-    host: EditorHost;
+    host: AppHost;
 }
 
 const mapPredicateHocStateToProps = (state: any, ownProps: connectedPredicateHocProps): PredicateHocProps => ({

@@ -1,4 +1,4 @@
-import { ExtensionSlot, ExtensionItem, SlotKey, EditorHost, ContributionPredicate, EditorFeature } from './api';
+import { ExtensionSlot, ExtensionItem, SlotKey, AppHost, ContributionPredicate, FeatureLifecycle } from './api';
 
 export interface AnyExtensionSlot {
     readonly name: string
@@ -8,8 +8,8 @@ const alwaysTrue = () => true;
 
 export function createExtensionSlot<T>(
     key: SlotKey<T>, 
-    host: EditorHost,
-    getCurrentLifecycleFeature: () => EditorFeature): ExtensionSlot<T> & AnyExtensionSlot {
+    host: AppHost,
+    getCurrentLifecycleFeature: () => FeatureLifecycle): ExtensionSlot<T> & AnyExtensionSlot {
 
     let items: ExtensionItem<T>[] = [];
 

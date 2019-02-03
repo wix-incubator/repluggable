@@ -1,8 +1,8 @@
 import { createContext } from 'react';
-import { EditorHost } from './api';
+import { AppHost } from './api';
 
 export interface HostContext {
-    readonly host: EditorHost;
+    readonly host: AppHost;
 };
 
 export const HostContext = createContext<HostContext | null>(null) as React.Context<HostContext>;

@@ -1,25 +1,25 @@
 import {
-  EditorHost,
-  EditorMainView,
+  AppHost,
+  AppMainView,
   HostContext,
-  createEditorHost
+  createAppHost
 } from "../index";
 import { Provider } from "react-redux";
 import React, { Component, ReactElement } from "react";
 import ReactDOM from "react-dom";
 import _ from "lodash";
 
-export { EditorHost, createEditorHost } from "../index";
+export { AppHost, createAppHost } from "../index";
 
 export const renderHost = async (
-  host: EditorHost
+  host: AppHost
 ): Promise<{ root: Component | null; DOMNode: HTMLElement | null }> => {
   const div = document.createElement("div");
   let root = null;
   await new Promise(resolve => {
     root = ReactDOM.render(
       <Provider store={host.getStore()}>
-        <EditorMainView host={host} />
+        <AppMainView host={host} />
       </Provider>,
       div,
       resolve
@@ -30,12 +30,12 @@ export const renderHost = async (
 
 export const renderInHost = async (
   reactElement: ReactElement<any>,
-  host: EditorHost = createEditorHost([])
+  host: AppHost = createAppHost([])
 ): Promise<{
   root: Component | null;
   parentRef: Component | null;
   DOMNode: HTMLElement | null;
-  host: EditorHost;
+  host: AppHost;
 }> => {
   const div = document.createElement("div");
   let root = null;

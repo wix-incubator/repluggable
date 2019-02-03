@@ -6,8 +6,8 @@ import {
 } from 'redux';
 
 import { 
-    EditorHost, 
-    EditorFeature,
+    AppHost, 
+    FeatureLifecycle,
     ExtensionSlot, 
     ReactComponentContributor, 
     ReduxStateContributor,
@@ -31,12 +31,12 @@ export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): Lazy
     };
 };
 
-export function createEditorHost(
-    features: (EditorFeature | LazyFeatureDescriptor)[],  
+export function createAppHost(
+    features: (FeatureLifecycle | LazyFeatureDescriptor)[],  
     activation?: FeatureActivationPredicate
     /*, log?: HostLogger */ //TODO: define logging abstraction
-): EditorHost {
-    const host = createEditorHostImpl();
+): AppHost {
+    const host = createAppHostImpl();
     host.installFeatures(features, activation);
     return host;
 }
@@ -51,17 +51,17 @@ const toFeatureToggleSet = (names: string[], active: boolean): FeatureToggleSet 
     }, {});
 }
 
-function createEditorHostImpl(): EditorHost {
+function createAppHostImpl(): AppHost {
     let store: Store | null = null;
-    let currentLifecycleFeature: EditorFeature | null = null;
+    let currentLifecycleFeature: FeatureLifecycle | null = null;
     let lastInstallLazyFeatureNames: string[] = [];
 
     const uniqueFeatureNames = new Set<string>();
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>();
-    const installedFeatures = new Map<string, EditorFeature>();
+    const installedFeatures = new Map<string, FeatureLifecycle>();
     const lazyFeatures = new Map<string, LazyFeatureFactory>();
 
-    const host: EditorHost = {
+    const host: AppHost = {
         getStore,
         getApi,
         getSlot,
@@ -80,16 +80,16 @@ function createEditorHostImpl(): EditorHost {
 
     return host;
 
-    function isLazyFeatureDescriptor(value: EditorFeature | LazyFeatureDescriptor): value is LazyFeatureDescriptor {
+    function isLazyFeatureDescriptor(value: FeatureLifecycle | LazyFeatureDescriptor): value is LazyFeatureDescriptor {
         return (typeof (value as LazyFeatureDescriptor).factory === 'function');
     }
 
-    function installFeatures(features: (EditorFeature | LazyFeatureDescriptor)[], activation?: FeatureActivationPredicate): void {
+    function installFeatures(features: (FeatureLifecycle | LazyFeatureDescriptor)[], activation?: FeatureActivationPredicate): void {
         console.log(`Adding ${features.length} features.`);
 
         validateUniqueFeatureNames(features);
 
-        const readyFeatureList = features.filter(f => !isLazyFeatureDescriptor(f)) as EditorFeature[];
+        const readyFeatureList = features.filter(f => !isLazyFeatureDescriptor(f)) as FeatureLifecycle[];
         const lazyFeatureList = features.filter(f => isLazyFeatureDescriptor(f)) as LazyFeatureDescriptor[];
         
         executeInstallLifecycle(readyFeatureList);
@@ -103,10 +103,10 @@ function createEditorHostImpl(): EditorHost {
         activateFeatures(activeFeatureNames);
     }
 
-    function executeInstallLifecycle(features: EditorFeature[]): void {
+    function executeInstallLifecycle(features: FeatureLifecycle[]): void {
         lastInstallLazyFeatureNames = [];
 
-        const contexts = new Map<EditorFeature, FeatureContext>();
+        const contexts = new Map<FeatureLifecycle, FeatureContext>();
         features.forEach(f => contexts.set(f, createFeatureContext(f)));
 
         invokeFeaturePhase(features, contexts, 'install', (f, ctx) => f.install(ctx));
@@ -183,7 +183,7 @@ function createEditorHostImpl(): EditorHost {
         lazyFeatures.set(descriptor.name, descriptor.factory);
     }
 
-    function validateUniqueFeatureNames(features: (EditorFeature | LazyFeatureDescriptor)[]): void {
+    function validateUniqueFeatureNames(features: (FeatureLifecycle | LazyFeatureDescriptor)[]): void {
         features.forEach(f => validateUniqueFeatureName(f.name));
     }
 
@@ -195,7 +195,7 @@ function createEditorHostImpl(): EditorHost {
         }
     }
 
-    function loadLazyFeature(name: string): Promise<EditorFeature> {
+    function loadLazyFeature(name: string): Promise<FeatureLifecycle> {
         const factory = lazyFeatures.get(name);
         
         if (factory) {
@@ -248,11 +248,11 @@ function createEditorHostImpl(): EditorHost {
     }
 
     function invokeFeaturePhase(
-        features: EditorFeature[], 
-        contexts: Map<EditorFeature, FeatureContext>,
+        features: FeatureLifecycle[], 
+        contexts: Map<FeatureLifecycle, FeatureContext>,
         phase: string, 
-        action: (feature: EditorFeature, context: FeatureContext) => void,
-        predicate?: (feature: EditorFeature) => boolean
+        action: (feature: FeatureLifecycle, context: FeatureContext) => void,
+        predicate?: (feature: FeatureLifecycle) => boolean
     ): void {
         console.log(`--- ${phase} phase ---`);
         
@@ -272,8 +272,8 @@ function createEditorHostImpl(): EditorHost {
     }
 
     function invokeFeature(
-        feature: EditorFeature, 
-        action: (feature: EditorFeature, context: FeatureContext) => void, 
+        feature: FeatureLifecycle, 
+        action: (feature: FeatureLifecycle, context: FeatureContext) => void, 
         context: FeatureContext,
         phase: string): void 
     {
@@ -290,20 +290,20 @@ function createEditorHostImpl(): EditorHost {
         }
     } 
 
-    function getCurrentLifecycleFeature(): EditorFeature {
+    function getCurrentLifecycleFeature(): FeatureLifecycle {
         if (currentLifecycleFeature) {
             return currentLifecycleFeature;
         }
         throw new Error('Current lifecycle feature does not exist.');
     }
 
-    function createFeatureContext(feature: EditorFeature): FeatureContext {
+    function createFeatureContext(feature: FeatureLifecycle): FeatureContext {
         return {
 
             ...host,
             declareSlot,
 
-            contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: EditorHost) => TApi): TApi {
+            contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi {
                 console.log(`Contributing API ${key.name}.`);
         
                 const api = factory(host);
