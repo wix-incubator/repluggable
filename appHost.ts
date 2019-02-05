@@ -126,7 +126,6 @@ function createAppHostImpl(): AppHost {
         );
         
         buildStore(); 
-        
         contexts.forEach(context => context.setLifecycleState(true, true));
 
         invokeFeaturePhase(
