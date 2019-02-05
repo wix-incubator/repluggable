@@ -51,6 +51,11 @@ const toFeatureToggleSet = (names: string[], active: boolean): FeatureToggleSet 
     }, {});
 }
 
+interface PrivateFeatureHost extends FeatureHost {
+    setDependencyApis(apis: AnySlotKey[]): void;
+    setLifecycleState(enableStore: boolean, enableApis: boolean): void;
+}
+
 function createAppHostImpl(): AppHost {
     let store: Store | null = null;
     let currentLifecycleFeature: FeatureLifecycle | null = null;
@@ -105,13 +110,30 @@ function createAppHostImpl(): AppHost {
 
     function executeInstallLifecycle(features: FeatureLifecycle[]): void {
         lastInstallLazyFeatureNames = [];
+        const contexts = new Map<FeatureLifecycle, PrivateFeatureHost>();
 
-        const contexts = new Map<FeatureLifecycle, FeatureHost>();
         features.forEach(f => contexts.set(f, createFeatureHost(f)));
 
-        invokeFeaturePhase(features, contexts, 'install', (f, ctx) => f.install(ctx));
-        buildStore(); //TODO: preserve existing state
-        invokeFeaturePhase(features, contexts, 'extend', (f, ctx) => f.extend && f.extend(ctx), f => !!f.extend);
+        invokeFeaturePhase(
+            'getDependencyApis', features, contexts, 
+            (f, ctx) => f.getDependencyApis && ctx.setDependencyApis(f.getDependencyApis()),
+            f => !!f.getDependencyApis
+        );
+        
+        invokeFeaturePhase(
+            'install', features, contexts, 
+            (f, ctx) => f.install(ctx)
+        );
+        
+        buildStore(); 
+        
+        contexts.forEach(context => context.setLifecycleState(true, true));
+
+        invokeFeaturePhase(
+            'extend', features, contexts, 
+            (f, ctx) => f.extend && f.extend(ctx), 
+            f => !!f.extend
+        );
 
         features.forEach(f => installedFeatures.set(f.name, f));
     }
@@ -248,10 +270,10 @@ function createAppHostImpl(): AppHost {
     }
 
     function invokeFeaturePhase(
-        features: FeatureLifecycle[], 
-        contexts: Map<FeatureLifecycle, FeatureHost>,
         phase: string, 
-        action: (feature: FeatureLifecycle, context: FeatureHost) => void,
+        features: FeatureLifecycle[], 
+        contexts: Map<FeatureLifecycle, PrivateFeatureHost>,
+        action: (feature: FeatureLifecycle, context: PrivateFeatureHost) => void,
         predicate?: (feature: FeatureLifecycle) => boolean
     ): void {
         console.log(`--- ${phase} phase ---`);
@@ -273,8 +295,8 @@ function createAppHostImpl(): AppHost {
 
     function invokeFeature(
         feature: FeatureLifecycle, 
-        action: (feature: FeatureLifecycle, context: FeatureHost) => void, 
-        context: FeatureHost,
+        action: (feature: FeatureLifecycle, context: PrivateFeatureHost) => void, 
+        context: PrivateFeatureHost,
         phase: string): void 
     {
         console.log(`${phase} : ${feature.name}`);
@@ -297,11 +319,41 @@ function createAppHostImpl(): AppHost {
         throw new Error('Current lifecycle feature does not exist.');
     }
 
-    function createFeatureHost(feature: FeatureLifecycle): FeatureHost {
+    function createFeatureHost(feature: FeatureLifecycle): PrivateFeatureHost {
+        
+        let storeEnabled = false;
+        let apisEnabled = false;
+        let dependencyApis: AnySlotKey[] = [];
+
         return {
 
             ...host,
             declareSlot,
+
+            setLifecycleState(enableStore: boolean, enableApis: boolean) {
+                storeEnabled = enableStore;
+                apisEnabled = enableApis;
+            },
+
+            setDependencyApis(apis: AnySlotKey[]) : void {
+                dependencyApis = apis;
+            },
+
+            canUseApis(): boolean {
+                return apisEnabled;
+            },
+
+            canUseStore(): boolean {
+                return storeEnabled;
+            },
+
+            getApi<TApi>(key: SlotKey<TApi>): TApi {
+                if (dependencyApis.indexOf(key) >= 0) {
+                    return host.getApi(key);
+                }
+                throw new Error(
+                    `API '${key.name}' is not declared as dependency by feature '${feature.name}' (forgot to return it from getDependencyApis?)`);
+            },
 
             contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi {
                 console.log(`Contributing API ${key.name}.`);

@@ -23,6 +23,7 @@ export interface SlotKey<T> extends AnySlotKey {
 
 export interface FeatureLifecycle {
     readonly name: string;
+    getDependencyApis?(): AnySlotKey[];
     install(host: FeatureHost): void;
     extend?(host: FeatureHost): void;
 }
@@ -69,6 +70,8 @@ export interface AppHost {
 }
 
 export interface FeatureHost extends AppHost {
+    canUseApis(): boolean;
+    canUseStore(): boolean;
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>;
     contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi;
     contributeState(contributor: ReduxStateContributor): void;
