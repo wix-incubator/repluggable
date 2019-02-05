@@ -16,7 +16,7 @@ import {
     AnySlotKey,
     FeatureActivationPredicate,
     FeatureInfo,
-    FeatureContext,
+    FeatureHost,
     LazyFeatureDescriptor
 } from './api';
 
@@ -106,8 +106,8 @@ function createAppHostImpl(): AppHost {
     function executeInstallLifecycle(features: FeatureLifecycle[]): void {
         lastInstallLazyFeatureNames = [];
 
-        const contexts = new Map<FeatureLifecycle, FeatureContext>();
-        features.forEach(f => contexts.set(f, createFeatureContext(f)));
+        const contexts = new Map<FeatureLifecycle, FeatureHost>();
+        features.forEach(f => contexts.set(f, createFeatureHost(f)));
 
         invokeFeaturePhase(features, contexts, 'install', (f, ctx) => f.install(ctx));
         buildStore(); //TODO: preserve existing state
@@ -249,9 +249,9 @@ function createAppHostImpl(): AppHost {
 
     function invokeFeaturePhase(
         features: FeatureLifecycle[], 
-        contexts: Map<FeatureLifecycle, FeatureContext>,
+        contexts: Map<FeatureLifecycle, FeatureHost>,
         phase: string, 
-        action: (feature: FeatureLifecycle, context: FeatureContext) => void,
+        action: (feature: FeatureLifecycle, context: FeatureHost) => void,
         predicate?: (feature: FeatureLifecycle) => boolean
     ): void {
         console.log(`--- ${phase} phase ---`);
@@ -273,8 +273,8 @@ function createAppHostImpl(): AppHost {
 
     function invokeFeature(
         feature: FeatureLifecycle, 
-        action: (feature: FeatureLifecycle, context: FeatureContext) => void, 
-        context: FeatureContext,
+        action: (feature: FeatureLifecycle, context: FeatureHost) => void, 
+        context: FeatureHost,
         phase: string): void 
     {
         console.log(`${phase} : ${feature.name}`);
@@ -297,7 +297,7 @@ function createAppHostImpl(): AppHost {
         throw new Error('Current lifecycle feature does not exist.');
     }
 
-    function createFeatureContext(feature: FeatureLifecycle): FeatureContext {
+    function createFeatureHost(feature: FeatureLifecycle): FeatureHost {
         return {
 
             ...host,

@@ -23,8 +23,8 @@ export interface SlotKey<T> extends AnySlotKey {
 
 export interface FeatureLifecycle {
     readonly name: string;
-    install(context: FeatureContext): void;
-    extend?(context: FeatureContext): void;
+    install(host: FeatureHost): void;
+    extend?(host: FeatureHost): void;
 }
 
 export interface ExtensionSlot<T> {
@@ -68,7 +68,7 @@ export interface AppHost {
     //readonly log: HostLogger; //TODO: define logging abstraction
 }
 
-export interface FeatureContext extends AppHost {
+export interface FeatureHost extends AppHost {
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>;
     contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi;
     contributeState(contributor: ReduxStateContributor): void;

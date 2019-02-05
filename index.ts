@@ -1,7 +1,7 @@
 export {
     FeatureLifecycle,
     AppHost,
-    FeatureContext,
+    FeatureHost,
     ExtensionSlot,
     ExtensionItem,
     AnySlotKey,
