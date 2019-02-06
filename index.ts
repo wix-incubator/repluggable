@@ -11,29 +11,14 @@ export {
     ReactComponentContributor,
     SoloReactComponentContributor,
     ReduxStateContributor
-} from './api';
+} from './api'
 
-export {
-    HostContext
-} from './hostContext';
+export { HostContext } from './hostContext'
 
-export {
-    AppMainView
-} from './appMainView';
+export { AppMainView } from './appMainView'
 
-export { 
-    createAppHost,
-    makeLazyFeature,
-    mainViewSlotKey,
-    stateSlotKey
-} from './appHost';
+export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './appHost'
 
-export { 
-    renderSlotComponents,
-    renderSlotComponentsConnected
-} from './renderSlotComponents';
+export { renderSlotComponents, renderSlotComponentsConnected } from './renderSlotComponents'
 
-export {
-    ErrorBoundary
-} from './errorBoundary';
-
+export { ErrorBoundary } from './errorBoundary'

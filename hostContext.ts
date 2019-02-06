@@ -1,8 +1,8 @@
-import { createContext } from 'react';
-import { AppHost } from './api';
+import { createContext } from 'react'
+import { AppHost } from './api'
 
 export interface HostContext {
-    readonly host: AppHost;
-};
+    readonly host: AppHost
+}
 
-export const HostContext = createContext<HostContext | null>(null) as React.Context<HostContext>;
+export const HostContext = createContext<HostContext | null>(null) as React.Context<HostContext>

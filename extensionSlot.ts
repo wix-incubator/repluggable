@@ -1,17 +1,17 @@
-import { ExtensionSlot, ExtensionItem, SlotKey, AppHost, ContributionPredicate, FeatureLifecycle } from './api';
+import { AppHost, ContributionPredicate, ExtensionItem, ExtensionSlot, FeatureLifecycle, SlotKey } from './api'
 
 export interface AnyExtensionSlot {
     readonly name: string
-};
+}
 
-const alwaysTrue = () => true;
+const alwaysTrue = () => true
 
 export function createExtensionSlot<T>(
-    key: SlotKey<T>, 
+    key: SlotKey<T>,
     host: AppHost,
-    getCurrentLifecycleFeature: () => FeatureLifecycle): ExtensionSlot<T> & AnyExtensionSlot {
-
-    let items: ExtensionItem<T>[] = [];
+    getCurrentLifecycleFeature: () => FeatureLifecycle
+): ExtensionSlot<T> & AnyExtensionSlot {
+    const items: Array<ExtensionItem<T>> = []
 
     return {
         host,
@@ -20,28 +20,25 @@ export function createExtensionSlot<T>(
         getItems,
         getSingleItem,
         getItemByName
-    };
+    }
 
     function contribute(item: T, condition?: ContributionPredicate): void {
         items.push({
             feature: getCurrentLifecycleFeature(),
             contribution: item,
             condition: condition || alwaysTrue
-        });
-    }    
-    
-    function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
-        return items.filter(item => forceAll || item.condition());
+        })
     }
-    
+
+    function getItems(forceAll: boolean = false): Array<ExtensionItem<T>> {
+        return items.filter(item => forceAll || item.condition())
+    }
+
     function getSingleItem(): ExtensionItem<T> {
-        return getItems()[0];
+        return getItems()[0]
     }
 
     function getItemByName(name: string): ExtensionItem<T> {
-        return items.filter(
-            item => item['name'] === name && item.condition()
-        )[0];
+        return items.filter(item => item.name === name && item.condition())[0]
     }
-
 }

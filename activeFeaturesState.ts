@@ -1,32 +1,32 @@
-import { Action, AnyAction } from 'redux';
-import { AppStateBlock } from './api';
+import { Action, AnyAction } from 'redux'
+import { AppStateBlock } from './api'
 
 export interface FeatureToggleSet {
-    [name: string]: boolean;
+    [name: string]: boolean
 }
 
 export interface ActiveFeaturesState {
-    readonly activeFeatures: FeatureToggleSet;
+    readonly activeFeatures: FeatureToggleSet
 }
 
-export interface UpdateActiveFeaturesAction extends Action { 
-    readonly updates: FeatureToggleSet;
-};
+export interface UpdateActiveFeaturesAction extends Action {
+    readonly updates: FeatureToggleSet
+}
 
-const UPDATE_ACTIVE_FEATURES_ACTION = '$activeFeatures/update';
+const UPDATE_ACTIVE_FEATURES_ACTION = '$activeFeatures/update'
 
 export const contributeActiveFeaturesState = (): AppStateBlock => {
     return {
         name: '$activeFeatures',
         reducer: activeFeaturesReducer
-    };
+    }
 }
 
-const selectRootState = (state: any): ActiveFeaturesState => state.$activeFeatures;
+const selectRootState = (state: any): ActiveFeaturesState => state.$activeFeatures
 
 export const ActiveFeaturesSelectors = {
     getActiveFeatureSet(state: any): FeatureToggleSet {
-        return selectRootState(state).activeFeatures;
+        return selectRootState(state).activeFeatures
     }
 }
 
@@ -35,31 +35,25 @@ export const ActiveFeaturesActions = {
         return {
             type: UPDATE_ACTIVE_FEATURES_ACTION,
             updates
-        };
-    },
+        }
+    }
 }
 
 const toggleActiveFeatures = (currentlyActive: FeatureToggleSet, updates: FeatureToggleSet): FeatureToggleSet => {
-    let activeFeatureNames = new Set<string>(Object.keys(currentlyActive));
+    const activeFeatureNames = new Set<string>(Object.keys(currentlyActive))
 
-    for (let name in updates)
-    {
+    for (const name in updates) {
         if (updates[name] === true) {
-            activeFeatureNames.add(name);
+            activeFeatureNames.add(name)
         } else {
-            activeFeatureNames.delete(name);
+            activeFeatureNames.delete(name)
         }
     }
 
-    return Array
-        .from(activeFeatureNames)
-        .reduce<FeatureToggleSet>(
-            (result: FeatureToggleSet, name: string) => {
-                result[name] = true;
-                return result;
-            }, 
-            {}
-        );
+    return Array.from(activeFeatureNames).reduce<FeatureToggleSet>((result: FeatureToggleSet, name: string) => {
+        result[name] = true
+        return result
+    }, {})
 }
 
 export const activeFeaturesReducer = (state: ActiveFeaturesState = { activeFeatures: {} }, action: AnyAction): ActiveFeaturesState => {
@@ -68,9 +62,9 @@ export const activeFeaturesReducer = (state: ActiveFeaturesState = { activeFeatu
             return {
                 ...state,
                 activeFeatures: toggleActiveFeatures(state.activeFeatures, action.updates)
-            };
-            break;
+            }
+            break
     }
 
-    return state;
+    return state
 }
