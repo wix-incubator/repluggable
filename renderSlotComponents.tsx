@@ -38,13 +38,13 @@ const PredicateHoc: React.FunctionComponent<PredicateHocProps> = props => (
     </HostContext.Consumer>
 )
 
-interface connectedPredicateHocProps {
+interface ConnectedPredicateHocProps {
     index: number
     item: ExtensionItem<ReactComponentContributor>
     host: AppHost
 }
 
-const mapPredicateHocStateToProps = (state: any, ownProps: connectedPredicateHocProps): PredicateHocProps => ({
+const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps): PredicateHocProps => ({
     index: ownProps.index,
     render: ownProps.item.contribution,
     predicateResult: ownProps.item.condition()
