@@ -31,7 +31,7 @@ export interface FeatureLifecycle {
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
-    contribute(item: T, condition?: ContributionPredicate, feature?: FeatureLifecycle): void
+    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void;
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
@@ -39,7 +39,7 @@ export interface ExtensionSlot<T> {
 
 export interface ExtensionItem<T> {
     readonly name?: string
-    readonly feature: FeatureLifecycle
+    readonly feature: PrivateFeatureHost;
     readonly contribution: T
     readonly condition: ContributionPredicate
 }
@@ -78,6 +78,13 @@ export interface FeatureHost extends AppHost {
     contributeMainView(contributor: ReactComponentContributor): void
     contributeLazyFeature(name: string, factory: LazyFeatureFactory): void
     // readonly log: FeatureLogger; //TODO: define logging abstraction
+}
+
+export interface PrivateFeatureHost extends FeatureHost {
+    readonly name: string;
+    readonly lifecycle: FeatureLifecycle;
+    setDependencyApis(apis: AnySlotKey[]): void;
+    setLifecycleState(enableStore: boolean, enableApis: boolean): void;
 }
 
 export interface FeatureInfo {
