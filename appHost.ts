@@ -15,8 +15,7 @@ import {
     SlotKey
 } from './api'
 
-import { ActiveFeaturesActions, ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState'
-import { contributeActiveFeaturesState } from './activeFeaturesState'
+import { ActiveFeaturesActions, ActiveFeaturesSelectors, contributeActiveFeaturesState, FeatureToggleSet } from './activeFeaturesState'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 
 export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): LazyFeatureDescriptor => {
