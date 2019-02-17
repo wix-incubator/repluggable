@@ -9,7 +9,7 @@ export function renderSlotComponents(host: AppHost, slot: ExtensionSlot<ReactCom
     return slot
         .getItems()
         .map((item, index) => (
-            <ErrorBoundary key={index} featureName={item.feature.name} componentName={item.name}>
+            <ErrorBoundary key={index} feature={item.feature} componentName={item.name}>
                 <FeatureContext.Provider value={item.feature}>
                     {item.contribution()} 
                 </FeatureContext.Provider>
@@ -21,7 +21,7 @@ export function renderSlotComponentsConnected(host: AppHost, slot: ExtensionSlot
     return slot
         .getItems(true)
         .map((item, index) => (
-            <ErrorBoundary key={index.toString()} featureName={item.feature.name} componentName={item.name}>
+            <ErrorBoundary key={index.toString()} feature={item.feature} componentName={item.name}>
                 <FeatureContext.Provider value={item.feature}>
                     <ConnectedPredicateHoc 
                         index={0} 
