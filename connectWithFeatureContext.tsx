@@ -6,7 +6,7 @@ import { Action } from 'redux';
 import { FeatureContext } from './featureContext'
 import { SlotKey } from './api';
 
-const featureContextTypes = {
+export const featureContextTypes = {
     getSlot: PropTypes.func.isRequired,
     getApi: PropTypes.func.isRequired,
     log: PropTypes.object

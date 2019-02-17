@@ -1,9 +1,11 @@
 import React, { ErrorInfo } from 'react'
+import { PrivateFeatureHost } from './api';
+import { featureContextTypes } from './connectWithFeatureContext';
 
 interface ErrorBoundaryProps {
-    readonly featureName: string
-    readonly componentName?: string
-    readonly errorClassName?: string
+    readonly feature: PrivateFeatureHost;
+    readonly componentName?: string;
+    readonly errorClassName?: string;
 }
 
 interface ErrorBoundaryState {
@@ -38,11 +40,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         if (this.state.hasError) {
             return (
                 <div className={`component-error ${this.props.errorClassName || ''}`} title={this.state.errorMessage || '(unknown error)'}>
-                    error in {getQualifiedName(this.props.featureName, this.props.componentName)}
+                    error in {getQualifiedName(this.props.feature.name, this.props.componentName)}
                 </div>
             )
         }
 
         return this.props.children
     }
+
+    public getChildContext() {
+        return {
+            getSlot: this.props.feature.getSlot,
+            getApi: this.props.feature.getApi,
+            //log: this.props.feature.log //TODO: define logging abstraction
+        };
+    }
+
+    static childContextTypes = featureContextTypes;
 }

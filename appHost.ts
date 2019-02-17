@@ -7,7 +7,6 @@ import {
 
 import { 
     AppHost, 
-    FeatureLifecycle,
     ExtensionSlot, 
     ReactComponentContributor, 
     ReduxStateContributor,
