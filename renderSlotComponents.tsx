@@ -1,35 +1,37 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, ReactComponentContributor } from './api'
+import { AppHost, ExtensionItem, ExtensionSlot, ReactComponentContributor, PrivateFeatureHost } from './api'
 import { ErrorBoundary } from './errorBoundary'
 import { FeatureContext } from './featureContext';
-import { HostContext } from './hostContext'
 
-export function renderSlotComponents(host: AppHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
-    return slot
-        .getItems()
-        .map((item, index) => (
-            <ErrorBoundary key={index} feature={item.feature} componentName={item.name}>
-                <FeatureContext.Provider value={item.feature}>
-                    {item.contribution()} 
-                </FeatureContext.Provider>
-            </ErrorBoundary>
-        )); // index is the key prop
+export function renderFeatureComponent(feature: PrivateFeatureHost, component: React.ReactNode, key: any, name?: string): React.ReactNode {
+    return (
+        <ErrorBoundary key={key} feature={feature} componentName={name}>
+            <FeatureContext.Provider value={feature}>
+                {component} 
+            </FeatureContext.Provider>
+        </ErrorBoundary>
+    )
 }
 
-export function renderSlotComponentsConnected(host: AppHost, slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
+export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
+    return slot
+        .getItems()
+        .map((item, index) => renderFeatureComponent(
+            item.feature, 
+            item.contribution(), 
+            index, // index is the key prop
+            item.name)); 
+}
+
+export function renderSlotComponentsConnected(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
     return slot
         .getItems(true)
-        .map((item, index) => (
-            <ErrorBoundary key={index.toString()} feature={item.feature} componentName={item.name}>
-                <FeatureContext.Provider value={item.feature}>
-                    <ConnectedPredicateHoc 
-                        index={0} 
-                        item={item} 
-                        host={host} />            
-                </FeatureContext.Provider>
-            </ErrorBoundary>
-        )); 
+        .map((item, index) => renderFeatureComponent(
+            item.feature, 
+            <ConnectedPredicateHoc index={0} item={item} />, 
+            index, // index is the key prop
+            item.name)); 
 }
 
 interface PredicateHocProps {
@@ -38,22 +40,15 @@ interface PredicateHocProps {
     predicateResult: boolean
 }
 
-const PredicateHoc: React.FunctionComponent<PredicateHocProps> = props => (
-    <HostContext.Consumer>
-        {ctx => {
-            if (props.predicateResult) {
-                return props.render()
-            } else {
-                return null
-            }
-        }}
-    </HostContext.Consumer>
-)
+const PredicateHoc: React.FunctionComponent<PredicateHocProps> = (props) => (
+    <>
+        {(props.predicateResult ? props.render() : null)}
+    </>
+);
 
 interface ConnectedPredicateHocProps {
     index: number
     item: ExtensionItem<ReactComponentContributor>
-    host: AppHost
 }
 
 const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps): PredicateHocProps => ({

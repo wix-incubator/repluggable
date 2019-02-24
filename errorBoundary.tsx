@@ -52,6 +52,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return {
             getSlot: this.props.feature.getSlot,
             getApi: this.props.feature.getApi,
+            isFeatureActive: this.props.feature.isFeatureInstalled,
+            isFeatureInstalled: this.props.feature.isFeatureInstalled,
+            isLazyFeature: this.props.feature.isLazyFeature,
             //log: this.props.feature.log //TODO: define logging abstraction
         };
     }

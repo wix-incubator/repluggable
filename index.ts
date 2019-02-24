@@ -13,12 +13,12 @@ export {
     ReduxStateContributor
 } from './api'
 
-export { HostContext } from './hostContext'
-
 export { AppMainView } from './appMainView'
 
 export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './appHost'
 
 export { renderSlotComponents, renderSlotComponentsConnected } from './renderSlotComponents'
+
+export { connectWithFeature } from './connectWithFeatureContext';
 
 export { ErrorBoundary } from './errorBoundary'

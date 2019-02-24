@@ -3,8 +3,8 @@ import { connect } from 'react-redux'
 import { ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState'
 import { AppHost, ExtensionSlot, SlotKey } from './api'
 import { mainViewSlotKey, stateSlotKey } from './appHost'
-import { HostContext } from './hostContext'
 import { renderSlotComponents } from './renderSlotComponents'
+import { FeatureContext } from './featureContext';
 
 export interface AppMainViewProps {
     host: AppHost
@@ -16,9 +16,8 @@ interface SfcProps {
 }
 
 const sfc: SFC<SfcProps> = props => {
-    const contextValue = { host: props.host }
-    const contextProviderChildren = renderSlotComponents(props.host, props.host.getSlot(mainViewSlotKey))
-    const contextProviderElement = React.createElement(HostContext.Provider, { value: contextValue }, contextProviderChildren)
+    const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
+    const contextProviderElement = React.createElement(FeatureContext.Provider, { value: props.host }, contextProviderChildren)
 
     return contextProviderElement
 }

@@ -9,11 +9,17 @@ import { SlotKey } from './api';
 export const featureContextTypes = {
     getSlot: PropTypes.func.isRequired,
     getApi: PropTypes.func.isRequired,
+    isFeatureActive: PropTypes.func.isRequired,
+    isFeatureInstalled: PropTypes.func.isRequired,
+    isLazyFeature: PropTypes.func.isRequired,
     log: PropTypes.object
 };
 
 export interface FeatureContextWithApi extends FeatureContext {
     getApi<TApi>(key: SlotKey<TApi>): TApi;
+    isFeatureActive(name: string): boolean
+    activateFeatures(names: string[]): Promise<any>
+    deactivateFeatures(names: string[]): void
 }
 
 interface WrapperMembers<S, OP, SP, DP> {
