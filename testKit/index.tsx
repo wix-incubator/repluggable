@@ -2,10 +2,9 @@ import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
+import { FeatureLifecycle, PrivateFeatureHost } from '../api'
 import { AppHost, AppMainView, createAppHost } from '../index'
-import { FeatureContext } from '../featureContext';
-import { renderFeatureComponent } from '../renderSlotComponents';
-import { PrivateFeatureHost, FeatureLifecycle, AnySlotKey, SlotKey, ReduxStateContributor, ReactComponentContributor, LazyFeatureFactory } from '../api';
+import { renderFeatureComponent } from '../renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
 
@@ -34,15 +33,12 @@ export const renderInHost = async (
     host: AppHost
 }> => {
     const div = document.createElement('div')
-    const feature = createFeatureHost(host);
+    const feature = createFeatureHost(host)
     let root = null
     const { ref } = await new Promise(resolve => {
         root = ReactDOM.render(
             <Provider store={host.getStore()}>
-                {renderFeatureComponent(
-                    feature,
-                    <div ref={ref => resolve({ ref })}>{reactElement}</div>,
-                    '')}
+                {renderFeatureComponent(feature, <div ref={ref => resolve({ ref })}>{reactElement}</div>, '')}
             </Provider>,
             div
         )
@@ -61,34 +57,31 @@ export const renderInHost = async (
 function createFeatureHost(host: AppHost): PrivateFeatureHost {
     const lifecycle: FeatureLifecycle = {
         name: 'test',
-        install() { }
-    };
+        install() {}
+    }
 
     return {
         name: lifecycle.name,
         lifecycle,
         ...host,
-        declareSlot(key: any) { 
-            const slot: any = {};
-            return slot;
+        declareSlot() {
+            const slot: any = {}
+            return slot
         },
-        setLifecycleState(enableStore: boolean, enableApis: boolean) {  },
-        setDependencyApis(apis: AnySlotKey[]) : void { },
+        setLifecycleState() {},
+        setDependencyApis(): void {},
         canUseApis(): boolean {
-            return true;
+            return true
         },
         canUseStore(): boolean {
-            return true;
+            return true
         },
-        contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi {
-            const api: any = {};
-            return api;
+        contributeApi<TApi>(): TApi {
+            const api: any = {}
+            return api
         },
-        contributeState(contributor: ReduxStateContributor): void {
-        },
-        contributeMainView(contributor: ReactComponentContributor): void {
-        },
-        contributeLazyFeature(name: string, factory: LazyFeatureFactory): void {
-        }
-    };
+        contributeState(): void {},
+        contributeMainView(): void {},
+        contributeLazyFeature(): void {}
+    }
 }

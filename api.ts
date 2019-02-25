@@ -28,10 +28,12 @@ export interface FeatureLifecycle {
     extend?(host: FeatureHost): void
 }
 
+export type AnyFeature = FeatureLifecycle | LazyFeatureDescriptor | Array<FeatureLifecycle | LazyFeatureDescriptor>
+
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
-    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void;
+    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
@@ -39,7 +41,7 @@ export interface ExtensionSlot<T> {
 
 export interface ExtensionItem<T> {
     readonly name?: string
-    readonly feature: PrivateFeatureHost;
+    readonly feature: PrivateFeatureHost
     readonly contribution: T
     readonly condition: ContributionPredicate
 }
@@ -63,7 +65,7 @@ export interface AppHost {
     isFeatureActive(name: string): boolean
     isFeatureInstalled(name: string): boolean
     isLazyFeature(name: string): boolean
-    installFeatures(features: Array<FeatureLifecycle | LazyFeatureDescriptor>, activation?: FeatureActivationPredicate): void
+    installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
     activateFeatures(names: string[]): Promise<any>
     deactivateFeatures(names: string[]): void
     // readonly log: HostLogger; //TODO: define logging abstraction
@@ -81,10 +83,10 @@ export interface FeatureHost extends AppHost {
 }
 
 export interface PrivateFeatureHost extends FeatureHost {
-    readonly name: string;
-    readonly lifecycle: FeatureLifecycle;
-    setDependencyApis(apis: AnySlotKey[]): void;
-    setLifecycleState(enableStore: boolean, enableApis: boolean): void;
+    readonly name: string
+    readonly lifecycle: FeatureLifecycle
+    setDependencyApis(apis: AnySlotKey[]): void
+    setLifecycleState(enableStore: boolean, enableApis: boolean): void
 }
 
 export interface FeatureInfo {
