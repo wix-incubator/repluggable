@@ -1,0 +1,39 @@
+{
+  "name": "react-app-lego",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "yarn run type-check -- --watch",
+    "build": "yarn run build:types && yarn run build:js",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "webpack --mode=production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "main": "dist/react-app-lego.min.js",
+  "types": "dist/types/index.d.ts",
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "react": "^16.6.0",
+    "react-dom": "^16.6.0",
+    "react-redux": "^5.1.1",
+    "redux": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.3.3",
+    "@babel/plugin-proposal-class-properties": "^7.3.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.3.2",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.3.3",
+    "@types/react-redux": "^6.0.10",
+    "@types/requirejs": "^2.1.31",
+    "babel-loader": "8.0.4",
+    "fork-ts-checker-webpack-plugin": "^0.5.2",
+    "typescript": "^3.3.3333",
+    "webpack": "^4.29.5",
+    "webpack-cli": "^3.2.3"
+  }
+}
