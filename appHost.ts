@@ -116,6 +116,7 @@ function createAppHostImpl(): AppHost {
                 .defaultTo([])
                 .find(key => !readyAPIs.has(key))
                 .isEmpty()
+                .value()
         )
 
         if (store && _.isEmpty(readyLifecycles)) {
