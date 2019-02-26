@@ -102,7 +102,7 @@ function createAppHostImpl(): AppHost {
         const activeFeatureNames = lifecycles
             .map(lifecycles => lifecycles.name)
             .concat(lastInstallLazyFeatureNames)
-            .filter(name => !activation || activation(name))
+            .filter(name => (!activation || activation(name)) && installedFeatures.has(name))
 
         activateFeatures(activeFeatureNames)
     }
@@ -370,7 +370,9 @@ function createAppHostImpl(): AppHost {
                 readyAPIs.add(key)
 
                 if (canInstallReadyFeatures) {
+                    const lifecycleNames = _.map(unReadyFeatureLifecycles, 'name')
                     executeInstallLifecycle(unReadyFeatureLifecycles)
+                    activateFeatures(_.difference(lifecycleNames, _.map(unReadyFeatureLifecycles, 'name')))
                 }
 
                 return api
