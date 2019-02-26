@@ -12,6 +12,8 @@ export const featureContextTypes = {
     isFeatureActive: PropTypes.func.isRequired,
     isFeatureInstalled: PropTypes.func.isRequired,
     isLazyFeature: PropTypes.func.isRequired,
+    activateFeatures: PropTypes.func.isRequired,
+    deactivateFeatures: PropTypes.func.isRequired,
     log: PropTypes.object
 };
 
