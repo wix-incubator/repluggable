@@ -75,7 +75,7 @@ export interface FeatureHost extends AppHost {
     canUseApis(): boolean
     canUseStore(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi
+    contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
     contributeState(contributor: ReduxStateContributor): void
     contributeMainView(contributor: ReactComponentContributor): void
     contributeLazyFeature(name: string, factory: LazyFeatureFactory): void

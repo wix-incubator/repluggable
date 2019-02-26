@@ -30,7 +30,7 @@ export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): Lazy
 export function createAppHost(
     features: AnyFeature[],
     activation?: FeatureActivationPredicate
-    /*, log?: HostLogger */ //TODO: define logging abstraction
+    /*, log?: HostLogger */ // TODO: define logging abstraction
 ): AppHost {
     const host = createAppHostImpl()
     host.installFeatures(features, activation)
@@ -252,7 +252,7 @@ function createAppHostImpl(): AppHost {
     }
 
     function buildStore(): Store {
-        //TODO: preserve existing state
+        // TODO: preserve existing state
         const reducersMap = buildReducersMapObject()
         const reducer = combineReducers(reducersMap)
 
@@ -266,15 +266,15 @@ function createAppHostImpl(): AppHost {
     }
 
     function buildReducersMapObject(): ReducersMapObject {
-        let result: any = {}
+        const result: any = {}
 
-        //TODO: get rid of builtInStateBlocks
+        // TODO: get rid of builtInStateBlocks
         const builtInStateBlocks = [contributeActiveFeaturesState()]
 
         const stateSlot = getSlot(stateSlotKey)
         const allStateBlocks = builtInStateBlocks.concat(stateSlot.getItems().map(item => item.contribution()))
 
-        for (let block of allStateBlocks) {
+        for (const block of allStateBlocks) {
             result[block.name] = block.reducer
         }
 
@@ -325,6 +325,9 @@ function createAppHostImpl(): AppHost {
         let apisEnabled = false
         let dependencyApis: AnySlotKey[] = []
 
+        const getApiContributor = <TApi>(key: SlotKey<TApi>): PrivateFeatureHost => getSlot<TApi>(key).getSingleItem().feature
+        const isOwnContributedApi = <TApi>(key: SlotKey<TApi>): boolean => getApiContributor(key) === featureHost
+
         const featureHost: PrivateFeatureHost = {
             name: lifecycle.name,
             lifecycle,
@@ -350,7 +353,7 @@ function createAppHostImpl(): AppHost {
             },
 
             getApi<TApi>(key: SlotKey<TApi>): TApi {
-                if (dependencyApis.indexOf(key) >= 0) {
+                if (dependencyApis.indexOf(key) >= 0 || isOwnContributedApi(key)) {
                     return host.getApi(key)
                 }
                 throw new Error(
@@ -360,10 +363,10 @@ function createAppHostImpl(): AppHost {
                 )
             },
 
-            contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi {
+            contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi {
                 console.log(`Contributing API ${key.name}.`)
 
-                const api = factory(host)
+                const api = factory()
                 const apiSlot = declareSlot<TApi>(key)
                 apiSlot.contribute(api, undefined, featureHost)
 
