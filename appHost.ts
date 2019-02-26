@@ -52,7 +52,7 @@ function createAppHostImpl(): AppHost {
     let currentLifecycleFeature: PrivateFeatureHost | null = null
     let lastInstallLazyFeatureNames: string[] = []
     let canInstallReadyFeatures: boolean = true
-    let featuresQueue: FeatureLifecycle[] = []
+    let unReadyFeatureLifecycles: FeatureLifecycle[] = []
 
     const readyAPIs = new Set<AnySlotKey>()
 
@@ -87,18 +87,20 @@ function createAppHostImpl(): AppHost {
     function installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void {
         console.log(`Adding ${features.length} features.`)
 
-        validateUniqueFeatureNames(features)
+        const lifecycles = _.flatten(features)
 
-        const [lazyFeatureList, readyFeatureList] = _(features)
-            .flatten()
-            .partition(isLazyFeatureDescriptor)
-            .value() as [LazyFeatureDescriptor[], FeatureLifecycle[]]
+        validateUniqueFeatureNames(lifecycles)
+
+        const [lazyFeatureList, readyFeatureList] = _.partition(lifecycles, isLazyFeatureDescriptor) as [
+            LazyFeatureDescriptor[],
+            FeatureLifecycle[]
+        ]
 
         executeInstallLifecycle(readyFeatureList)
         lazyFeatureList.forEach(registerLazyFeature)
 
-        const activeFeatureNames = features
-            .map(feature => getFeatureName(feature) as string)
+        const activeFeatureNames = lifecycles
+            .map(lifecycles => lifecycles.name)
             .concat(lastInstallLazyFeatureNames)
             .filter(name => !activation || activation(name))
 
@@ -120,13 +122,16 @@ function createAppHostImpl(): AppHost {
             return
         }
 
-        featuresQueue = _(featuresQueue)
+        unReadyFeatureLifecycles = _(unReadyFeatureLifecycles)
             .difference(readyLifecycles)
             .union(unReadyLifecycles)
             .value()
 
         const featureHosts = readyLifecycles.map(createFeatureHost)
+        executeReadyFeaturesLifecycle(featureHosts)
+    }
 
+    function executeReadyFeaturesLifecycle(featureHosts: PrivateFeatureHost[]): void {
         canInstallReadyFeatures = false
         try {
             invokeFeaturePhase(
@@ -146,7 +151,7 @@ function createAppHostImpl(): AppHost {
             featureHosts.forEach(f => installedFeatures.set(f.lifecycle.name, f))
         } finally {
             canInstallReadyFeatures = true
-            executeInstallLifecycle(featuresQueue)
+            executeInstallLifecycle(unReadyFeatureLifecycles)
         }
     }
 
@@ -217,16 +222,8 @@ function createAppHostImpl(): AppHost {
         lazyFeatures.set(descriptor.name, descriptor.factory)
     }
 
-    function getFeatureName(feature: AnyFeature) {
-        return _.chain(feature)
-            .castArray()
-            .head()
-            .get('name')
-            .value()
-    }
-
     function validateUniqueFeatureNames(features: AnyFeature[]): void {
-        features.forEach(f => validateUniqueFeatureName(getFeatureName(f)))
+        features.forEach(f => validateUniqueFeatureName(f.name))
     }
 
     function validateUniqueFeatureName(name: string): void {
@@ -372,7 +369,7 @@ function createAppHostImpl(): AppHost {
                 readyAPIs.add(key)
 
                 if (canInstallReadyFeatures) {
-                    executeInstallLifecycle(featuresQueue)
+                    executeInstallLifecycle(unReadyFeatureLifecycles)
                 }
 
                 return api
