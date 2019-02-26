@@ -6,7 +6,6 @@ export {
     ExtensionItem,
     AnySlotKey,
     SlotKey,
-    HostConnectorCallback,
     AppStateBlock,
     ReactComponentContributor,
     SoloReactComponentContributor,
@@ -19,6 +18,6 @@ export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from '.
 
 export { renderSlotComponents, renderSlotComponentsConnected } from './renderSlotComponents'
 
-export { connectWithFeature } from './connectWithFeatureContext';
+export { connectWithFeature } from './connectWithFeatureContext'
 
 export { ErrorBoundary } from './errorBoundary'

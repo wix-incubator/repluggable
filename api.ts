@@ -1,7 +1,6 @@
 import * as React from 'react'
 import * as Redux from 'redux'
 
-export type HostConnectorCallback = (host: AppHost) => void
 export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReduxStateContributor = () => AppStateBlock
