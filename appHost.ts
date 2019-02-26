@@ -102,7 +102,7 @@ function createAppHostImpl(): AppHost {
         const activeFeatureNames = lifecycles
             .map(lifecycles => lifecycles.name)
             .concat(lastInstallLazyFeatureNames)
-            .filter(name => (!activation || activation(name)) && installedFeatures.has(name))
+            .filter(name => (!activation || activation(name)) && (installedFeatures.has(name) || lazyFeatures.has(name)))
 
         activateFeatures(activeFeatureNames)
     }
@@ -119,14 +119,14 @@ function createAppHostImpl(): AppHost {
                 .value()
         )
 
-        if (store && _.isEmpty(readyLifecycles)) {
-            return
-        }
-
         unReadyFeatureLifecycles = _(unReadyFeatureLifecycles)
             .difference(readyLifecycles)
             .union(unReadyLifecycles)
             .value()
+
+        if (store && _.isEmpty(readyLifecycles)) {
+            return
+        }
 
         const featureHosts = readyLifecycles.map(createFeatureHost)
         executeReadyFeaturesLifecycle(featureHosts)
