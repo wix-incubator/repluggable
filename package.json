@@ -39,9 +39,6 @@
     "typescript": "3.3.1",
     "webpack": "4.29.0",
     "webpack-cli": "3.2.1",
-    "@wix/wnpm-ci": "*"
-  },
-  "resolutions": {
-    "terser": "3.14.1"
+    "wnpm-ci": "*"
   }
 }
