@@ -1,10 +1,10 @@
 
-import React, { Dispatch, ComponentType } from 'react';
-import { connect as reduxConnect, ConnectedComponentClass, InferableComponentEnhancerWithProps, Matching } from 'react-redux';
 import * as PropTypes from 'prop-types';
+import React, { ComponentType, Dispatch } from 'react';
+import { connect as reduxConnect, ConnectedComponentClass, InferableComponentEnhancerWithProps, Matching } from 'react-redux';
 import { Action } from 'redux';
+import { AnyFeature, ExtensionItemFilter, FeatureActivationPredicate, SlotKey } from './api';
 import { FeatureContext } from './featureContext'
-import { SlotKey } from './api';
 
 export const featureContextTypes = {
     getSlot: PropTypes.func.isRequired,
@@ -14,14 +14,18 @@ export const featureContextTypes = {
     isLazyFeature: PropTypes.func.isRequired,
     activateFeatures: PropTypes.func.isRequired,
     deactivateFeatures: PropTypes.func.isRequired,
+    installFeatures: PropTypes.func.isRequired,
+    uninstallFeatures: PropTypes.func.isRequired,
     log: PropTypes.object
 };
 
 export interface FeatureContextWithApi extends FeatureContext {
-    getApi<TApi>(key: SlotKey<TApi>): TApi;
+    getApi<TApi>(key: SlotKey<TApi>): TApi
     isFeatureActive(name: string): boolean
     activateFeatures(names: string[]): Promise<any>
     deactivateFeatures(names: string[]): void
+    installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
+    uninstallFeatures(names: string[]): void
 }
 
 interface WrapperMembers<S, OP, SP, DP> {

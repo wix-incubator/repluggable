@@ -56,7 +56,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             isFeatureInstalled: this.props.feature.isFeatureInstalled,
             isLazyFeature: this.props.feature.isLazyFeature,
             activateFeatures: this.props.feature.activateFeatures,
-            deactivateFeatures: this.props.feature.deactivateFeatures
+            deactivateFeatures: this.props.feature.deactivateFeatures,
+            installFeatures: this.props.feature.installFeatures,
+            uninstallFeatures: this.props.feature.uninstallFeatures
             //log: this.props.feature.log //TODO: define logging abstraction
         };
     }

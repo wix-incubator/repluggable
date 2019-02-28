@@ -13,7 +13,8 @@ import {
     PrivateFeatureHost,
     ReactComponentContributor,
     ReduxStateContributor,
-    SlotKey
+    SlotKey,
+    ExtensionItem
 } from './api'
 
 import _ from 'lodash'
@@ -71,8 +72,19 @@ function createAppHostImpl(): AppHost {
         isFeatureInstalled,
         isLazyFeature,
         installFeatures,
+        uninstallFeatures,
         activateFeatures,
         deactivateFeatures
+    }
+
+    // TODO: Conditionally with parameter
+    window.reactAppLegoDebug = {
+        host,
+        uniqueFeatureNames,
+        extensionSlots,
+        installedFeatures,
+        lazyFeatures,
+        readyAPIs
     }
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
@@ -320,12 +332,56 @@ function createAppHostImpl(): AppHost {
         throw new Error('Current lifecycle feature does not exist.')
     }
 
+    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateFeatureHost {
+        return getSlot<TApi>(key).getSingleItem().feature
+    }
+
+    function doesExtensionItemBelongToFeatures(extensionItem: ExtensionItem<any>, featureNames: string[]) {
+        return (
+            _.includes(featureNames, extensionItem.feature.name) ||
+            _.some(_.invoke(extensionItem.feature.lifecycle, 'getDependencyApis'), apiKey =>
+                _.includes(featureNames, getApiContributor(apiKey).name)
+            )
+        )
+    }
+
+    function uninstallIfDependencyApisRemoved(featureHost: PrivateFeatureHost) {
+        const dependencyApis = _.invoke(featureHost.lifecycle, 'getDependencyApis')
+        if (_.some(dependencyApis, apiKey => !extensionSlots.has(apiKey))) {
+            unReadyFeatureLifecycles.push(featureHost.lifecycle)
+            uninstallFeatures([featureHost.name])
+        }
+    }
+
+    function discardApi<TApi>(apiKey: SlotKey<TApi>) {
+        readyAPIs.delete(apiKey)
+        extensionSlots.delete(apiKey)
+        console.log(`-- Removed API: ${apiKey.name}} --`)
+    }
+
+    function uninstallFeatures(names: string[]): void {
+        console.log(`-- Uninstalling ${names} --`)
+
+        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, getApiContributor(apiKey).name))
+        extensionSlots.forEach(extensionSlot =>
+            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToFeatures(extensionItem, names))
+        )
+
+        names.forEach(name => installedFeatures.delete(name))
+        apisToDiscard.forEach(discardApi)
+
+        deactivateFeatures(names)
+
+        console.log(`Done uninstalling ${names}`)
+
+        installedFeatures.forEach(uninstallIfDependencyApisRemoved)
+    }
+
     function createFeatureHost(lifecycle: FeatureLifecycle): PrivateFeatureHost {
         let storeEnabled = false
         let apisEnabled = false
         let dependencyApis: AnySlotKey[] = []
 
-        const getApiContributor = <TApi>(key: SlotKey<TApi>): PrivateFeatureHost => getSlot<TApi>(key).getSingleItem().feature
         const isOwnContributedApi = <TApi>(key: SlotKey<TApi>): boolean => getApiContributor(key) === featureHost
 
         const featureHost: PrivateFeatureHost = {

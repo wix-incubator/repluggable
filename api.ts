@@ -29,6 +29,7 @@ export interface FeatureLifecycle {
 
 export type AnyFeature = FeatureLifecycle | LazyFeatureDescriptor | Array<FeatureLifecycle | LazyFeatureDescriptor>
 
+export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
@@ -36,6 +37,7 @@ export interface ExtensionSlot<T> {
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
+    discardBy(predicate: ExtensionItemFilter<T>): void
 }
 
 export interface ExtensionItem<T> {
@@ -65,6 +67,7 @@ export interface AppHost {
     isFeatureInstalled(name: string): boolean
     isLazyFeature(name: string): boolean
     installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
+    uninstallFeatures(names: string[]): void
     activateFeatures(names: string[]): Promise<any>
     deactivateFeatures(names: string[]): void
     // readonly log: HostLogger; //TODO: define logging abstraction

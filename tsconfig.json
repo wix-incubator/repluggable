@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "allowJs": true,
+    "downlevelIteration": true,
     "skipLibCheck": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
