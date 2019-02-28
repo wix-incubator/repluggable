@@ -6,10 +6,9 @@ export {
     ExtensionItem,
     AnySlotKey,
     SlotKey,
-    AppStateBlock,
     ReactComponentContributor,
     SoloReactComponentContributor,
-    ReduxStateContributor
+    ReducersMapObjectContributor
 } from './api'
 
 export { AppMainView } from './appMainView'

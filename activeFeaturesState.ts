@@ -1,5 +1,4 @@
-import { Action, AnyAction } from 'redux'
-import { AppStateBlock } from './api'
+import { Action, AnyAction, ReducersMapObject } from 'redux'
 
 export interface FeatureToggleSet {
     [name: string]: boolean
@@ -15,10 +14,9 @@ export interface UpdateActiveFeaturesAction extends Action {
 
 const UPDATE_ACTIVE_FEATURES_ACTION = '$activeFeatures/update'
 
-export const contributeActiveFeaturesState = (): AppStateBlock => {
+export const contributeActiveFeaturesState = (): ReducersMapObject => {
     return {
-        name: '$activeFeatures',
-        reducer: activeFeaturesReducer
+        $activeFeatures: activeFeaturesReducer
     }
 }
 

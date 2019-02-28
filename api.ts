@@ -3,7 +3,7 @@ import * as Redux from 'redux'
 
 export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
-export type ReduxStateContributor = () => AppStateBlock
+export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type FeatureActivationPredicate = (name: string) => boolean
 export type ContributionPredicate = () => boolean
 export type LazyFeatureFactory = () => Promise<FeatureLifecycle>
@@ -53,11 +53,6 @@ export interface JsxWithContainerCss {
     containerCss: string | Object
 }
 
-export interface AppStateBlock {
-    readonly name: string
-    readonly reducer: Redux.Reducer
-}
-
 export interface AppHost {
     getStore(): Redux.Store
     getApi<TApi>(key: SlotKey<TApi>): TApi
@@ -79,7 +74,7 @@ export interface FeatureHost extends AppHost {
     canUseStore(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
-    contributeState(contributor: ReduxStateContributor): void
+    contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(contributor: ReactComponentContributor): void
     // readonly log: FeatureLogger; //TODO: define logging abstraction
 }

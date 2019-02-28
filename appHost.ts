@@ -13,7 +13,7 @@ import {
     LazyFeatureFactory,
     PrivateFeatureHost,
     ReactComponentContributor,
-    ReduxStateContributor,
+    ReducersMapObjectContributor,
     SlotKey
 } from './api'
 
@@ -39,7 +39,7 @@ export function createAppHost(
 }
 
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = { name: 'mainView' }
-export const stateSlotKey: SlotKey<ReduxStateContributor> = { name: 'state' }
+export const stateSlotKey: SlotKey<ReducersMapObjectContributor> = { name: 'state' }
 
 const toFeatureToggleSet = (names: string[], active: boolean): FeatureToggleSet => {
     return names.reduce<FeatureToggleSet>((result: FeatureToggleSet, name: string) => {
@@ -88,7 +88,7 @@ function createAppHostImpl(): AppHost {
     }
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
-    declareSlot<ReduxStateContributor>(stateSlotKey)
+    declareSlot<ReducersMapObjectContributor>(stateSlotKey)
 
     return host
 
@@ -278,19 +278,13 @@ function createAppHostImpl(): AppHost {
     }
 
     function buildReducersMapObject(): ReducersMapObject {
-        const result: any = {}
-
-        // TODO: get rid of builtInStateBlocks
-        const builtInStateBlocks = [contributeActiveFeaturesState()]
+        // TODO: get rid of builtInReducersMaps
+        const builtInReducersMaps = [contributeActiveFeaturesState()]
 
         const stateSlot = getSlot(stateSlotKey)
-        const allStateBlocks = builtInStateBlocks.concat(stateSlot.getItems().map(item => item.contribution()))
+        const allReducersMaps = builtInReducersMaps.concat(stateSlot.getItems().map(item => item.contribution()))
 
-        for (const block of allStateBlocks) {
-            result[block.name] = block.reducer
-        }
-
-        return result
+        return allReducersMaps.reduce((result, item) => ({ ...result, ...item }), {})
     }
 
     function invokeFeaturePhase(
@@ -444,7 +438,7 @@ function createAppHostImpl(): AppHost {
                 return api
             },
 
-            contributeState(contributor: ReduxStateContributor): void {
+            contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
                 getSlot(stateSlotKey).contribute(contributor)
             },
 
