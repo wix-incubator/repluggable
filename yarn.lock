@@ -713,10 +713,10 @@
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/prop-types/-/prop-types-15.5.9.tgz#f2d14df87b0739041bc53a7d75e3d77d726a3ec0"
   integrity sha1-8tFN+HsHOQQbxTp9dePXfXJqPsA=
 
-"@types/react-redux@^6.0.10":
-  version "6.0.13"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/react-redux/-/react-redux-6.0.13.tgz#490ace7b49e57281edf85671bb455b31cdfa7d0b"
-  integrity sha1-SQrOe0nlcoHt+FZxu0VbMc36fQs=
+"@types/react-redux@^7.0.0":
+  version "7.0.1"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/react-redux/-/react-redux-7.0.1.tgz#9dd2503be7a9861c5a092bf1c5050b7ade4dc62e"
+  integrity sha1-ndJQO+ephhxaCSvxxQULet5Nxi4=
   dependencies:
     "@types/react" "*"
     redux "^4.0.0"

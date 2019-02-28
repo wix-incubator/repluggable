@@ -1,6 +1,6 @@
 {
   "name": "react-app-lego",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "author": "",
   "license": "ISC",
@@ -32,7 +32,7 @@
     "@babel/preset-env": "7.3.1",
     "@babel/preset-react": "^7.0.0",
     "@babel/preset-typescript": "7.1.0",
-    "@types/react-redux": "^6.0.10",
+    "@types/react-redux": "^7.0.0",
     "@types/requirejs": "^2.1.31",
     "babel-loader": "8.0.5",
     "fork-ts-checker-webpack-plugin": "0.5.2",
