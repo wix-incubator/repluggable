@@ -25,6 +25,7 @@ export interface FeatureLifecycle {
     getDependencyApis?(): AnySlotKey[]
     install(host: FeatureHost): void
     extend?(host: FeatureHost): void
+    uninstall?(host: FeatureHost): void
 }
 
 export type AnyFeature = FeatureLifecycle | LazyFeatureDescriptor | Array<FeatureLifecycle | LazyFeatureDescriptor>

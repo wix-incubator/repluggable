@@ -4,6 +4,7 @@ import {
     AnyFeature,
     AnySlotKey,
     AppHost,
+    ExtensionItem,
     ExtensionSlot,
     FeatureActivationPredicate,
     FeatureInfo,
@@ -13,8 +14,7 @@ import {
     PrivateFeatureHost,
     ReactComponentContributor,
     ReduxStateContributor,
-    SlotKey,
-    ExtensionItem
+    SlotKey
 } from './api'
 
 import _ from 'lodash'
@@ -332,15 +332,15 @@ function createAppHostImpl(): AppHost {
         throw new Error('Current lifecycle feature does not exist.')
     }
 
-    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateFeatureHost {
-        return getSlot<TApi>(key).getSingleItem().feature
+    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateFeatureHost | undefined {
+        return extensionSlots.has(key) ? _.get(getSlot<TApi>(key).getSingleItem(), 'feature') : undefined
     }
 
     function doesExtensionItemBelongToFeatures(extensionItem: ExtensionItem<any>, featureNames: string[]) {
         return (
             _.includes(featureNames, extensionItem.feature.name) ||
             _.some(_.invoke(extensionItem.feature.lifecycle, 'getDependencyApis'), apiKey =>
-                _.includes(featureNames, getApiContributor(apiKey).name)
+                _.includes(featureNames, _.get(getApiContributor(apiKey), 'name'))
             )
         )
     }
@@ -362,7 +362,11 @@ function createAppHostImpl(): AppHost {
     function uninstallFeatures(names: string[]): void {
         console.log(`-- Uninstalling ${names} --`)
 
-        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, getApiContributor(apiKey).name))
+        invokeFeaturePhase('uninstall', names.map(name => installedFeatures.get(name)) as PrivateFeatureHost[], f =>
+            _.invoke(f.lifecycle, 'uninstall', f)
+        )
+
+        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, _.get(getApiContributor(apiKey), 'name')))
         extensionSlots.forEach(extensionSlot =>
             (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToFeatures(extensionItem, names))
         )
