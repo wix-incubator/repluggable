@@ -164,8 +164,8 @@ function createAppHostImpl(): AppHost {
             featureHosts.forEach(f => installedFeatures.set(f.lifecycle.name, f))
         } finally {
             canInstallReadyFeatures = true
-            executeInstallLifecycle(unReadyFeatureLifecycles)
         }
+        executeInstallLifecycle(unReadyFeatureLifecycles)
     }
 
     async function activateFeatures(names: string[]) {
