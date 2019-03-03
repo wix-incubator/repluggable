@@ -1,6 +1,7 @@
 import * as React from 'react'
 import * as Redux from 'redux'
 
+export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'subscribe'>
 export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
@@ -69,7 +70,8 @@ export interface AppHost {
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
 
-export interface FeatureHost extends AppHost {
+export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
+    getStore<TState>(): ScopedStore<TState>
     canUseApis(): boolean
     canUseStore(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>

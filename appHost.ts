@@ -14,12 +14,17 @@ import {
     PrivateFeatureHost,
     ReactComponentContributor,
     ReducersMapObjectContributor,
+    ScopedStore,
     SlotKey
 } from './api'
 
 import _ from 'lodash'
 import { ActiveFeaturesActions, ActiveFeaturesSelectors, contributeActiveFeaturesState, FeatureToggleSet } from './activeFeaturesState'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
+
+interface FeaturesReducersMap {
+    [featureName: string]: ReducersMapObject
+}
 
 export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): LazyFeatureDescriptor => {
     return {
@@ -277,14 +282,27 @@ function createAppHostImpl(): AppHost {
         return store
     }
 
+    function getPerFeatureReducersMapObject(): FeaturesReducersMap {
+        const stateSlot = getSlot(stateSlotKey)
+        return stateSlot.getItems().reduce((reducersMap: FeaturesReducersMap, item) => {
+            const featureName = item.feature.name
+            reducersMap[featureName] = { ...reducersMap[featureName], ...item.contribution() }
+            return reducersMap
+        }, {})
+    }
+
+    function getCombinedFeatureReducers(): ReducersMapObject {
+        const featuresReducerMaps = getPerFeatureReducersMapObject()
+        return Object.keys(featuresReducerMaps).reduce((reducersMap: ReducersMapObject, featureName: string) => {
+            reducersMap[featureName] = combineReducers(featuresReducerMaps[featureName])
+            return reducersMap
+        }, {})
+    }
+
     function buildReducersMapObject(): ReducersMapObject {
         // TODO: get rid of builtInReducersMaps
-        const builtInReducersMaps = [contributeActiveFeaturesState()]
-
-        const stateSlot = getSlot(stateSlotKey)
-        const allReducersMaps = builtInReducersMaps.concat(stateSlot.getItems().map(item => item.contribution()))
-
-        return allReducersMaps.reduce((result, item) => ({ ...result, ...item }), {})
+        const builtInReducersMaps: ReducersMapObject = { ...contributeActiveFeaturesState() }
+        return { ...builtInReducersMaps, ...getCombinedFeatureReducers() }
     }
 
     function invokeFeaturePhase(
@@ -439,7 +457,15 @@ function createAppHostImpl(): AppHost {
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
-                getSlot(stateSlotKey).contribute(contributor)
+                getSlot(stateSlotKey).contribute(contributor, undefined, featureHost)
+            },
+
+            getStore<TState>(): ScopedStore<TState> {
+                return {
+                    dispatch: host.getStore().dispatch,
+                    subscribe: host.getStore().subscribe,
+                    getState: () => host.getStore().getState()[featureHost.name]
+                }
             },
 
             contributeMainView(contributor: ReactComponentContributor): void {
