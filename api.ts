@@ -81,7 +81,6 @@ export interface FeatureHost extends AppHost {
     contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
     contributeState(contributor: ReduxStateContributor): void
     contributeMainView(contributor: ReactComponentContributor): void
-    contributeLazyFeature(name: string, factory: LazyFeatureFactory): void
     // readonly log: FeatureLogger; //TODO: define logging abstraction
 }
 

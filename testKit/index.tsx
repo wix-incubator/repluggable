@@ -81,7 +81,6 @@ function createFeatureHost(host: AppHost): PrivateFeatureHost {
             return api
         },
         contributeState(): void {},
-        contributeMainView(): void {},
-        contributeLazyFeature(): void {}
+        contributeMainView(): void {}
     }
 }

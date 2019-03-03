@@ -371,7 +371,10 @@ function createAppHostImpl(): AppHost {
             (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToFeatures(extensionItem, names))
         )
 
-        names.forEach(name => installedFeatures.delete(name))
+        names.forEach(name => {
+            installedFeatures.delete(name)
+            uniqueFeatureNames.delete(name)
+        })
         apisToDiscard.forEach(discardApi)
 
         deactivateFeatures(names)
@@ -447,12 +450,6 @@ function createAppHostImpl(): AppHost {
 
             contributeMainView(contributor: ReactComponentContributor): void {
                 getSlot(mainViewSlotKey).contribute(contributor)
-            },
-
-            contributeLazyFeature(name: string, factory: LazyFeatureFactory): void {
-                validateUniqueFeatureName(name)
-                registerLazyFeature({ name, factory })
-                lastInstallLazyFeatureNames.push(name)
             }
         }
 
