@@ -69,6 +69,7 @@ export interface AppHost {
 }
 
 export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
+    readonly name: string
     getStore<TState>(): ScopedStore<TState>
     canUseApis(): boolean
     canUseStore(): boolean
@@ -80,7 +81,6 @@ export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getSt
 }
 
 export interface PrivateFeatureHost extends FeatureHost {
-    readonly name: string
     readonly lifecycle: FeatureLifecycle
     setDependencyApis(apis: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableApis: boolean): void
