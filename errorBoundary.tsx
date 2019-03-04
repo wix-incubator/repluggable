@@ -51,6 +51,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     public getChildContext() {
         return {
             getSlot: this.props.feature.getSlot,
+            getStore: this.props.feature.getStore,
             getApi: this.props.feature.getApi,
             isFeatureActive: this.props.feature.isFeatureInstalled,
             isFeatureInstalled: this.props.feature.isFeatureInstalled,
