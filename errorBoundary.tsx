@@ -1,6 +1,5 @@
 import React, { ErrorInfo } from 'react'
-import { PrivateFeatureHost } from './api';
-import { featureContextTypes } from './connectWithFeatureContext';
+import { PrivateFeatureHost } from './api'
 
 interface ErrorBoundaryProps {
     readonly feature: PrivateFeatureHost;
@@ -47,20 +46,4 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
         return this.props.children
     }
-
-    public getChildContext() {
-        return {
-            getSlot: this.props.feature.getSlot,
-            getStore: this.props.feature.getStore,
-            getApi: this.props.feature.getApi,
-            isFeatureActive: this.props.feature.isFeatureInstalled,
-            isFeatureInstalled: this.props.feature.isFeatureInstalled,
-            isLazyFeature: this.props.feature.isLazyFeature,
-            installFeatures: this.props.feature.installFeatures,
-            uninstallFeatures: this.props.feature.uninstallFeatures
-            //log: this.props.feature.log //TODO: define logging abstraction
-        };
-    }
-
-    static childContextTypes = featureContextTypes;
 }
