@@ -65,8 +65,6 @@ export interface AppHost {
     isLazyFeature(name: string): boolean
     installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
     uninstallFeatures(names: string[]): void
-    activateFeatures(names: string[]): Promise<any>
-    deactivateFeatures(names: string[]): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
 

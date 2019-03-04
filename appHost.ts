@@ -77,9 +77,7 @@ function createAppHostImpl(): AppHost {
         isFeatureInstalled,
         isLazyFeature,
         installFeatures,
-        uninstallFeatures,
-        activateFeatures,
-        deactivateFeatures
+        uninstallFeatures
     }
 
     // TODO: Conditionally with parameter

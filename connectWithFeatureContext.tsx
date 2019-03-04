@@ -12,8 +12,6 @@ export const featureContextTypes = {
     isFeatureActive: PropTypes.func.isRequired,
     isFeatureInstalled: PropTypes.func.isRequired,
     isLazyFeature: PropTypes.func.isRequired,
-    activateFeatures: PropTypes.func.isRequired,
-    deactivateFeatures: PropTypes.func.isRequired,
     installFeatures: PropTypes.func.isRequired,
     uninstallFeatures: PropTypes.func.isRequired,
     log: PropTypes.object
@@ -22,8 +20,6 @@ export const featureContextTypes = {
 export interface FeatureContextWithApi extends FeatureContext {
     getApi<TApi>(key: SlotKey<TApi>): TApi
     isFeatureActive(name: string): boolean
-    activateFeatures(names: string[]): Promise<any>
-    deactivateFeatures(names: string[]): void
     installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
     uninstallFeatures(names: string[]): void
 }
