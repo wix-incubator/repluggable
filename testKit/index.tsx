@@ -56,8 +56,7 @@ export const renderInHost = async (
 
 function createFeatureHost(host: AppHost): PrivateFeatureHost {
     const lifecycle: FeatureLifecycle = {
-        name: 'test',
-        install() {}
+        name: 'test'
     }
 
     return {

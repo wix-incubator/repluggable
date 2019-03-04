@@ -24,7 +24,7 @@ export interface SlotKey<T> extends AnySlotKey {
 export interface FeatureLifecycle {
     readonly name: string
     getDependencyApis?(): AnySlotKey[]
-    install(host: FeatureHost): void
+    install?(host: FeatureHost): void
     extend?(host: FeatureHost): void
     uninstall?(host: FeatureHost): void
 }

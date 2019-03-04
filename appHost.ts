@@ -157,7 +157,7 @@ function createAppHostImpl(): AppHost {
                 f => !!f.lifecycle.getDependencyApis
             )
 
-            invokeFeaturePhase('install', featureHosts, f => f.lifecycle.install(f))
+            invokeFeaturePhase('install', featureHosts, f => f.lifecycle.install && f.lifecycle.install(f), f => !!f.lifecycle.install)
 
             buildStore()
             featureHosts.forEach(f => f.setLifecycleState(true, true))
