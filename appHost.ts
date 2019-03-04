@@ -65,6 +65,7 @@ function createAppHostImpl(): AppHost {
     const uniqueFeatureNames = new Set<string>()
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const installedFeatures = new Map<string, PrivateFeatureHost>()
+    const featureInstallers = new WeakMap<PrivateFeatureHost, string[]>()
     const lazyFeatures = new Map<string, LazyFeatureFactory>()
 
     const host: AppHost = {
@@ -87,7 +88,8 @@ function createAppHostImpl(): AppHost {
         extensionSlots,
         installedFeatures,
         lazyFeatures,
-        readyAPIs
+        readyAPIs,
+        featureInstallers
     }
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
@@ -423,6 +425,31 @@ function createAppHostImpl(): AppHost {
 
             canUseStore(): boolean {
                 return storeEnabled
+            },
+
+            installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void {
+                const featureNamesToBeinstalled = _.chain(features)
+                    .flatten()
+                    .map('name')
+                    .value()
+                const featureNamesInstalledByCurrentFeature = featureInstallers.get(featureHost) || []
+                featureInstallers.set(featureHost, [...featureNamesInstalledByCurrentFeature, ...featureNamesToBeinstalled])
+                host.installFeatures(features, activation)
+            },
+
+            uninstallFeatures(names: string[]): void {
+                const namesInstalledByCurrentFeature = featureInstallers.get(featureHost) || []
+                const namesNotInstalledByCurrentFeature = _.difference(names, namesInstalledByCurrentFeature)
+                // TODO: Allow feature to uninstall itself?
+                if (!_.isEmpty(namesNotInstalledByCurrentFeature)) {
+                    throw new Error(
+                        `Feature ${lifecycle.name} is trying to uninstall features: ${names} which is are not installed by ${
+                            lifecycle.name
+                        } - This is not allowed`
+                    )
+                }
+                featureInstallers.set(featureHost, _.without(namesInstalledByCurrentFeature, ...names))
+                host.uninstallFeatures(names)
             },
 
             getApi<TApi>(key: SlotKey<TApi>): TApi {
