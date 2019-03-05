@@ -1,10 +1,10 @@
 import React, { SFC } from 'react'
 import { connect } from 'react-redux'
-import { ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState'
-import { AppHost, ExtensionSlot, SlotKey } from './api'
-import { mainViewSlotKey, stateSlotKey } from './appHost'
 import { renderSlotComponents } from './renderSlotComponents'
-import { FeatureContext } from './featureContext';
+import { ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState'
+import { AppHost } from './api'
+import { mainViewSlotKey } from './appHost'
+import { FeatureContext } from './featureContext'
 
 export interface AppMainViewProps {
     host: AppHost

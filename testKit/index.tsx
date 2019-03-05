@@ -2,9 +2,9 @@ import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
-import { FeatureLifecycle, PrivateFeatureHost } from '../api'
+import { FeatureLifecycle, PrivateFeatureHost } from '../src/api'
 import { AppHost, AppMainView, createAppHost } from '../index'
-import { renderFeatureComponent } from '../renderSlotComponents'
+import { renderFeatureComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
 

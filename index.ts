@@ -1,4 +1,5 @@
 export {
+    AnyFeature,
     FeatureLifecycle,
     AppHost,
     FeatureHost,
@@ -9,14 +10,14 @@ export {
     ReactComponentContributor,
     SoloReactComponentContributor,
     ReducersMapObjectContributor
-} from './api'
+} from './src/api'
 
-export { AppMainView } from './appMainView'
+export { AppMainView } from './src/appMainView'
 
-export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './appHost'
+export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './src/appHost'
 
-export { renderSlotComponents, renderSlotComponentsConnected } from './renderSlotComponents'
+export { renderSlotComponents, renderSlotComponentsConnected } from './src/renderSlotComponents'
 
-export { connectWithFeature } from './connectWithFeatureContext'
+export * from './src/connectWithFeatureContext'
 
-export { ErrorBoundary } from './errorBoundary'
+export { ErrorBoundary } from './src/errorBoundary'

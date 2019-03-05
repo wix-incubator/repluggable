@@ -1,7 +1,7 @@
 import React, { ComponentType, Dispatch } from 'react'
-import { connect as reduxConnect, ConnectedComponentClass, InferableComponentEnhancerWithProps, Matching } from 'react-redux'
+import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action } from 'redux'
-import { AnyFeature, ExtensionItemFilter, FeatureActivationPredicate, ScopedStore, SlotKey } from './api'
+import { AnyFeature, FeatureActivationPredicate, ScopedStore, SlotKey } from './api'
 import { FeatureContext } from './featureContext'
 
 export interface FeatureContextWithApi extends FeatureContext {
