@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "lib": ["es6", "dom"],
+    "noImplicitAny": true,
+    "declarationDir": "dist/types",
+    "declaration": true,
+    "target": "es2015",
+    "module": "es2015",
+    "strict": true,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "src", 
+    "../../sdk/**/*",
+    "../../features/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "editor-lego-example",
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": "",
+  "license": "ISC",
+  "private": true,
+  "scripts": {
+    "tslint-check": "tslint-config-prettier-check ./tslint.json",
+    "lint": "tslint -c tslint.json -t verbose ./**/*.{ts,tsx}",
+    "build": "lerna run build",
+    "clean": "lerna clean -f --yes && rm -rf node_modules",
+    "reset": "yarn run clean && yarn",
+    "responsive": "cd editors/responsive-editor && yarn start"
+  },
+  "devDependencies": {
+    "lerna": "^2.6.0",
+    "tslint": "^5.12.1",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "tslint-react": "^3.6.0"
+  },
+  "workspaces": [
+    "sdk/*",
+    "features/*",
+    "editors/*"
+  ],
+  "resolutions": {
+    "@types/react": "16.7.18"
+  }
+}

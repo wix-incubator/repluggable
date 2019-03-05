@@ -1,0 +1,45 @@
+{
+  "name": "feature-two",
+  "version": "0.1.1",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "publishConfig": {
+    "registry": "http://npm.dev.wixpress.com/"
+  },  
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "yarn run type-check -- --watch",
+    "build": "yarn run build:types && yarn run build:js",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "webpack --mode=production",
+    "test": ":",
+    "release": "wnpm-release"
+  },
+  "main": "dist/feature-two-public.js",
+  "types": "dist/types/public.d.ts",
+  "sideEffects": false,
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "react": "^16.6.0",
+    "react-dom": "^16.6.0",
+    "react-redux": "^5.1.1",
+    "redux": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.2.2",
+    "@babel/plugin-proposal-class-properties": "7.3.0",
+    "@babel/plugin-proposal-object-rest-spread": "7.3.1",
+    "@babel/preset-env": "7.3.1",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "7.1.0",
+    "@types/react-redux": "^7.0.0",
+    "@types/requirejs": "^2.1.31",
+    "babel-loader": "8.0.5",
+    "fork-ts-checker-webpack-plugin": "0.5.2",
+    "typescript": "3.3.1",
+    "webpack": "4.29.0",
+    "webpack-cli": "3.2.1",
+    "wnpm-ci": "*"
+  }
+}
