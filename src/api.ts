@@ -5,7 +5,6 @@ export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'sub
 export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
-export type FeatureActivationPredicate = (name: string) => boolean
 export type ContributionPredicate = () => boolean
 export type LazyFeatureFactory = () => Promise<FeatureLifecycle>
 export interface LazyFeatureDescriptor {
@@ -63,7 +62,7 @@ export interface AppHost {
     isFeatureActive(name: string): boolean
     isFeatureInstalled(name: string): boolean
     isLazyFeature(name: string): boolean
-    installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void
+    installFeatures(features: AnyFeature[]): void
     uninstallFeatures(names: string[]): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }

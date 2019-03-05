@@ -6,7 +6,6 @@ import {
     AppHost,
     ExtensionItem,
     ExtensionSlot,
-    FeatureActivationPredicate,
     FeatureInfo,
     FeatureLifecycle,
     LazyFeatureDescriptor,
@@ -34,12 +33,11 @@ export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): Lazy
 }
 
 export function createAppHost(
-    features: AnyFeature[],
-    activation?: FeatureActivationPredicate
+    features: AnyFeature[]
     /*, log?: HostLogger */ // TODO: define logging abstraction
 ): AppHost {
     const host = createAppHostImpl()
-    host.installFeatures(features, activation)
+    host.installFeatures(features)
     return host
 }
 
@@ -101,7 +99,7 @@ function createAppHostImpl(): AppHost {
         return typeof (value as LazyFeatureDescriptor).factory === 'function'
     }
 
-    function installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void {
+    function installFeatures(features: AnyFeature[]): void {
         console.log(`Adding ${features.length} features.`)
 
         const lifecycles = _.flatten(features)
@@ -119,7 +117,7 @@ function createAppHostImpl(): AppHost {
         const activeFeatureNames = lifecycles
             .map(lifecycles => lifecycles.name)
             .concat(lastInstallLazyFeatureNames)
-            .filter(name => (!activation || activation(name)) && (installedFeatures.has(name) || lazyFeatures.has(name)))
+            .filter(name => installedFeatures.has(name) || lazyFeatures.has(name))
 
         activateFeatures(activeFeatureNames)
     }
@@ -427,14 +425,14 @@ function createAppHostImpl(): AppHost {
                 return storeEnabled
             },
 
-            installFeatures(features: AnyFeature[], activation?: FeatureActivationPredicate): void {
+            installFeatures(features: AnyFeature[]): void {
                 const featureNamesToBeinstalled = _.chain(features)
                     .flatten()
                     .map('name')
                     .value()
                 const featureNamesInstalledByCurrentFeature = featureInstallers.get(featureHost) || []
                 featureInstallers.set(featureHost, [...featureNamesInstalledByCurrentFeature, ...featureNamesToBeinstalled])
-                host.installFeatures(features, activation)
+                host.installFeatures(features)
             },
 
             uninstallFeatures(names: string[]): void {
