@@ -1,5 +1,6 @@
 const path = require('path');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const externalsConfigObject = require('./webpack.config.externals');
 
 module.exports = {
   entry: path.resolve(__dirname, 'src'),
@@ -26,31 +27,9 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
   ],
 
-  externals: {
-    "lodash": { 
-      root: ['editorLego', 'libs', 'lodash'],
-      commonjs: 'lodash',
-      commonjs2: 'lodash'
-    },
-    "react": { 
-      root: ['editorLego', 'libs', 'react'],
-      commonjs: 'react',
-      commonjs2: 'react'
-    },
-    "react-dom": { 
-      root: ['editorLego', 'libs', 'react-dom'],
-      commonjs: 'react-dom',
-      commonjs2: 'react-dom'
-    },
-    "react-redux": { 
-      root: ['editorLego', 'libs', 'react-redux'],
-      commonjs: 'react-redux',
-      commonjs2: 'react-redux'
-    },
-    "redux": { 
-      root: ['editorLego', 'libs', 'lodash'],
-      commonjs: 'redux',
-      commonjs2: 'redux'
-    }
-  }
+  externals: externalsConfigObject
+
+  // optimization: {
+  //   minimize: false
+  // }
 };
