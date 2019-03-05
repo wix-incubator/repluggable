@@ -7,6 +7,7 @@ import { AppHost, AppMainView, createAppHost } from '../index'
 import { renderFeatureComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
+export * from './mockFeature'
 
 export const renderHost = async (host: AppHost): Promise<{ root: Component | null; DOMNode: HTMLElement | null }> => {
     const div = document.createElement('div')
