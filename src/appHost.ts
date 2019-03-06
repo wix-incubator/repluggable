@@ -19,7 +19,7 @@ import {
 } from './api'
 
 import _ from 'lodash'
-import { ActiveFeaturesActions, ActiveFeaturesSelectors, contributeActiveFeaturesState, FeatureToggleSet } from './activeFeaturesState'
+import { InstalledFeaturesActions, InstalledFeaturesSelectors, contributeInstalledFeaturesState, FeatureToggleSet } from './installedFeaturesState'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 
 interface FeaturesReducersMap {
@@ -175,12 +175,12 @@ function createAppHostImpl(): AppHost {
     async function activateFeatures(names: string[]) {
         await ensureLazyFeaturesInstalled(names)
         const updates = toFeatureToggleSet(names, true)
-        getStore().dispatch(ActiveFeaturesActions.updateActiveFeatures(updates))
+        getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
     }
 
     function deactivateFeatures(names: string[]): void {
         const updates = toFeatureToggleSet(names, false)
-        getStore().dispatch(ActiveFeaturesActions.updateActiveFeatures(updates))
+        getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
@@ -223,7 +223,7 @@ function createAppHostImpl(): AppHost {
     }
 
     function isFeatureActive(name: string): boolean {
-        const activeFeatureSet = ActiveFeaturesSelectors.getActiveFeatureSet(getStore().getState())
+        const activeFeatureSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
         return activeFeatureSet[name] === true
     }
 
@@ -300,7 +300,7 @@ function createAppHostImpl(): AppHost {
 
     function buildReducersMapObject(): ReducersMapObject {
         // TODO: get rid of builtInReducersMaps
-        const builtInReducersMaps: ReducersMapObject = { ...contributeActiveFeaturesState() }
+        const builtInReducersMaps: ReducersMapObject = { ...contributeInstalledFeaturesState() }
         return { ...builtInReducersMaps, ...getCombinedFeatureReducers() }
     }
 

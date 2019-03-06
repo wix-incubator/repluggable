@@ -1,7 +1,7 @@
 import React, { SFC } from 'react'
 import { connect } from 'react-redux'
 import { renderSlotComponents } from './renderSlotComponents'
-import { ActiveFeaturesSelectors, FeatureToggleSet } from './activeFeaturesState'
+import { InstalledFeaturesSelectors, FeatureToggleSet } from './installedFeaturesState'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
 import { FeatureContext } from './featureContext'
@@ -27,7 +27,7 @@ const sfc: SFC<SfcProps> = props => {
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
-    activeFeatures: ActiveFeaturesSelectors.getActiveFeatureSet(state),
+    activeFeatures: InstalledFeaturesSelectors.getInstalledFeatureSet(state),
     host: ownProps.host
 })
 

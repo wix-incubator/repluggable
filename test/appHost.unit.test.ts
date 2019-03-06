@@ -136,8 +136,8 @@ describe('App Host', () => {
         it('should have a store with initial state', () => {
             const host = createAppHost([])
             expect(host.getStore().getState()).toEqual({
-                $activeFeatures: {
-                    activeFeatures: {}
+                $installedFeatures: {
+                    installedFeatures: {}
                 }
             })
         })
