@@ -2,11 +2,18 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, FeatureHost, FeatureLifecycle } from '../src/api'
-import { mockFeature, MockFeatureAPI, mockFeatureInitialState, mockFeatureStateKey } from '../testKit/mockFeature'
+import { AnySlotKey, SlotKey, AppHost, FeatureHost, FeatureLifecycle } from '../src/api'
+import { 
+    mockFeature, 
+    MockFeatureAPI, 
+    mockFeatureWithPublicAPI, 
+    MockFeaturePublicAPI, 
+    mockFeatureInitialState, 
+    mockFeatureStateKey 
+} from '../testKit/mockFeature'
 
 const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
-    const MockAPI = _.clone(DependencyAPI)
+    const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' } 
     const dependentFeature: FeatureLifecycle[] = [
         {
             name: 'DEPENDENT_MOCK_FEATURE_1',
@@ -20,7 +27,7 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
                 return [DependencyAPI]
             },
             install(host: FeatureHost) {
-                host.contributeApi(MockAPI, () => ({}))
+                host.contributeApi(MockAPI2, () => ({}))
             }
         }
     ]
@@ -29,17 +36,26 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
         {
             name: 'DEPENDENT_MOCK_FEATURE_3',
             getDependencyApis() {
-                return [MockAPI]
+                return [MockAPI2]
             }
         }
     ]
 
-    const host = createAppHost([dependentFeature, deeplyDependentFeature])
+    let getHelperFeatureHost: () => FeatureHost = () => { throw new Error() }
+    const helperLifecycle: FeatureLifecycle = {
+        name: 'TEST_HELPER',
+        install(host: FeatureHost) {
+            getHelperFeatureHost = () => host
+        }
+    }
+
+    const host = createAppHost([dependentFeature, deeplyDependentFeature, helperLifecycle])
 
     return {
         host,
         dependentFeature,
-        deeplyDependentFeature
+        deeplyDependentFeature,
+        helperFeatureHost: getHelperFeatureHost()
     }
 }
 
@@ -73,40 +89,63 @@ describe('App Host', () => {
         it('should not install multiple features with the same name', () => {
             expect(() => createAppHost([mockFeature, _.pick(mockFeature, 'name')])).toThrow()
         })
+    })
 
-        it('should not install dependent feature until dependency is installed', () => {
-            const { host, dependentFeature } = createHostWithDependantFeatures(MockFeatureAPI)
+    _.forEach([
+        {testCase: 'private API keys', dependencyAPI: MockFeatureAPI, providerLifecycle: mockFeature }, 
+        {testCase: 'public API keys',  dependencyAPI: {name: MockFeaturePublicAPI.name, public: true}, providerLifecycle: mockFeatureWithPublicAPI}
+    ], ({testCase, dependencyAPI, providerLifecycle}) => {
 
-            expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
+        describe(`Dependecy features installation (${testCase})`, () => {
 
-            host.installFeatures([mockFeature])
-            expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
-        })
+            it('should not install dependent feature until dependency is installed', () => {
+                const { host, dependentFeature } = createHostWithDependantFeatures(dependencyAPI)
 
-        it('should install all dependent features chain when dependencies are installed', () => {
-            const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(MockFeatureAPI)
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
 
-            expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
-            expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
-            expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+                host.installFeatures([providerLifecycle])
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
+            })
 
-            host.installFeatures([mockFeature])
+            it('should install all dependent features chain when dependencies are installed from lifecycle', () => {
+                const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(dependencyAPI)
 
-            expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
-            expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(true)
-            expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(true)
-        })
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
+                expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
+                expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
 
-        it('should uninstall all dependent features chain when dependencies are uninstalled', () => {
-            const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(MockFeatureAPI)
+                host.installFeatures([providerLifecycle])
 
-            host.installFeatures([mockFeature])
-            host.uninstallFeatures([mockFeature.name])
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
+                expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(true)
+                expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(true)
+            })
 
-            expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
-            expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
-            expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
-        })
+            it('should install all dependent features chain when dependencies are installed outside of lifecycle', () => {
+                const { host, dependentFeature, deeplyDependentFeature, helperFeatureHost } = createHostWithDependantFeatures(dependencyAPI)
+
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
+                expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
+                expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+
+                helperFeatureHost.contributeApi(dependencyAPI, () => ({ stubTrue: () => true }))
+
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
+                expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(true)
+                expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(true)
+            })
+
+            it('should uninstall all dependent features chain when dependencies are uninstalled', () => {
+                const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(dependencyAPI)
+
+                host.installFeatures([providerLifecycle])
+                host.uninstallFeatures([providerLifecycle.name])
+
+                expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
+                expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
+                expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+            })
+        }) 
     })
 
     describe('Host extension slots', () => {
@@ -129,6 +168,88 @@ describe('App Host', () => {
             const expected = sortSlotKeys([mainViewSlotKey, stateSlotKey, MockFeatureAPI])
 
             expect(actual).toEqual(expected)
+        })
+
+        describe('private API slot key', () => {
+            
+            it('should equal itself', () => {
+                const host = createAppHost([mockFeature])
+
+                const api = host.getApi(MockFeatureAPI)
+
+                expect(api).toBeTruthy()
+            })
+
+            it('should not equal another key with same name', () => {
+                const host = createAppHost([mockFeature])
+                const fakeKey: SlotKey<MockFeatureAPI> =  { name: MockFeatureAPI.name }
+              
+                expect(() => {
+                    host.getApi(fakeKey)
+                }).toThrowError(new RegExp(MockFeatureAPI.name))
+            })
+
+            it('should not equal another key with same name that claims it is public', () => {
+                const host = createAppHost([mockFeature])
+                const fakeKey1: SlotKey<MockFeatureAPI> =  { 
+                    name: MockFeatureAPI.name,
+                    public: true
+                }
+                const fakeKey2: SlotKey<MockFeatureAPI> =  { 
+                    name: MockFeatureAPI.name,
+                    public: false
+                }
+                const fakeKey3: any =  { 
+                    name: MockFeatureAPI.name,
+                    public: 'zzz'
+                }
+              
+                expect(() => host.getApi(fakeKey1)).toThrowError(new RegExp(MockFeatureAPI.name))
+                expect(() => host.getApi(fakeKey2)).toThrowError(new RegExp(MockFeatureAPI.name))
+                expect(() => host.getApi(fakeKey3)).toThrowError(new RegExp(MockFeatureAPI.name))
+            })
+        })
+
+        describe('public API slot key', () => {
+            
+            it('should equal itself', () => {
+                const host = createAppHost([mockFeatureWithPublicAPI])
+
+                const api = host.getApi(MockFeaturePublicAPI)
+
+                expect(api).toBeTruthy()
+            })
+
+            it('should equal another key with same name that claims it is public', () => {
+                const host = createAppHost([mockFeatureWithPublicAPI])
+                const anotherKey: SlotKey<MockFeatureAPI> = { 
+                    name: MockFeaturePublicAPI.name,
+                    public: true 
+                }
+              
+                const api = host.getApi(anotherKey)
+
+                expect(api).toBeTruthy()
+            })
+
+            it('should not equal another key with same name than does not claim it is public', () => {
+                const host = createAppHost([mockFeatureWithPublicAPI])
+                const anotherKey1: SlotKey<MockFeatureAPI> = { 
+                    name: MockFeaturePublicAPI.name 
+                }
+                const anotherKey2: SlotKey<MockFeatureAPI> = { 
+                    name: MockFeaturePublicAPI.name,
+                    public: false
+                }
+                const anotherKey3: any = { 
+                    name: MockFeaturePublicAPI.name,
+                    public: 'zzz'
+                }
+              
+                expect(() => host.getApi(anotherKey1)).toThrowError(new RegExp(MockFeaturePublicAPI.name))
+                expect(() => host.getApi(anotherKey2)).toThrowError(new RegExp(MockFeaturePublicAPI.name))
+                expect(() => host.getApi(anotherKey3)).toThrowError(new RegExp(MockFeaturePublicAPI.name))
+            })
         })
     })
 

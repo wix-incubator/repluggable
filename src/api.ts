@@ -14,6 +14,7 @@ export interface LazyFeatureDescriptor {
 
 export interface AnySlotKey {
     readonly name: string
+    readonly public?: boolean
 }
 
 export interface SlotKey<T> extends AnySlotKey {

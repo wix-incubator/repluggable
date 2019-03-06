@@ -63,6 +63,7 @@ function createAppHostImpl(): AppHost {
 
     const uniqueFeatureNames = new Set<string>()
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
+    const slotKeysByName = new Map<string, AnySlotKey>()
     const installedFeatures = new Map<string, PrivateFeatureHost>()
     const featureInstallers = new WeakMap<PrivateFeatureHost, string[]>()
     const lazyFeatures = new Map<string, LazyFeatureFactory>()
@@ -130,7 +131,7 @@ function createAppHostImpl(): AppHost {
             _.chain(lifecycle)
                 .invoke('getDependencyApis')
                 .defaultTo([])
-                .find(key => !readyAPIs.has(key))
+                .find(key => !readyAPIs.has(getOwnSlotKey(key)))
                 .isEmpty()
                 .value()
         )
@@ -184,9 +185,12 @@ function createAppHostImpl(): AppHost {
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
-        if (!extensionSlots.has(key)) {
+        if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
             const newSlot = createExtensionSlot<TItem>(key, host, getCurrentLifecycleFeature)
+
             extensionSlots.set(key, newSlot)
+            slotKeysByName.set(key.name, key)
+
             return newSlot
         } else {
             throw new Error(`Extension slot with key '${key.name}' already exists.`)
@@ -194,8 +198,10 @@ function createAppHostImpl(): AppHost {
     }
 
     function getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
-        if (extensionSlots.has(key)) {
-            const anySlot = extensionSlots.get(key)
+        const ownKey = getOwnSlotKey(key)
+        const anySlot = extensionSlots.get(ownKey)
+
+        if (anySlot) {
             return anySlot as ExtensionSlot<TItem>
         } else {
             throw new Error(`Extension slot with key '${key.name}' doesn't exist.`)
@@ -237,6 +243,16 @@ function createAppHostImpl(): AppHost {
 
     function registerLazyFeature(descriptor: LazyFeatureDescriptor): void {
         lazyFeatures.set(descriptor.name, descriptor.factory)
+    }
+
+    function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
+        if (key.public === true) {
+            const ownKey = slotKeysByName.get(key.name)
+            if (ownKey && ownKey.public) {
+                return ownKey as SlotKey<T>
+            }
+        }
+        return key
     }
 
     function validateUniqueFeatureNames(features: AnyLifecycle[]): void {
@@ -344,7 +360,8 @@ function createAppHostImpl(): AppHost {
     }
 
     function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateFeatureHost | undefined {
-        return extensionSlots.has(key) ? _.get(getSlot<TApi>(key).getSingleItem(), 'feature') : undefined
+        const ownKey = getOwnSlotKey(key)
+        return extensionSlots.has(ownKey) ? _.get(getSlot<TApi>(ownKey).getSingleItem(), 'feature') : undefined
     }
 
     function doesExtensionItemBelongToFeatures(extensionItem: ExtensionItem<any>, featureNames: string[]) {
@@ -356,18 +373,28 @@ function createAppHostImpl(): AppHost {
         )
     }
 
+    function isApiMissing(apiKey: AnySlotKey): boolean {
+        const ownKey = getOwnSlotKey(apiKey)
+        return !extensionSlots.has(ownKey)
+    }
+
     function uninstallIfDependencyApisRemoved(featureHost: PrivateFeatureHost) {
         const dependencyApis = _.invoke(featureHost.lifecycle, 'getDependencyApis')
-        if (_.some(dependencyApis, apiKey => !extensionSlots.has(apiKey))) {
+
+        if (_.some(dependencyApis, isApiMissing)) {
             unReadyFeatureLifecycles.push(featureHost.lifecycle)
             uninstallFeatures([featureHost.name])
         }
     }
 
     function discardApi<TApi>(apiKey: SlotKey<TApi>) {
-        readyAPIs.delete(apiKey)
-        extensionSlots.delete(apiKey)
-        console.log(`-- Removed API: ${apiKey.name}} --`)
+        const ownKey = getOwnSlotKey(apiKey)
+        
+        readyAPIs.delete(ownKey)
+        extensionSlots.delete(ownKey)
+        slotKeysByName.delete(ownKey.name)
+        
+        console.log(`-- Removed API: ${ownKey.name}} --`)
     }
 
     function uninstallFeatures(names: string[]): void {

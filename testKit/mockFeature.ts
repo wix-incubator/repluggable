@@ -7,7 +7,15 @@ export interface MockFeatureAPI {
     stubTrue(): boolean
 }
 
+export interface MockFeaturePublicAPI {
+    stubTrue(): boolean
+}
+
 export const MockFeatureAPI: SlotKey<MockFeatureAPI> = { name: 'mock feature API' }
+export const MockFeaturePublicAPI: SlotKey<MockFeaturePublicAPI> = { 
+    name: 'mock feature API public',
+    public: true
+}
 
 const createMockFeatureAPI = (host: FeatureHost): MockFeatureAPI => ({
     stubTrue: _.stubTrue
@@ -39,6 +47,15 @@ export const mockFeature: FeatureLifecycle = {
         host.contributeApi(MockFeatureAPI, () => createMockFeatureAPI(host))
         host.contributeState(() => ({
             [mockFeatureStateKey]: mockFeatureReducer
+        }))
+    }
+}
+
+export const mockFeatureWithPublicAPI: FeatureLifecycle = {
+    name: 'MOCK_FEATURE_PUBLIC',
+    install(host: FeatureHost) {
+        host.contributeApi(MockFeaturePublicAPI, () => ({
+            stubTrue: () => true
         }))
     }
 }
