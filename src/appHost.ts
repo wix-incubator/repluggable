@@ -14,7 +14,8 @@ import {
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
-    SlotKey
+    SlotKey,
+    AnyLifecycle
 } from './api'
 
 import _ from 'lodash'
@@ -95,7 +96,7 @@ function createAppHostImpl(): AppHost {
 
     return host
 
-    function isLazyFeatureDescriptor(value: FeatureLifecycle | LazyFeatureDescriptor): value is LazyFeatureDescriptor {
+    function isLazyFeatureDescriptor(value: AnyLifecycle): value is LazyFeatureDescriptor {
         return typeof (value as LazyFeatureDescriptor).factory === 'function'
     }
 
@@ -238,7 +239,7 @@ function createAppHostImpl(): AppHost {
         lazyFeatures.set(descriptor.name, descriptor.factory)
     }
 
-    function validateUniqueFeatureNames(features: AnyFeature[]): void {
+    function validateUniqueFeatureNames(features: AnyLifecycle[]): void {
         features.forEach(f => validateUniqueFeatureName(f.name))
     }
 

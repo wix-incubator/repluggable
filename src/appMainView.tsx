@@ -17,7 +17,11 @@ interface SfcProps {
 
 const sfc: SFC<SfcProps> = props => {
     const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
-    const contextProviderElement = React.createElement(FeatureContext.Provider, { value: props.host }, contextProviderChildren)
+    const rootFeatureContext = { 
+        name: '$root', 
+        ...props.host 
+    }
+    const contextProviderElement = React.createElement(FeatureContext.Provider, { value: rootFeatureContext }, contextProviderChildren)
 
     return contextProviderElement
 }

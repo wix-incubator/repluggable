@@ -28,7 +28,8 @@ export interface FeatureLifecycle {
     uninstall?(host: FeatureHost): void
 }
 
-export type AnyFeature = FeatureLifecycle | LazyFeatureDescriptor | Array<FeatureLifecycle | LazyFeatureDescriptor>
+export type AnyLifecycle = FeatureLifecycle | LazyFeatureDescriptor
+export type AnyFeature = AnyLifecycle | Array<AnyLifecycle>
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
