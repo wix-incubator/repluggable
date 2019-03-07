@@ -9,7 +9,7 @@ const externalLibNames = [
 function configExternal(libName) {
     let result = {};
     result[libName] = {
-        root: ['editorLego', 'libs', libName],
+        root: ['reactAppLego', 'packages', libName],
         commonjs: libName,
         commonjs2: libName
     };
