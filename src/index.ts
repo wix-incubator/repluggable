@@ -1,4 +1,5 @@
 export {
+    AnyFeature,
     FeatureLifecycle,
     AppHost,
     FeatureHost,
@@ -6,11 +7,9 @@ export {
     ExtensionItem,
     AnySlotKey,
     SlotKey,
-    HostConnectorCallback,
-    AppStateBlock,
     ReactComponentContributor,
     SoloReactComponentContributor,
-    ReduxStateContributor
+    ReducersMapObjectContributor
 } from './api'
 
 export { AppMainView } from './appMainView'
@@ -19,6 +18,6 @@ export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from '.
 
 export { renderSlotComponents, renderSlotComponentsConnected } from './renderSlotComponents'
 
-export { connectWithFeature } from './connectWithFeatureContext';
+export * from './connectWithFeatureContext'
 
 export { ErrorBoundary } from './errorBoundary'

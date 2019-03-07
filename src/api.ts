@@ -1,11 +1,10 @@
 import * as React from 'react'
 import * as Redux from 'redux'
 
-export type HostConnectorCallback = (host: AppHost) => void
+export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'subscribe'>
 export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
-export type ReduxStateContributor = () => AppStateBlock
-export type FeatureActivationPredicate = (name: string) => boolean
+export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
 export type LazyFeatureFactory = () => Promise<FeatureLifecycle>
 export interface LazyFeatureDescriptor {
@@ -15,6 +14,7 @@ export interface LazyFeatureDescriptor {
 
 export interface AnySlotKey {
     readonly name: string
+    readonly public?: boolean
 }
 
 export interface SlotKey<T> extends AnySlotKey {
@@ -24,22 +24,28 @@ export interface SlotKey<T> extends AnySlotKey {
 export interface FeatureLifecycle {
     readonly name: string
     getDependencyApis?(): AnySlotKey[]
-    install(host: FeatureHost): void
+    install?(host: FeatureHost): void
     extend?(host: FeatureHost): void
+    uninstall?(host: FeatureHost): void
 }
 
+export type AnyLifecycle = FeatureLifecycle | LazyFeatureDescriptor
+export type AnyFeature = AnyLifecycle | Array<AnyLifecycle>
+
+export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
-    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void;
+    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
+    discardBy(predicate: ExtensionItemFilter<T>): void
 }
 
 export interface ExtensionItem<T> {
     readonly name?: string
-    readonly feature: PrivateFeatureHost;
+    readonly feature: PrivateFeatureHost
     readonly contribution: T
     readonly condition: ContributionPredicate
 }
@@ -47,11 +53,6 @@ export interface ExtensionItem<T> {
 export interface JsxWithContainerCss {
     jsx: React.ReactNode
     containerCss: string | Object
-}
-
-export interface AppStateBlock {
-    readonly name: string
-    readonly reducer: Redux.Reducer
 }
 
 export interface AppHost {
@@ -63,28 +64,27 @@ export interface AppHost {
     isFeatureActive(name: string): boolean
     isFeatureInstalled(name: string): boolean
     isLazyFeature(name: string): boolean
-    installFeatures(features: Array<FeatureLifecycle | LazyFeatureDescriptor>, activation?: FeatureActivationPredicate): void
-    activateFeatures(names: string[]): Promise<any>
-    deactivateFeatures(names: string[]): void
+    installFeatures(features: AnyFeature[]): void
+    uninstallFeatures(names: string[]): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
 
-export interface FeatureHost extends AppHost {
+export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
+    readonly name: string
+    getStore<TState>(): ScopedStore<TState>
     canUseApis(): boolean
     canUseStore(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    contributeApi<TApi>(key: SlotKey<TApi>, factory: (host: AppHost) => TApi): TApi
-    contributeState(contributor: ReduxStateContributor): void
+    contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
+    contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(contributor: ReactComponentContributor): void
-    contributeLazyFeature(name: string, factory: LazyFeatureFactory): void
     // readonly log: FeatureLogger; //TODO: define logging abstraction
 }
 
 export interface PrivateFeatureHost extends FeatureHost {
-    readonly name: string;
-    readonly lifecycle: FeatureLifecycle;
-    setDependencyApis(apis: AnySlotKey[]): void;
-    setLifecycleState(enableStore: boolean, enableApis: boolean): void;
+    readonly lifecycle: FeatureLifecycle
+    setDependencyApis(apis: AnySlotKey[]): void
+    setLifecycleState(enableStore: boolean, enableApis: boolean): void
 }
 
 export interface FeatureInfo {

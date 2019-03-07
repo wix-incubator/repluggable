@@ -3,7 +3,7 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const externalsConfigObject = require('./webpack.config.externals');
 
 module.exports = {
-  entry: path.resolve(__dirname, 'src'),
+  entry: path.resolve(__dirname, 'src', 'index.ts'),
 
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -27,9 +27,9 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
   ],
 
-  externals: externalsConfigObject
+  externals: externalsConfigObject,
 
-  // optimization: {
-  //   minimize: false
-  // }
+  optimization: {
+     minimize: false
+  }
 };
