@@ -16,7 +16,11 @@ export { AppMainView } from './src/appMainView'
 
 export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './src/appHost'
 
-export { renderSlotComponents, renderSlotComponentsConnected } from './src/renderSlotComponents'
+export { 
+    renderFeatureComponent,
+    renderSlotComponents, 
+    renderSlotComponentsConnected 
+} from './src/renderSlotComponents'
 
 export * from './src/connectWithFeatureContext'
 
