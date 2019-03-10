@@ -7,7 +7,7 @@ import { FeatureContext } from './featureContext'
 export interface FeatureContextWithApi extends FeatureContext {
     getApi<TApi>(key: SlotKey<TApi>): TApi
     getStore<TState>(): ScopedStore<TState>
-    isFeatureActive(name: string): boolean
+    isFeatureInstalled(name: string): boolean
     installFeatures(features: AnyFeature[]): void
     uninstallFeatures(names: string[]): void
 }

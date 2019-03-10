@@ -32,7 +32,7 @@ describe('Installed Features State', () => {
         expect(actualState).toEqual(expectedState)
     })
 
-    it('should select active features from state', () => {
+    it('should select installed features from state', () => {
         const rootState = { $installedFeatures: initialState }
         expect(InstalledFeaturesSelectors.getInstalledFeatureSet(rootState)).toEqual(initialState.installedFeatures)
     })

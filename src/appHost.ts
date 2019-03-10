@@ -2,25 +2,31 @@ import { combineReducers, createStore, ReducersMapObject, Store } from 'redux'
 
 import {
     AnyFeature,
+    AnyLifecycle,
     AnySlotKey,
     AppHost,
     ExtensionItem,
     ExtensionSlot,
     FeatureInfo,
     FeatureLifecycle,
+    InstalledFeaturesChangedCallback,
     LazyFeatureDescriptor,
     LazyFeatureFactory,
     PrivateFeatureHost,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
-    SlotKey,
-    AnyLifecycle
+    SlotKey
 } from './api'
 
 import _ from 'lodash'
-import { InstalledFeaturesActions, InstalledFeaturesSelectors, contributeInstalledFeaturesState, FeatureToggleSet } from './installedFeaturesState'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
+import {
+    contributeInstalledFeaturesState,
+    FeatureToggleSet,
+    InstalledFeaturesActions,
+    InstalledFeaturesSelectors
+} from './installedFeaturesState'
 
 interface FeaturesReducersMap {
     [featureName: string]: ReducersMapObject
@@ -45,9 +51,9 @@ export function createAppHost(
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = { name: 'mainView' }
 export const stateSlotKey: SlotKey<ReducersMapObjectContributor> = { name: 'state' }
 
-const toFeatureToggleSet = (names: string[], active: boolean): FeatureToggleSet => {
+const toFeatureToggleSet = (names: string[], isInstalled: boolean): FeatureToggleSet => {
     return names.reduce<FeatureToggleSet>((result: FeatureToggleSet, name: string) => {
-        result[name] = active
+        result[name] = isInstalled
         return result
     }, {})
 }
@@ -67,6 +73,7 @@ function createAppHostImpl(): AppHost {
     const installedFeatures = new Map<string, PrivateFeatureHost>()
     const featureInstallers = new WeakMap<PrivateFeatureHost, string[]>()
     const lazyFeatures = new Map<string, LazyFeatureFactory>()
+    const installedFeaturesChangedCallbacks = new Map<string, InstalledFeaturesChangedCallback>()
 
     const host: AppHost = {
         getStore,
@@ -74,11 +81,12 @@ function createAppHostImpl(): AppHost {
         getSlot,
         getAllSlotKeys,
         getAllFeatures,
-        isFeatureActive,
         isFeatureInstalled,
         isLazyFeature,
         installFeatures,
-        uninstallFeatures
+        uninstallFeatures,
+        onFeaturesChanged,
+        removeFeaturesChangedCallback
     }
 
     // TODO: Conditionally with parameter
@@ -116,12 +124,7 @@ function createAppHostImpl(): AppHost {
         executeInstallLifecycle(readyFeatureList)
         lazyFeatureList.forEach(registerLazyFeature)
 
-        const activeFeatureNames = lifecycles
-            .map(lifecycles => lifecycles.name)
-            .concat(lastInstallLazyFeatureNames)
-            .filter(name => installedFeatures.has(name) || lazyFeatures.has(name))
-
-        activateFeatures(activeFeatureNames)
+        setInstalledFeatureNames(getInstalledFeatureNames())
     }
 
     function executeInstallLifecycle(lifecycles: FeatureLifecycle[]): void {
@@ -173,15 +176,32 @@ function createAppHostImpl(): AppHost {
         executeInstallLifecycle(unReadyFeatureLifecycles)
     }
 
-    async function activateFeatures(names: string[]) {
+    function executeFeaturesChangedCallbacks() {
+        installedFeaturesChangedCallbacks.forEach(f => f(_.keys(InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState()))))
+    }
+
+    async function setInstalledFeatureNames(names: string[]) {
         await ensureLazyFeaturesInstalled(names)
         const updates = toFeatureToggleSet(names, true)
         getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
+        executeFeaturesChangedCallbacks()
     }
 
-    function deactivateFeatures(names: string[]): void {
+    async function setUninstalledFeatureNames(names: string[]) {
+        await Promise.resolve()
         const updates = toFeatureToggleSet(names, false)
         getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
+        executeFeaturesChangedCallbacks()
+    }
+
+    function onFeaturesChanged(callback: InstalledFeaturesChangedCallback) {
+        const callbackId = _.uniqueId('features-changed-callback-')
+        installedFeaturesChangedCallbacks.set(callbackId, callback)
+        return callbackId
+    }
+
+    function removeFeaturesChangedCallback(callbackId: string) {
+        installedFeaturesChangedCallbacks.delete(callbackId)
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
@@ -228,13 +248,9 @@ function createAppHostImpl(): AppHost {
         throw new Error('not implemented')
     }
 
-    function isFeatureActive(name: string): boolean {
-        const activeFeatureSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
-        return activeFeatureSet[name] === true
-    }
-
     function isFeatureInstalled(name: string): boolean {
-        return installedFeatures.has(name)
+        const installedFeatureSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
+        return installedFeatureSet[name] === true
     }
 
     function isLazyFeature(name: string): boolean {
@@ -383,21 +399,21 @@ function createAppHostImpl(): AppHost {
 
         if (_.some(dependencyApis, isApiMissing)) {
             unReadyFeatureLifecycles.push(featureHost.lifecycle)
-            uninstallFeatures([featureHost.name])
+            executeUninstallFeatures([featureHost.name])
         }
     }
 
     function discardApi<TApi>(apiKey: SlotKey<TApi>) {
         const ownKey = getOwnSlotKey(apiKey)
-        
+
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(ownKey.name)
-        
-        console.log(`-- Removed API: ${ownKey.name}} --`)
+
+        console.log(`-- Removed API: ${ownKey.name} --`)
     }
 
-    function uninstallFeatures(names: string[]): void {
+    function executeUninstallFeatures(names: string[]): void {
         console.log(`-- Uninstalling ${names} --`)
 
         invokeFeaturePhase('uninstall', names.map(name => installedFeatures.get(name)) as PrivateFeatureHost[], f =>
@@ -415,11 +431,19 @@ function createAppHostImpl(): AppHost {
         })
         apisToDiscard.forEach(discardApi)
 
-        deactivateFeatures(names)
-
         console.log(`Done uninstalling ${names}`)
 
         installedFeatures.forEach(uninstallIfDependencyApisRemoved)
+    }
+
+    function getInstalledFeatureNames(): string[] {
+        return [...installedFeatures].map(([v]) => v)
+    }
+
+    function uninstallFeatures(names: string[]): void {
+        const lifecycleNames = getInstalledFeatureNames()
+        executeUninstallFeatures(names)
+        setUninstalledFeatureNames(_.difference(lifecycleNames, getInstalledFeatureNames()))
     }
 
     function createFeatureHost(lifecycle: FeatureLifecycle): PrivateFeatureHost {
@@ -501,7 +525,7 @@ function createAppHostImpl(): AppHost {
                 if (canInstallReadyFeatures) {
                     const lifecycleNames = _.map(unReadyFeatureLifecycles, 'name')
                     executeInstallLifecycle(unReadyFeatureLifecycles)
-                    activateFeatures(_.difference(lifecycleNames, _.map(unReadyFeatureLifecycles, 'name')))
+                    setInstalledFeatureNames(_.difference(lifecycleNames, _.map(unReadyFeatureLifecycles, 'name')))
                 }
 
                 return api
