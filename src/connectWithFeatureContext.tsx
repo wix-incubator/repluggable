@@ -1,6 +1,6 @@
-import React, { ComponentType, Dispatch } from 'react'
+import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
-import { Action } from 'redux'
+import { Action, Dispatch } from 'redux'
 import { AnyFeature, ScopedStore, SlotKey } from './api'
 import { FeatureContext } from './featureContext'
 
