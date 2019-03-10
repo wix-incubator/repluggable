@@ -7,6 +7,7 @@ export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
 export type LazyFeatureFactory = () => Promise<FeatureLifecycle>
+export type InstalledFeaturesChangedCallback = (installedFeatureNames: string[]) => void
 export interface LazyFeatureDescriptor {
     readonly name: string
     readonly factory: LazyFeatureFactory
@@ -61,11 +62,12 @@ export interface AppHost {
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     getAllSlotKeys(): AnySlotKey[]
     getAllFeatures(): FeatureInfo[]
-    isFeatureActive(name: string): boolean
     isFeatureInstalled(name: string): boolean
     isLazyFeature(name: string): boolean
     installFeatures(features: AnyFeature[]): void
     uninstallFeatures(names: string[]): void
+    onFeaturesChanged(callback: InstalledFeaturesChangedCallback): string
+    removeFeaturesChangedCallback(callbackId: string): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
 
@@ -91,7 +93,6 @@ export interface FeatureInfo {
     readonly name: string
     readonly lazy: boolean
     readonly installed: boolean
-    readonly active: boolean
 }
 
 // TODO: define logging abstraction
