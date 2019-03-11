@@ -124,7 +124,7 @@ function createAppHostImpl(): AppHost {
         executeInstallLifecycle(readyFeatureList)
         lazyFeatureList.forEach(registerLazyFeature)
 
-        setInstalledFeatureNames(getInstalledFeatureNames())
+        setInstalledFeatureNames(getInstalledFeatureNames().concat(_.map(lazyFeatureList, 'name')))
     }
 
     function executeInstallLifecycle(lifecycles: FeatureLifecycle[]): void {

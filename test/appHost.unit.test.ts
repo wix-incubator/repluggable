@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, stateSlotKey } from '../src/appHost'
+import { createAppHost, mainViewSlotKey, stateSlotKey, makeLazyFeature } from '../src/appHost'
 
 import { AnySlotKey, AppHost, FeatureHost, FeatureLifecycle, SlotKey } from '../src/api'
 import {
@@ -99,6 +99,14 @@ describe('App Host', () => {
 
         it('should not install multiple features with the same name', () => {
             expect(() => createAppHost([mockFeature, _.pick(mockFeature, 'name')])).toThrow()
+        })
+
+        it('should install lazy featues', async () => {
+            const lazyFeature = makeLazyFeature(mockFeature.name, async () => mockFeature)
+            const host = createAppHost([lazyFeature])
+            await new Promise(resolve => host.onFeaturesChanged(resolve))
+
+            expect(host.isFeatureInstalled(lazyFeature.name)).toBe(true)
         })
     })
 
