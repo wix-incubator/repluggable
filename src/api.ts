@@ -31,7 +31,7 @@ export interface FeatureLifecycle {
 }
 
 export type AnyLifecycle = FeatureLifecycle | LazyFeatureDescriptor
-export type AnyFeature = AnyLifecycle | Array<AnyLifecycle>
+export type AnyFeature = AnyLifecycle | AnyLifecycle[]
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {

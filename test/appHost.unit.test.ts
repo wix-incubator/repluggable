@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, stateSlotKey, makeLazyFeature } from '../src/appHost'
+import { createAppHost, mainViewSlotKey, makeLazyFeature, stateSlotKey } from '../src/appHost'
 
 import { AnySlotKey, AppHost, FeatureHost, FeatureLifecycle, SlotKey } from '../src/api'
 import {

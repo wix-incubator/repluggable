@@ -1,4 +1,13 @@
-import { AppHost, ContributionPredicate, ExtensionItem, ExtensionSlot, FeatureLifecycle, PrivateFeatureHost, SlotKey, ExtensionItemFilter } from './api'
+import {
+    AppHost,
+    ContributionPredicate,
+    ExtensionItem,
+    ExtensionItemFilter,
+    ExtensionSlot,
+    FeatureLifecycle,
+    PrivateFeatureHost,
+    SlotKey
+} from './api'
 
 export interface AnyExtensionSlot {
     readonly name: string

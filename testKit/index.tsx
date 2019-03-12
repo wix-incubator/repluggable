@@ -2,8 +2,8 @@ import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
-import { FeatureLifecycle, PrivateFeatureHost } from '../src/api'
 import { AppHost, AppMainView, createAppHost } from '../index'
+import { FeatureLifecycle, PrivateFeatureHost } from '../src/api'
 import { renderFeatureComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
@@ -68,8 +68,8 @@ function createFeatureHost(host: AppHost): PrivateFeatureHost {
             const slot: any = {}
             return slot
         },
-        setLifecycleState() {},
-        setDependencyApis(): void {},
+        setLifecycleState: _.noop,
+        setDependencyApis: _.noop,
         canUseApis(): boolean {
             return true
         },
@@ -80,7 +80,7 @@ function createFeatureHost(host: AppHost): PrivateFeatureHost {
             const api: any = {}
             return api
         },
-        contributeState(): void {},
-        contributeMainView(): void {}
+        contributeState: _.noop,
+        contributeMainView: _.noop
     }
 }

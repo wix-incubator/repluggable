@@ -2,9 +2,9 @@ import React, { ErrorInfo } from 'react'
 import { PrivateFeatureHost } from './api'
 
 interface ErrorBoundaryProps {
-    readonly feature: PrivateFeatureHost;
-    readonly componentName?: string;
-    readonly errorClassName?: string;
+    readonly feature: PrivateFeatureHost
+    readonly componentName?: string
+    readonly errorClassName?: string
 }
 
 interface ErrorBoundaryState {

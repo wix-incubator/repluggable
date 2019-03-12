@@ -12,7 +12,7 @@ export interface MockFeaturePublicAPI {
 }
 
 export const MockFeatureAPI: SlotKey<MockFeatureAPI> = { name: 'mock feature API' }
-export const MockFeaturePublicAPI: SlotKey<MockFeaturePublicAPI> = { 
+export const MockFeaturePublicAPI: SlotKey<MockFeaturePublicAPI> = {
     name: 'mock feature API public',
     public: true
 }

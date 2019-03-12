@@ -1,6 +1,6 @@
-import { AppHost, AnySlotKey } from '..'
+import { AnySlotKey, AppHost } from '..'
+import { LazyFeatureFactory, PrivateFeatureHost } from './api'
 import { AnyExtensionSlot } from './extensionSlot'
-import { PrivateFeatureHost, LazyFeatureFactory } from './api'
 
 declare global {
     interface Window {
