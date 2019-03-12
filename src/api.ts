@@ -53,7 +53,7 @@ export interface ExtensionItem<T> {
 
 export interface JsxWithContainerCss {
     jsx: React.ReactNode
-    containerCss: string | Object
+    containerCss: string | object
 }
 
 export interface AppHost {

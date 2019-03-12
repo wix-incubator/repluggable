@@ -36,7 +36,7 @@ export const renderInHost = async (
     const div = document.createElement('div')
     const feature = createFeatureHost(host)
     let root = null
-    const { ref } = await new Promise(resolve => {
+    const { ref: parentRef } = await new Promise(resolve => {
         root = ReactDOM.render(
             <Provider store={host.getStore()}>
                 {renderFeatureComponent(feature, <div ref={ref => resolve({ ref })}>{reactElement}</div>, '')}
@@ -45,12 +45,12 @@ export const renderInHost = async (
         )
     })
 
-    const parentNode: HTMLElement = ReactDOM.findDOMNode(ref) as HTMLElement
+    const parentNode: HTMLElement = ReactDOM.findDOMNode(parentRef) as HTMLElement
 
     return {
         root,
-        DOMNode: ref && (_.head(parentNode.children) as HTMLElement),
-        parentRef: ref,
+        DOMNode: parentRef && (_.head(parentNode.children) as HTMLElement),
+        parentRef,
         host
     }
 }

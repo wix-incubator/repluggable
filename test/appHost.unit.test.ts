@@ -51,10 +51,8 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
         }
     }
 
-    const host = createAppHost([dependentFeature, deeplyDependentFeature, helperLifecycle])
-
     return {
-        host,
+        host: createAppHost([dependentFeature, deeplyDependentFeature, helperLifecycle]),
         dependentFeature,
         deeplyDependentFeature,
         helperFeatureHost: getHelperFeatureHost()
@@ -316,11 +314,11 @@ describe('App Host', () => {
         it('should contribute state', () => {
             const getMockFeatureState = (host: AppHost) => _.get(host.getStore().getState(), [mockFeature.name, mockFeatureStateKey], null)
 
-            const host = createAppHost([])
-            expect(getMockFeatureState(host)).toBeNull()
+            const appHost = createAppHost([])
+            expect(getMockFeatureState(appHost)).toBeNull()
 
-            host.installFeatures([mockFeature])
-            expect(getMockFeatureState(host)).toEqual(mockFeatureInitialState)
+            appHost.installFeatures([mockFeature])
+            expect(getMockFeatureState(appHost)).toEqual(mockFeatureInitialState)
         })
     })
 
@@ -335,8 +333,8 @@ describe('App Host', () => {
                     host.getApi(MockFeatureAPI).stubTrue()
                 }
             }
-            const host = createAppHost([mockFeature])
-            expect(() => host.installFeatures([featureThatCallsAPI])).not.toThrow()
+            const appHost = createAppHost([mockFeature])
+            expect(() => appHost.installFeatures([featureThatCallsAPI])).not.toThrow()
         })
 
         it('should not be able to call an API not declared in dependencies', () => {
@@ -346,8 +344,8 @@ describe('App Host', () => {
                     host.getApi(MockFeatureAPI).stubTrue()
                 }
             }
-            const host = createAppHost([mockFeature])
-            expect(() => host.installFeatures([featureThatCallsAPI])).toThrow()
+            const appHost = createAppHost([mockFeature])
+            expect(() => appHost.installFeatures([featureThatCallsAPI])).toThrow()
         })
 
         it('should get scoped state', done => {
