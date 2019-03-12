@@ -19,5 +19,4 @@ export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from '.
 export { renderFeatureComponent, renderSlotComponents, renderSlotComponentsConnected } from './src/renderSlotComponents'
 
 export * from './src/connectWithFeatureContext'
-
 export { ErrorBoundary } from './src/errorBoundary'
