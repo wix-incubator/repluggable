@@ -19,7 +19,7 @@ interface WrapperMembers<S, OP, SP, DP> {
 }
 
 function wrapWithFeatureContext<S, OP, SP, DP>(
-    component: React.ComponentType<SP & DP>,
+    component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: (context: FeatureContextWithApi, state: S, ownProps?: OP) => SP,
     mapDispatchToProps: (context: FeatureContextWithApi, dispatch: Dispatch<Action>, ownProps?: OP) => DP
 ) {
@@ -57,7 +57,7 @@ export function connectWithFeature<S, OP, SP, DP>(
     mapStateToProps: (context: FeatureContextWithApi, state: S, ownProps?: OP) => SP,
     mapDispatchToProps: (context: FeatureContextWithApi, dispatch: Dispatch<Action>, ownProps?: OP) => DP
 ) {
-    return (component: React.ComponentType<SP & DP>) => {
+    return (component: React.ComponentType<OP & SP & DP>) => {
         return wrapWithFeatureContext(component, mapStateToProps, mapDispatchToProps)
     }
 }
