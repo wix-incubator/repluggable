@@ -2,12 +2,33 @@ import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
-import { AppHost, AppMainView, createAppHost } from '../index'
+import { AnyFeature, AnySlotKey, AppHost, AppMainView, createAppHost, FeatureHost, SlotKey } from '../index'
 import { FeatureLifecycle, PrivateFeatureHost } from '../src/api'
 import { renderFeatureComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
 export * from './mockFeature'
+
+interface PactApiBase {
+    getApiKey(): AnySlotKey
+}
+
+export interface PactApi<T> extends PactApiBase {
+    getApiKey(): SlotKey<T>
+}
+
+export function createAppHostWithPacts(features: AnyFeature[], pacts: PactApiBase[]) {
+    const pactsFeature: FeatureLifecycle = {
+        name: 'PACTS_FEATURE',
+        install(host: FeatureHost): void {
+            _.each(pacts, pact => {
+                host.contributeApi(pact.getApiKey(), () => pact)
+            })
+        }
+    }
+
+    return createAppHost([...features, pactsFeature])
+}
 
 export const renderHost = async (host: AppHost): Promise<{ root: Component | null; DOMNode: HTMLElement | null }> => {
     const div = document.createElement('div')
