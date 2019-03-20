@@ -1,5 +1,5 @@
 import React, { SFC } from 'react'
-import { connect } from 'react-redux'
+import { Provider, connect } from 'react-redux'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
 import { FeatureContext } from './featureContext'
@@ -21,9 +21,8 @@ const sfc: SFC<SfcProps> = props => {
         name: '$root',
         ...props.host
     }
-    const contextProviderElement = React.createElement(FeatureContext.Provider, { value: rootFeatureContext }, contextProviderChildren)
 
-    return contextProviderElement
+    return <FeatureContext.Provider value={rootFeatureContext}>{contextProviderChildren}</FeatureContext.Provider>
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
@@ -31,4 +30,10 @@ const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
     host: ownProps.host
 })
 
-export const AppMainView = connect(mapStateToProps)(sfc)
+const ConnectedSfc = connect(mapStateToProps)(sfc)
+
+export const AppMainView = (props: AppMainViewProps) => (
+    <Provider store={props.host.getStore()}>
+        <ConnectedSfc host={props.host} />
+    </Provider>
+)
