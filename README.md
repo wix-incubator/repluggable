@@ -111,7 +111,7 @@ The main application is a React application, which uses `react-app-lego` package
 The `index.ts` of the application must perform the following steps.
 
 1. Import from `react-app-lego`
-   ```
+   ```JavaScript
    import { createAppHost, AppMainView } from 'react-app-lego'
    ```
 
@@ -123,14 +123,14 @@ The `index.ts` of the application must perform the following steps.
    
    This is how the three packages are loaded:
 
-   ```
+   ```JavaScript
    import packageOne from 'package-one'
    const packageTwo = () => import('package-two').then(m => m.default)
    const packageThree = require('package-three')
    ```
 
 1. Initialize `AppHost` with the packages:
-   ```
+   ```JavaScript
    const host = createAppHost([
        packageOne, 
        packageTwo,
@@ -140,7 +140,7 @@ The `index.ts` of the application must perform the following steps.
 
 1. Render `AppMainView` component, passing it the host:
 
-   ```
+   ```JavaScript
    ReactDOM.render(
        <AppMainView host={host} />, 
        document.getElementById('root')
@@ -150,7 +150,7 @@ The `index.ts` of the application must perform the following steps.
 
 The full code listing looks like this:
 
-```
+```JavaScript
 import ReactDOM from 'react-dom'
 import { createAppHost, AppMainView } from 'react-app-lego'
 
