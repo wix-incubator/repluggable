@@ -1,5 +1,5 @@
 import React, { SFC } from 'react'
-import { Provider, connect } from 'react-redux'
+import { connect, Provider } from 'react-redux'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
 import { FeatureContext } from './featureContext'
