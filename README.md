@@ -148,7 +148,7 @@ The `index.ts` of the application must perform the following steps.
    ```
 
 
-The full code listing looks like this:
+### Full code listing
 
 ```JavaScript
 import ReactDOM from 'react-dom'
@@ -172,209 +172,135 @@ ReactDOM.render(
 
 ## Developing pluggable package
 
-TBD 
+### Creating package project
+
+A package project is a regular Node project. 
+
+Typically, it is set up with TypeScript, React, and Redux. The project must include dependency on `react-app-lego`. 
+
+The rest of the configuration (Babel, WebPack, Jest, etc) heavily depends on organization of you codebase and release pipeline, and is out of scope of this README.
+
+### Creating entry points
+
+As we mentioned, each package must export one or more entry points, in order to be loaded by the main app.
+
+An entry point is an object which implements `EntryPoint` interface:
+```JavaScript
+import { EntryPoint } from 'react-app-lego'
+
+const FooEntryPoint: EntryPoint = {
+
+    // required: specify name of the entry point
+    name: 'FOO-ENTRY-POINT',
+
+    // optional
+    getDependencies() {
+        return [ 
+            // DO list required API keys 
+            // DO list components form other packages,
+            //    which are in use by your components
+            BarAPI, BazInputBox
+        ]
+    }
+
+    // optional
+    install(host: EntryPointHost) {
+        // DO contribute APIs 
+        // DO contribute reducers
+        // DO NOT consume APIs
+        // DO NOT access store
+        host.contributeAPI(FooAPI, () => createFooAPI(host))
+    },
+
+    // optional
+    extend(host: EntryPointHost) {
+        // DO access store if necessary
+        host.getStore()
+        // DO consume APIs and contribute to other packages
+        host.getAPI(BarAPI).contributeBarItem(() => <FooItem />)
+    },
+
+    // optional
+    uninstall(host: EntryPointHost) {
+        // DO perform any necessary cleanup
+    }
+}
+```
+
+### Creating an API
+
+To create an API, perform these steps:
+
+1. Declare an API interface. For example:
+   ```TypeScript
+   export interface FooAPI {
+       doSomething(): void
+       doSomethingElse(what: string): Promise<number>
+   }
+   ```
+
+1. Declare an API key, which is a const named after the interface, as follows:
+   ```TypeScript
+   import { SlotKey } from 'react-app-lego'
+
+   export const FooAPI: SlotKey<FooAPI> = { 
+       name: 'Foo API', 
+       public: true
+   }
+   ```
+   Note that `public: true` is required if you plan to export your API outside of your package. The key must be declared in the same file with the interface.
+
+1. Implement your API. For example:
+   ```JavaScript
+   export function createFooAPI(host: EntryPointHost): FooAPI {
+       return {
+           doSomething(): void {
+               // ...
+           },
+           doSomethingElse(what: string): Promise<number> {
+               // ...
+           }
+       }
+   }
+   ```
+
+1. Contribute your API from an entry point `install` function:
+    ```JavaScript
+    import { FooAPI, createFooAPI } from './fooApi'
+
+    const FooEntryPoint: EntryPoint = {
+
+        ...
+
+        install(host: EntryPointHost) {
+            host.contributeAPI(FooAPI, () => createFooAPI(host))
+        }
+
+        ...
+
+    }
+    ```
+
+1. Export your API from the package. For example, in the `index.ts` of your package:
+    ```JavaScript
+    export { FooAPI } from './fooApi'
+    ```
+
+
+### Creating a reducer
+
+
+
+### Creating a connected React component
+
+
+
+### Creating an exported React component
+
+
+## Testing a package
+
 # API Reference
 
 TBD
-
-# === ==== Draft offcuts ==== ===
-
-
-
-
-
-
-
-- Why TypeScript? 
-
-  - Better tools that back the devs up (static type checking...) -> less bugs
-  - Better code navigation - let the devs quickly figure out how the things are done or what's expected -> less bugs, faster progress
-  - Productivity:
-    - with JS, you code quickly but maintain slowly
-    - with TS, you code slowly but maintain quickly
-    - with JS, you spend more time fixing defects -> slower progress with new tasks
-  - In the bottom line: TypeScript === less technical risk
-
-- Why infrastructure layer? Let reusable modules emerge as we go.
-
-  - 
-
-
-- Why AppHost? We can just use static imports across the packages.
-
-
-
-- Why should AppHost hold my extension slots? My feature can hold them privately instead. 
-
-
-
-- Why should I always lookup APIs and slots through AppHost? I can lookup once in the build time, then cache privately.
-
-
-
-- Why bother separating build-time and run-time APIs?
-
-
-
-- The typings look cryptographic! Can they be simplified?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Concept
-
-`react-app-lego` allows composition of a React-with-Redux application entirely from a list of _plugin packages_, much like a lego built from pieces.
-
-Such application is referred to as _main application_. 
-
-The main application can be as small as just an empty shell. Yet, its responsibilities include:
-- initialize an `AppHost` object with a list of plugins. This is where the composition takes place.
-- render an `<AppMainView />` component, which is the presentation layer of the lego
-
-```
-// TODO: provide an example
-```
-
-## Plugin packages
-
-Plugin packages (or simply _plugins_) are regular Node packages, which export one or more _entry points_. 
-
-The plugins are loaded in the order they are listed in the main app, and their entry points are invoked in the load order.
-
-```
-// TODO: provide an example
-```
-
-## Entry points
-
-Every entry point contributes one or more pieces to the whole lego of the application.
-
-Contributed pieces can be anything, provided that they are expected by the lego. Here _expected_ means that another plugin provides an API, through which it accepts contributions of this specific type.
-
-```
-// TODO: provide an example
-```
-
-Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. There are also two kinds of contributions supported directly by `react-app-lego`: _APIs_ and _reducers_.
-
-## APIs
-
-Some plugins provide services to other plugins. We'll refer to them as _providers_ and _consumers_, respectively.
-
-A provider plugin contributes one or more APIs, which can be used by consumers. APIs allow plugins to extend each other and otherwise interact. Moreover, APIs are the only allowed way of interaction between plugins.
-
-An API is basically a TypeScript `interface`, accompanied by a unique strongly-typed key `SlotKey<T>`, which represents the interface type at runtime, and thus is named after the interface.
-
-```
-export interface MyAPI {
-    doSomething(value: number): void;
-}
-
-export const MyAPI: SlotKey<MyAPI> = { name: 'MyPackage.MyAPI', public: true }
-```
-
-Provider plugin must contribute its APIs 
-
-
-
-## Extension Slots
-
-
-- internally, initialized an _extension slot_ (basically, a typed array of contributions)
-- exposed an _API_, through which other plugins can contribute to the extension slot
-
-
-There are few types of contributions supported directly by `react-app-lego`:
-
-- APIs
-- Reducers
-
-
-(React components, Redux reducers, API contracts and implementations, various descriptors, etc etc)
-
-# Developing main application
-
-# Developing plugin package
-
-
-
-
-# API Reference
-
-
-
-
-
-
-- Why TypeScript? 
-
-  - Better tools that back the devs up (static type checking...) -> less bugs
-  - Better code navigation - let the devs quickly figure out how the things are done or what's expected -> less bugs, faster progress
-  - Productivity:
-    - with JS, you code quickly but maintain slowly
-    - with TS, you code slowly but maintain quickly
-    - with JS, you spend more time fixing defects -> slower progress with new tasks
-  - In the bottom line: TypeScript === less technical risk
-
-- Why infrastructure layer? Let reusable modules emerge as we go.
-
-  - 
-
-
-- Why AppHost? We can just use static imports across the packages.
-
-
-
-- Why should AppHost hold my extension slots? My feature can hold them privately instead. 
-
-
-
-- Why should I always lookup APIs and slots through AppHost? I can lookup once in the build time, then cache privately.
-
-
-
-- Why bother separating build-time and run-time APIs?
-
-
-
-- The typings look cryptographic! Can they be simplified?
-
-
-
-
-A package that accepts contributions, must perform these steps for every kind of contributions:
-
-- internally, initialize an `ExtensionSlot<T>` 
-- contribute an API with a function that receives contributed piece, and pushes it to the extension slot.
-- consume items from the extension slot, as necessary
-
-
-
-
-key must be declared as a `const` named after the API interface. Example:
-
-```
-// API is a TypeScript interface
-
-export interface MyAPI {
-    doSomething(): void;
-    doSomethingElse(what: string): Promise<boolean>;
-}
-
-// API key is an object that implements SlotKey<T> 
-// where T is the API interface
-// The key must declared as a const named after the interface
-
-export const MyAPI: SlotKey<MyAPI> = { name: "My API", public: true }
-```
 
