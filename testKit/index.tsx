@@ -20,6 +20,9 @@ export interface PactApi<T> extends PactApiBase {
 export function createAppHostWithPacts(features: AnyFeature[], pacts: PactApiBase[]) {
     const pactsFeature: FeatureLifecycle = {
         name: 'PACTS_FEATURE',
+        declareApis() {
+            return pacts.map(pact => pact.getApiKey())
+        },
         install(host: FeatureHost): void {
             _.each(pacts, pact => {
                 host.contributeApi(pact.getApiKey(), () => pact)

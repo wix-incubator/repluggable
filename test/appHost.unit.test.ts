@@ -26,6 +26,9 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
             getDependencyApis() {
                 return [DependencyAPI]
             },
+            declareApis() {
+                return [MockAPI2]
+            },
             install(host: FeatureHost) {
                 host.contributeApi(MockAPI2, () => ({}))
             }
@@ -46,6 +49,9 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
     }
     const helperLifecycle: FeatureLifecycle = {
         name: 'TEST_HELPER',
+        declareApis() {
+            return [DependencyAPI]
+        },
         install(host: FeatureHost) {
             getHelperFeatureHost = () => host
         }

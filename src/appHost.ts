@@ -516,6 +516,10 @@ function createAppHostImpl(): AppHost {
             contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi {
                 console.log(`Contributing API ${key.name}.`)
 
+                if (!_.includes(_.invoke(lifecycle, 'declareApis') || [], key)) {
+                    throw new Error(`Feature '${lifecycle.name}' is trying to contribute API '${key.name}' which it didn't declare`)
+                }
+
                 const api = factory()
                 const apiSlot = declareSlot<TApi>(key)
                 apiSlot.contribute(api, undefined, featureHost)

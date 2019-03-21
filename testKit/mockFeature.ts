@@ -43,6 +43,9 @@ export const mockFeatureStateKey = 'mockFeature'
 
 export const mockFeature: FeatureLifecycle = {
     name: 'MOCK_FEATURE',
+    declareApis() {
+        return [MockFeatureAPI]
+    },
     install(host: FeatureHost) {
         host.contributeApi(MockFeatureAPI, () => createMockFeatureAPI(host))
         host.contributeState(() => ({
@@ -53,6 +56,9 @@ export const mockFeature: FeatureLifecycle = {
 
 export const mockFeatureWithPublicAPI: FeatureLifecycle = {
     name: 'MOCK_FEATURE_PUBLIC',
+    declareApis() {
+        return [MockFeaturePublicAPI]
+    },
     install(host: FeatureHost) {
         host.contributeApi(MockFeaturePublicAPI, () => ({
             stubTrue: () => true
