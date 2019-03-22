@@ -8,28 +8,34 @@
 
 # Concept
 
-`react-app-lego` allows composition of a React-with-Redux application entirely from a list of _pluggable packages_, much like a lego built from pieces.
+`react-app-lego` allows composition of a React-with-Redux application entirely from a list of _pluggable packages_, much like a lego built from pieces. 
+
+The packages can be plugged in and out at runtime without the need to reload the application.
 
 ## Main application
 
 This is the application being composed as a lego. We refer to it as _main application_. 
 
-The main application can be as small empty shell. Its minimal responsibilities are:
+The main application can be as small as an empty shell. Its functionality can be composed completely from the packages, where each loaded package contributes its pieces to the whole.
 
-- Initialize an `AppHost` object with a list of pluggable packages. The `AppHost` object orchestrates lifecycle of the pluggable packages, and provides dependency injection.
-- Render `AppMainView` component, passing it the `AppHost` in its props.
+The minimal responsibilities of the main application are:
+
+- Initialize an `AppHost` object with a list of pluggable packages. 
+   > The `AppHost` object orchestrates lifecycle of the packages, handles cross-cutting concerns at package boundaries, and provides dependency injection to Redux-connected components.
+
+- Render `AppMainView` component, passing it the initialized `AppHost` in props.
 
 ## Pluggable packages
 
-Pluggable packages (or simply _packages_) are regular Node packages, which export one or more _entry points_. 
+Pluggable package (or simply _package_) is a regular Node package, which exports an array of _entry points_. 
 
-The packages are loaded in the order they are listed in the main app, and their entry points are invoked in the load order.
+The packages are loaded in the order they are listed when passed to `AppHost`. Entry points are invoked in the load order of the packages, in the array order within the package.
 
 ## Entry points
 
 Every entry point contributes one or more pieces to the whole lego of the application. 
 
-Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. They can be anything, provided that they are expected by the lego. Here _expected_ means that another package provides an API, through which it accepts contributions of this specific type.
+Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. They can be anything, provided that they are expected by the lego. Here _expected_ means that some package provides an API, through which it accepts contributions of this specific type.
 
 There are also two kinds of contributions supported directly by `react-app-lego`: _APIs_ and _reducers_.
 
@@ -39,14 +45,17 @@ Besides contributing lego pieces, entry points may contain additional lifecycle 
 
 Some packages (providers) provide services to other packages (consumers). The services are provided through APIs. An API is an object, which implements a TypeScript interface, and is identified by an API key. An API key is another object declared as a const [TODO: link to example](), and exported from the package. 
 
-In general, APIs allow packages to extend each other (consumers call APIs and pass contributions to the provider), and otherwise interact. Moreover, APIs are the only allowed way of interaction between packages.
+In general, APIs allow packages to extend other packages (consumers call APIs, which let them pass contributions to the provider), and otherwise interact. Moreover, APIs are the only allowed way of interaction between packages.
 
-In order to provide an API, a provider package contributes that API under corresponding API key. 
-
+In order to provide an API, a provider package does:
+- declare and export API interface and API key
+- implement API object according to the interface
+- contribute API object under the key
+ 
 In order to consume an API, a consumer package does:
-- import API key from the provider package, together with the API interface
+- import API key and API interface from the provider package
 - declare dependency on the API in relevant entry points
-- retrieve API object by calling `getApi` and passing it the API key [TODO: link to example]().
+- retrieve API object by calling `getAPI` and passing it the API key [TODO: link to example]().
 
 ## Reducers 
 
@@ -67,7 +76,31 @@ Its additional responsibility is remembering which package and entry point each 
 Extension slots are implementation details of a package, and they should never be directly exposed outside of the package. Instead, the package does: 
 
 - internally initialize an extension slot for every kind or group of accepted contributions
-- contribute an API that receives contributions from the outside and pushes them to an appropriate extension slot.
+- contribute an API that receives contributions from the outside and pushes them to an internal extension slot.
+
+With that, the `AppHost` also tracks all existing extension slots. This approach allows easy implementation of application-wide aspects. For example, removal of a package with all of its contributions across the application.
+
+## Package context in DOM
+
+Every React component rendered under the `AppMainView` is associated with a package context. 
+
+The package context is a React context, which associates its children with a specific package, and a specific entry point within the package. 
+
+- actually, the context is associated with an entry point, which is in turn associated with containing package. 
+
+Such association provides several aspects to the children:
+
+- performance measurements and errors reported by the children, are automatically tagged with the package and the entry point
+
+- in Redux-connected components ([TODO: link to details]()):
+
+  - dependency injection (the `getAPI` function): all dependencies are resolved in the context of the entry point
+
+  - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): the state is scoped to reducers contributed by the entry point.  
+
+> TODO: verify that getState() in thunks is actually scoped
+
+- when rendering an extension slot of contributed React components: each component is rendered within the context of the entry point it was contributed by.
 
 ## Progressive loading 
 
@@ -191,7 +224,7 @@ import { EntryPoint } from 'react-app-lego'
 const FooEntryPoint: EntryPoint = {
 
     // required: specify name of the entry point
-    name: 'FOO-ENTRY-POINT',
+    name: 'FOO',
 
     // optional
     getDependencies() {
@@ -215,7 +248,7 @@ const FooEntryPoint: EntryPoint = {
     // optional
     extend(host: EntryPointHost) {
         // DO access store if necessary
-        host.getStore()
+        host.getStore()....
         // DO consume APIs and contribute to other packages
         host.getAPI(BarAPI).contributeBarItem(() => <FooItem />)
     },
@@ -225,6 +258,17 @@ const FooEntryPoint: EntryPoint = {
         // DO perform any necessary cleanup
     }
 }
+```
+
+The default export of the package must be array of its entry points. For example, in package root `index.ts` :
+
+```JavaScript
+import { FooEntryPoint } from './fooEntryPoint'
+
+export default [ 
+    FooEntryPoint 
+    // list additional entry points here
+]
 ```
 
 ### Creating an API
@@ -248,7 +292,7 @@ To create an API, perform these steps:
        public: true
    }
    ```
-   Note that `public: true` is required if you plan to export your API outside of your package. The key must be declared in the same file with the interface.
+   Note that `public: true` is required if you plan to export your API outside of your package. The key must be declared in the same `.ts` file with the interface.
 
 1. Implement your API. For example:
    ```JavaScript
@@ -287,9 +331,68 @@ To create an API, perform these steps:
     ```
 
 
-### Creating a reducer
+### Managing state
 
+In order to manage state in a package, you need to contribute one or more reducers.
 
+In the example below, `FooEntryPoint` will contribute two reducers, `fooReducerOne` and `fooReducerTwo`.
+ 
+To contribute the reducers, perform these steps:
+
+1. Declare types that represent the state for each reducer: 
+    ```JavaScript
+    // state managed by fooReducerOne
+    export interface FooStateOne {
+        ...
+    }
+
+    // state managed by fooReducerTwo
+    export interface FooStateTwo {
+        ...
+    }
+    ```
+
+1. Wrap these state types in a root state type. This root type determines the shape of the state in the entry point.
+
+    ```JavaScript
+    // the root type on entry point level 
+    export interface FooEntryPointState {
+        one: FooStateOne
+        two: FooStateTwo
+    }
+    ```
+
+1. Write the two reducers. For example, they can look like this:
+    ```JavaScript
+    function fooReducerOne(
+        state: FooStateOne = { /* initial values */ }, 
+        action: Action)
+    {
+         ...
+    }
+
+    function fooReducerTwo(
+        state: FooStateTwo = { /* initial values */ }, 
+        action: Action)
+    {
+         ...
+    }
+    ```
+
+1. Contribute state in the entry point:
+
+    ```JavaScript
+    install(host: EntryPointHost) {
+        host.contributeState<FooEntryPointState>({
+            one: fooReducerOne,
+            two: fooReducerTwo
+        })
+    }
+    ```
+
+    Here the argument passed to `contributeState()` is a reducer map object. This object contains all same keys of `FooEntryPointState`, but here the keys are assigned their respective reducers. Such shape of the reducers map is also enforced by the typings.
+
+1. 
 
 ### Creating a connected React component
 
