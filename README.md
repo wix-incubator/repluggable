@@ -440,19 +440,74 @@ To contribute the reducers, perform these steps:
     }
     ```
 
-### Creating a connected React component
+### Creating React components
 
-When creating React components, we recommend following the Redux pattern of pure stateless components and `connect`. 
+When creating a React component, we strongly recommend to follow the React-Redux pattern, and separate your component into a stateless render and a `connect` container. 
 
-In `react-app-lego`, a Redux-connected component may require services from the `AppHost`, such as an ability to obtain APIs, or add an entry point.  
+In `react-app-lego`, components often need to consume APIs. Although APIs can be obtained through `EntryPointHost` passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
 
-Although these services are provided by the `EntryPointHost` object passed to lifecycle hooks of your entry points, 
+A more elegant solution is to use `connectWithEntryPoint()` function instead of the regular `connect()`. This provides connector with the ability to obtain APIs.
+
+To use `connectWithEntryPoint()`, perform these steps:
+
+1. declare type of render props, which is the object you return from `mapStateToProps`. In our example it's named `FooStateProps`. 
+    ```TypeScript
+
+    ```
+
+1. declare type of dispatch props, which is the object you return from `mapDispatchToProps`. In our example it's named `FooDispatchProps`.
+    ```TypeScript
+
+    ```
+
+1. write the stateless function component, and define its props type as `FooStateProps & FooDispatchProps`:
+    ```TypeScript
+    const FooPure: React.SFC<FooStateProps & FooDispatchProps> = 
+        (props) => {
+            ...
+        }
+    ```
+
+1. Write the connected container as follows:
+    ```TypeScript
+    export const Foo = connectWithEntryPoint(
+        // mapStateToProps
+        // - host: represents the containing entry point
+        // - the rest are regular parameters of mapStateToProps 
+        (host, state) => {
+            return {
+                // some properties can map from your own state
+                xyzzy: state.baz.xyzzy,
+                // some properties may come from other packages APIs
+                bar: host.getAPI(BarAPI).getSomeValue()
+            }
+        },
+        // mapDispatchToProps
+        // - host: represents the containing entry point
+        // - the rest are regular parameters of mapDispatchToProps
+        (host, dispatch) => {
+            return {
+                // some actions may alter your own state
+                setXyzzy(newValue) {
+                    dispatch(FooActionCreators.setXyzzy(newValue))
+                },
+                // some may request actions from other packages APIs
+                setBarValue(newValue) {
+                    host.getAPI(BarAPI).setSomeValue(newValue)  
+                }
+            }
+        }
+    )(FooPure)
+    ```
+
 
 ### Creating an exported React component
 
-
+TBD
 
 ## Testing a package
+
+TBD
 
 # API Reference
 
