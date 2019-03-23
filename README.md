@@ -144,46 +144,44 @@ The main application is a React application, which uses `react-app-lego` package
 The `index.ts` of the application must perform the following steps.
 
 1. Import from `react-app-lego`
-   ```JavaScript
+   ```TypeScript
    import { createAppHost, AppMainView } from 'react-app-lego'
    ```
 
 1. Provide loaders of pluggable packages. Here we give an example of three packages, each loaded in a different way:
-   - `package-one` is statically bundled with the main app
-   - `package-two` is in a separate chunk (WebPack code splitting). We'll load it with dynamic 
-   import
-   - `package-three` is in an AMD module, deployed separately. We'll load it with RequireJS.
+   - `package-foo` is statically bundled with the main app
+   - `package-bar` is in a separate chunk (WebPack code splitting). We'll load it with dynamic import
+   - `package-baz` is in an AMD module, deployed separately. We'll load it with RequireJS.
    
    This is how the three packages are loaded:
 
-   ```JavaScript
-   import packageOne from 'package-one'
-   const packageTwo = () => import('package-two').then(m => m.default)
-   const packageThree = require('package-three')
+   ```TypeScript
+   import foo from 'package-foo'
+   const bar = () => import('package-bar').then(m => m.default)
+   const baz = require('package-baz')
    ```
 
 1. Initialize `AppHost` with the packages:
-   ```JavaScript
+   ```TypeScript
    const host = createAppHost([
-       packageOne, 
-       packageTwo,
-       packageThree
+       foo, 
+       bar,
+       baz
    ])
    ```
 
 1. Render `AppMainView` component, passing it the host:
 
-   ```JavaScript
+   ```TypeScript
    ReactDOM.render(
        <AppMainView host={host} />, 
        document.getElementById('root')
    )
    ```
 
-
 ### Full code listing
 
-```JavaScript
+```TypeScript
 import ReactDOM from 'react-dom'
 import { createAppHost, AppMainView } from 'react-app-lego'
 
@@ -218,7 +216,7 @@ The rest of the configuration (Babel, WebPack, Jest, etc) heavily depends on org
 As we mentioned, each package must export one or more entry points, in order to be loaded by the main app.
 
 An entry point is an object which implements `EntryPoint` interface:
-```JavaScript
+```TypeScript
 import { EntryPoint } from 'react-app-lego'
 
 const FooEntryPoint: EntryPoint = {
@@ -248,7 +246,7 @@ const FooEntryPoint: EntryPoint = {
     // optional
     extend(host: EntryPointHost) {
         // DO access store if necessary
-        host.getStore()....
+        host.getStore().dispatch(....)
         // DO consume APIs and contribute to other packages
         host.getAPI(BarAPI).contributeBarItem(() => <FooItem />)
     },
@@ -260,14 +258,23 @@ const FooEntryPoint: EntryPoint = {
 }
 ```
 
+The `EntryPoint` interface consists of:
+- declarations: `name`, `getDependencies()`
+- lifecycle hooks: `install()`, `extend()`, `uninstall()`
+
+The lifecycle hooks receive an `EntryPointHost` object, which represents the `AppHost` for this specific entry point.
+
+### Exporting entry points
+
 The default export of the package must be array of its entry points. For example, in package root `index.ts` :
 
-```JavaScript
+```TypeScript
 import { FooEntryPoint } from './fooEntryPoint'
+import { BarEntryPoint } from './barEntryPoint'
 
 export default [ 
-    FooEntryPoint 
-    // list additional entry points here
+    FooEntryPoint,
+    BarEntryPoint
 ]
 ```
 
@@ -295,7 +302,7 @@ To create an API, perform these steps:
    Note that `public: true` is required if you plan to export your API outside of your package. The key must be declared in the same `.ts` file with the interface.
 
 1. Implement your API. For example:
-   ```JavaScript
+   ```TypeScript
    export function createFooAPI(host: EntryPointHost): FooAPI {
        return {
            doSomething(): void {
@@ -309,7 +316,7 @@ To create an API, perform these steps:
    ```
 
 1. Contribute your API from an entry point `install` function:
-    ```JavaScript
+    ```TypeScript
     import { FooAPI, createFooAPI } from './fooApi'
 
     const FooEntryPoint: EntryPoint = {
@@ -326,7 +333,7 @@ To create an API, perform these steps:
     ```
 
 1. Export your API from the package. For example, in the `index.ts` of your package:
-    ```JavaScript
+    ```TypeScript
     export { FooAPI } from './fooApi'
     ```
 
@@ -335,44 +342,45 @@ To create an API, perform these steps:
 
 In order to manage state in a package, you need to contribute one or more reducers.
 
-In the example below, `FooEntryPoint` will contribute two reducers, `fooReducerOne` and `fooReducerTwo`.
+In the example below, `FooEntryPoint` will contribute two reducers, `bazReducer` and `quxReducer`.
  
 To contribute the reducers, perform these steps:
 
 1. Declare types that represent the state for each reducer: 
-    ```JavaScript
-    // state managed by fooReducerOne
-    export interface FooStateOne {
+    ```TypeScript
+    // state managed by bazReducer
+    export interface BazState {
         ...
+        xyzzy: number // for example
     }
 
-    // state managed by fooReducerTwo
-    export interface FooStateTwo {
+    // state managed by quxReducer
+    export interface QuxState {
         ...
     }
     ```
 
 1. Wrap these state types in a root state type. This root type determines the shape of the state in the entry point.
 
-    ```JavaScript
+    ```TypeScript
     // the root type on entry point level 
-    export interface FooEntryPointState {
-        one: FooStateOne
-        two: FooStateTwo
+    export interface FooState {
+        baz: BazState
+        qux: QuxState
     }
     ```
 
 1. Write the two reducers. For example, they can look like this:
-    ```JavaScript
-    function fooReducerOne(
-        state: FooStateOne = { /* initial values */ }, 
+    ```TypeScript
+    function bazReducer(
+        state: BazState = { /* initial values */ }, 
         action: Action)
     {
          ...
     }
 
-    function fooReducerTwo(
-        state: FooStateTwo = { /* initial values */ }, 
+    function quxReducer(
+        state: QuxState = { /* initial values */ }, 
         action: Action)
     {
          ...
@@ -381,24 +389,67 @@ To contribute the reducers, perform these steps:
 
 1. Contribute state in the entry point:
 
-    ```JavaScript
+    ```TypeScript
     install(host: EntryPointHost) {
-        host.contributeState<FooEntryPointState>({
-            one: fooReducerOne,
-            two: fooReducerTwo
+        host.contributeState<FooState>({
+            baz: bazReducer,
+            qux: quxReducer
         })
     }
     ```
 
-    Here the argument passed to `contributeState()` is a reducer map object. This object contains all same keys of `FooEntryPointState`, but here the keys are assigned their respective reducers. Such shape of the reducers map is also enforced by the typings.
+    Here the argument passed to `contributeState()` is a reducer map object. This object contains all same keys of `FooState` (the `baz` and `qux`), but this time the keys are assigned their respective reducers. Such derivation of reducers map shape is enforced by the typings.
 
-1. 
+1. Expose selectors and action dispatchers through APIs:
+ 
+    ```TypeScript
+    export interface FooAPI {
+        ...
+        getBazXyzzy(): number
+        setBazXyzzy(value: number): void
+        ...
+    }
+    ```
+
+    The above API lets read and change the value of `xyzzy` in the `BazState`. 
+    
+    Note that neither of these two functions are passed the state or the `Store` object. This is because their implementations are already bound to the store of the `AppHost`:
+
+    ```TypeScript
+    const createFooAPI = (host: EntryPointHost): FooAPI => {
+        // this returns a scoped wrapper over the full 
+        // store of the main application
+        const entryPointStore = host.getStore()
+
+        // IMPORTANT! the generic parameter (FooState)
+        // must match the one specified when contributing state!
+        // In our example, we did contributeState<FooState>(...)
+        const getState = () => entryPointStore.getState<FooState>()
+
+        return {
+            ...
+            getBazXyzzy(): number {
+                const state: FooState = getState()
+                return state.baz.xyzzy
+            },
+            setBazXyzzy(value: number): void {
+                entryPointStore.dispatch(BazActionCreators.setXyzzy(value))
+            }
+            ...
+        }
+    }
+    ```
 
 ### Creating a connected React component
 
+When creating React components, we recommend following the Redux pattern of pure stateless components and `connect`. 
 
+In `react-app-lego`, a Redux-connected component may require services from the `AppHost`, such as an ability to obtain APIs, or add an entry point.  
+
+Although these services are provided by the `EntryPointHost` object passed to lifecycle hooks of your entry points, 
 
 ### Creating an exported React component
+
 
 
 ## Testing a package
