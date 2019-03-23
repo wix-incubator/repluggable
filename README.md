@@ -80,23 +80,21 @@ Extension slots are implementation details of a package, and they should never b
 
 With that, the `AppHost` also tracks all existing extension slots. This approach allows easy implementation of application-wide aspects. For example, removal of a package with all of its contributions across the application.
 
-## Package context in DOM
+## Package boundaries in DOM
 
-Every React component rendered under the `AppMainView` is associated with a package context. 
+Every React component rendered under the `AppMainView` is associated with an _entry point context_. 
 
-The package context is a React context, which associates its children with a specific package, and a specific entry point within the package. 
-
-- actually, the context is associated with an entry point, which is in turn associated with containing package. 
+The entry point context is a React context, which associates its children with a specific entry point, and thus the package that contains it. 
 
 Such association provides several aspects to the children:
 
-- performance measurements and errors reported by the children, are automatically tagged with the package and the entry point
+- performance measurements and errors reported by the children, are automatically tagged with the entry point and the package
 
 - in Redux-connected components ([TODO: link to details]()):
 
   - dependency injection (the `getAPI` function): all dependencies are resolved in the context of the entry point
 
-  - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): the state is scoped to reducers contributed by the entry point.  
+  - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): returned state object is scoped to reducers contributed by the entry point.  
 
 > TODO: verify that getState() in thunks is actually scoped
 
@@ -122,7 +120,7 @@ In addition, `AppHost` supports removal of previously added entry points or enti
 
 ## API dependencies
 
-Since APIs are contributed though entry points, their availability depends on the loading timing of the provider package, and a specific entry point within it. From a consumer package perspective, this creates a situation in which one or more of APIs the package depends on may be unavailable.
+Since APIs are contributed though entry points, their availability depends on the loading timing of the provider package, and a specific entry point within it. From a consumer package perspective, this creates a situation in which one or more of APIs the package depends on may be temporarily unavailable.
 
 `AppHost` resolves that with the help of explicit dependency declarations. Every entry point must declare APIs on which it depends (including dependencies of all pieces contributed by the entry point). If any of the required APIs is unavailable, the entry point is put on hold. There are two possible cases:
 
@@ -448,57 +446,90 @@ In `react-app-lego`, components often need to consume APIs. Although APIs can be
 
 A more elegant solution is to use `connectWithEntryPoint()` function instead of the regular `connect()`. This provides connector with the ability to obtain APIs.
 
-To use `connectWithEntryPoint()`, perform these steps:
+The usage of `connectWithEntryPoint()` is demonstrated in the example below. Suppose we want to create a component `<Foo />`, which would render like this:
 
-1. declare type of render props, which is the object you return from `mapStateToProps`. In our example it's named `FooStateProps`. 
-    ```TypeScript
-
+    ```JSX
+    (props) => (
+        <div classname="foo">
+            <div>
+                <label>XYZZY</label>
+                <input 
+                    type="text" 
+                    defaultValue={props.xyzzy} 
+                    onChange={e => props.setXyzzy(e.target.value)} />
+            </div>
+            <div>
+                Current BAR = {props.bar}
+                <button onClick={() => props.createNewBar()}>
+                    Create new BAR
+                </button>
+            </div>
+        </div>
+    )
     ```
 
-1. declare type of dispatch props, which is the object you return from `mapDispatchToProps`. In our example it's named `FooDispatchProps`.
+1. Declare type of state props, which is the object you return from `mapStateToProps`: 
     ```TypeScript
-
+    type FooStateProps = {
+        // retrieved from own package state
+        xyzzy: string
+        // retrieved from another package API
+        bar: number
+    }
     ```
 
-1. write the stateless function component, and define its props type as `FooStateProps & FooDispatchProps`:
+1. Declare type of dispatch props, which is the object you return from `mapDispatchToProps`:
     ```TypeScript
-    const FooPure: React.SFC<FooStateProps & FooDispatchProps> = 
-        (props) => {
-            ...
-        }
+    type FooDispatchProps = {
+        setXyzzy(newValue: string): void
+        createNewBar(): void
+    }
     ```
 
-1. Write the connected container as follows:
+1. Write the stateless function component. Note that its props type is specified as `FooStateProps & FooDispatchProps`:
+    ```TypeScript
+    const FooSfc: React.SFC<FooStateProps & FooDispatchProps> = 
+        (props) => (
+            <div classname="foo">
+                ...
+            </div>        
+        )
+    ```
+
+1. Write the connected container using `connectWithEntryPoint`. The latter differs from `connect` in that it passes `EntryPointHost` as the first parameter to `mapStateToProps` and `mapDispatchToProps`. The new parameter is followed by the regular parameters passed by `connect`. Example:
+
     ```TypeScript
     export const Foo = connectWithEntryPoint(
         // mapStateToProps
-        // - host: represents the containing entry point
+        // - host: represents the associated entry point
         // - the rest are regular parameters of mapStateToProps 
         (host, state) => {
             return {
                 // some properties can map from your own state
                 xyzzy: state.baz.xyzzy,
                 // some properties may come from other packages APIs
-                bar: host.getAPI(BarAPI).getSomeValue()
+                bar: host.getAPI(BarAPI).getCurrentBar()
             }
         },
         // mapDispatchToProps
-        // - host: represents the containing entry point
+        // - host: represents the associated entry point
         // - the rest are regular parameters of mapDispatchToProps
         (host, dispatch) => {
             return {
                 // some actions may alter your own state
-                setXyzzy(newValue) {
+                setXyzzy(newValue: string): void {
                     dispatch(FooActionCreators.setXyzzy(newValue))
                 },
-                // some may request actions from other packages APIs
-                setBarValue(newValue) {
-                    host.getAPI(BarAPI).setSomeValue(newValue)  
+                // others may request actions from other packages APIs
+                createNewBar() {
+                    host.getAPI(BarAPI).createNewBar()  
                 }
             }
         }
     )(FooPure)
     ```
+
+    The `EntryPointHost` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
 
 
 ### Creating an exported React component
