@@ -1,10 +1,33 @@
 # Table of contents
 
-- [Concept](#concept)
-- [Programmer's Guide](#programmers-guide)
+- [**Concept**](#concept)
+  - [Main application](#main-application)
+  - [Pluggable packages](#pluggable-packages)
+  - [Entry points](#entry-points)
+  - [APIs](#apis)
+  - [Reducers](#reducers)
+  - [Extension slots](#extension-slots)
+  - [Package boundaries](#package-boundaries-in-dom)
+  - [Progressive loading](#progressive-loading)
+  - [API dependencies](#api-dependencies)
+- [**Programmer's Guide**](#programmers-guide)
   - [Developing main application](#developing-main-application)
   - [Developing pluggable package](#developing-pluggable-package)
-- [API Reference](#api-reference)
+    - [Creating package project](#creating-package-project)
+    - [Creating entry points](#creating-entry-points)
+    - [Exporting entry points](#exporting-entry-points)
+    - [Creating an API](#creating-an-api)
+    - [Managing state](#managing-state)
+    - [Creating React components](#creating-react-components)
+    - (Advanced) [Exporting React components](#exporting-react-components)
+- [**API Reference**](#api-reference)
+  - AppHost
+  - EntryPointHost
+  - EntryPoint interface
+  - connectWithEntryPoint
+  - SlotKey
+  - ExtensionSlot
+  - renderExtensionSlot
 
 # Concept
 
@@ -536,9 +559,9 @@ The usage of `connectWithEntryPoint()` is demonstrated in the example below. Sup
     The `EntryPointHost` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
 
 
-### Creating an exported React component
+### Exporting React components
 
-TBD
+TBD (advanced topic)
 
 ## Testing a package
 
