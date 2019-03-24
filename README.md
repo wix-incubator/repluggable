@@ -19,7 +19,7 @@
     - [Creating an API](#creating-an-api)
     - [Managing state](#managing-state)
     - [Creating React components](#creating-react-components)
-    - (Advanced) [Exporting React components](#exporting-react-components)
+    - [Exporting React components](#exporting-react-components)
 - [**API Reference**](#api-reference)
   - AppHost
   - EntryPointHost
@@ -35,7 +35,7 @@
 
 A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
 
-For two pieces to connect, one piece defines a connection point for specific type of other pieces. In order to connect, the other piece has to match the type of the connection point. 
+For two pieces to connect, one piece defines a connection point (an _extension slot_) for specific type of other pieces. In order to connect, the other piece has to match the type of the slot. One slot can contain many pieces.
 
 Packages can be plugged in and out at runtime. Contributed pieces are added and removed from the application on the fly, without the need to reload a page. 
 
@@ -453,10 +453,12 @@ To contribute the reducers, perform these steps:
 
         return {
             ...
+            // example of selector
             getBazXyzzy(): number {
                 const state: FooState = getState()
                 return state.baz.xyzzy
             },
+            // example of action dispatcher
             setBazXyzzy(value: number): void {
                 entryPointStore.dispatch(BazActionCreators.setXyzzy(value))
             }
@@ -475,25 +477,27 @@ A more elegant solution is to use `connectWithEntryPoint()` function instead of 
 
 The usage of `connectWithEntryPoint()` is demonstrated in the example below. Suppose we want to create a component `<Foo />`, which would render like this:
 
-    ```JSX
-    (props) => (
-        <div classname="foo">
-            <div>
-                <label>XYZZY</label>
-                <input 
-                    type="text" 
-                    defaultValue={props.xyzzy} 
-                    onChange={e => props.setXyzzy(e.target.value)} />
-            </div>
-            <div>
-                Current BAR = {props.bar}
-                <button onClick={() => props.createNewBar()}>
-                    Create new BAR
-                </button>
-            </div>
+```jsx
+(props) => (
+    <div classname="foo">
+        <div>
+            <label>XYZZY</label>
+            <input 
+                type="text" 
+                defaultValue={props.xyzzy} 
+                onChange={e => props.setXyzzy(e.target.value)} />
         </div>
-    )
-    ```
+        <div>
+            Current BAR = {props.bar}
+            <button onClick={() => props.createNewBar()}>
+                Create new BAR
+            </button>
+        </div>
+    </div>
+)
+```
+
+In order to implement such component, follow these steps:
 
 1. Declare type of state props, which is the object you return from `mapStateToProps`: 
     ```TypeScript
@@ -553,7 +557,7 @@ The usage of `connectWithEntryPoint()` is demonstrated in the example below. Sup
                 }
             }
         }
-    )(FooPure)
+    )(FooSfc)
     ```
 
     The `EntryPointHost` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
