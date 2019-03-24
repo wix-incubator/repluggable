@@ -17,6 +17,35 @@ export interface PactApi<T> extends PactApiBase {
     getApiKey(): SlotKey<T>
 }
 
+function forEachDeclaredApi(allFeatures: AnyFeature[], iteration: (dependency: AnySlotKey, feature: FeatureLifecycle) => void) {
+    _.forEach(_.flatten(allFeatures), (feature: FeatureLifecycle) => {
+        _.forEach(feature.declareApis ? feature.declareApis() : [], dependency => {
+            iteration(dependency, feature)
+        })
+    })
+}
+
+export const getFeaturesDependencies = (allFeatures: AnyFeature[], requiredFeatures: AnyFeature[]): AnyFeature[] => {
+    const tree = new Map<AnySlotKey, FeatureLifecycle | undefined>()
+
+    forEachDeclaredApi(allFeatures, (dependency, feature) => {
+        tree.set(dependency, feature)
+    })
+
+    const featuresList: AnyFeature[] = []
+    const featuresQueue: FeatureLifecycle[] = _.flatten(requiredFeatures)
+
+    while (featuresQueue.length) {
+        const currFeature = featuresQueue.shift() as FeatureLifecycle
+        featuresList.push(currFeature)
+        const dependencies = currFeature.getDependencyApis ? currFeature.getDependencyApis() : []
+        const dependecyFeatures = dependencies.map(api => tree.get(api))
+        featuresQueue.push(..._.compact(dependecyFeatures))
+    }
+
+    return _.uniq(featuresList)
+}
+
 export function createAppHostWithPacts(features: AnyFeature[], pacts: PactApiBase[]) {
     const pactsFeature: FeatureLifecycle = {
         name: 'PACTS_FEATURE',
