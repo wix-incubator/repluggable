@@ -8,15 +8,19 @@
 
 # Concept
 
-`react-app-lego` allows composition of a React-with-Redux application entirely from a list of _pluggable packages_, much like a lego built from pieces. 
+`react-app-lego` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
 
-The packages can be plugged in and out at runtime without the need to reload the application.
+A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
+
+For two pieces to connect, one piece defines a connection point for specific type of other pieces. In order to connect, the other piece has to match the type of the connection point. 
+
+Packages can be plugged in and out at runtime. Contributed pieces are added and removed from the application on the fly, without the need to reload a page. 
 
 ## Main application
 
 This is the application being composed as a lego. We refer to it as _main application_. 
 
-The main application can be as small as an empty shell. Its functionality can be composed completely from the packages, where each loaded package contributes its pieces to the whole.
+The main application can be as small as an empty shell. Its functionality can be composed completely from the packages, where each plugged package contributes its pieces to the whole.
 
 The minimal responsibilities of the main application are:
 
@@ -29,7 +33,7 @@ The minimal responsibilities of the main application are:
 
 Pluggable package (or simply _package_) is a regular Node package, which exports an array of _entry points_. 
 
-The packages are loaded in the order they are listed when passed to `AppHost`. Entry points are invoked in the load order of the packages, in the array order within the package.
+The packages are plugged in the order they are listed when passed to `AppHost`. Entry points are invoked in the list order of the packages, in the array order within the package.
 
 ## Entry points
 
