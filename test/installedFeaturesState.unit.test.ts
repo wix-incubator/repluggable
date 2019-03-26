@@ -1,39 +1,39 @@
 import {
-    InstalledFeaturesActions,
-    installedFeaturesReducer,
-    InstalledFeaturesSelectors,
-    InstalledFeaturesState,
+    InstalledShellsActions,
+    installedShellsReducer,
+    InstalledShellsSelectors,
+    InstalledShellsState,
     ShellToggleSet
-} from '../src/installedFeaturesState'
+} from '../src/installedShellsState'
 
-const initialState: InstalledFeaturesState = {
-    installedFeatures: {
-        featureA: true,
-        featureB: true
+const initialState: InstalledShellsState = {
+    installedShells: {
+        shellA: true,
+        shellB: true
     }
 }
 
-const featureToggleSet: ShellToggleSet = {
-    featureB: false,
-    featureC: true
+const shellsToggleSet: ShellToggleSet = {
+    shellB: false,
+    shellC: true
 }
 
-const expectedState: InstalledFeaturesState = {
-    installedFeatures: {
-        featureA: true,
-        featureC: true
+const expectedState: InstalledShellsState = {
+    installedShells: {
+        shellA: true,
+        shellC: true
     }
 }
 
-describe('Installed Features State', () => {
-    it('should toggle features according to feature toggles', () => {
-        const actualState = installedFeaturesReducer(initialState, InstalledFeaturesActions.updateInstalledFeatures(featureToggleSet))
+describe('Installed Shells State', () => {
+    it('should toggle shells according to feature toggles', () => {
+        const actualState = installedShellsReducer(initialState, InstalledShellsActions.updateInstalledShells(shellsToggleSet))
 
         expect(actualState).toEqual(expectedState)
     })
 
-    it('should select installed features from state', () => {
-        const rootState = { $installedFeatures: initialState }
-        expect(InstalledFeaturesSelectors.getInstalledFeatureSet(rootState)).toEqual(initialState.installedFeatures)
+    it('should select installed shells from state', () => {
+        const rootState = { $installedShells: initialState }
+        expect(InstalledShellsSelectors.getInstalledShellsSet(rootState)).toEqual(initialState.installedShells)
     })
 })

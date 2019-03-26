@@ -3,7 +3,7 @@ import { connect, Provider } from 'react-redux'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
 import { ShellContext } from './featureContext'
-import { InstalledFeaturesSelectors, ShellToggleSet } from './installedFeaturesState'
+import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { renderSlotComponents } from './renderSlotComponents'
 
 export interface AppMainViewProps {
@@ -12,7 +12,7 @@ export interface AppMainViewProps {
 
 interface SfcProps {
     host: AppHost
-    installedFeatures: ShellToggleSet
+    installedShells: ShellToggleSet
 }
 
 const sfc: SFC<SfcProps> = props => {
@@ -26,7 +26,7 @@ const sfc: SFC<SfcProps> = props => {
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
-    installedFeatures: InstalledFeaturesSelectors.getInstalledFeatureSet(state),
+    installedShells: InstalledShellsSelectors.getInstalledShellsSet(state),
     host: ownProps.host
 })
 

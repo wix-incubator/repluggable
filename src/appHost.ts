@@ -21,12 +21,7 @@ import {
 
 import _ from 'lodash'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
-import {
-    contributeInstalledFeaturesState as contributeInstalledShellsState,
-    InstalledFeaturesActions,
-    InstalledFeaturesSelectors,
-    ShellToggleSet
-} from './installedFeaturesState'
+import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -177,20 +172,20 @@ function createAppHostImpl(): AppHost {
     }
 
     function executeShellsChangedCallbacks() {
-        installedShellsChangedCallbacks.forEach(f => f(_.keys(InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState()))))
+        installedShellsChangedCallbacks.forEach(f => f(_.keys(InstalledShellsSelectors.getInstalledShellsSet(getStore().getState()))))
     }
 
     async function setInstalledShellNames(names: string[]) {
         await ensureLazyShellsInstalled(names)
         const updates = toShellToggleSet(names, true)
-        getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
+        getStore().dispatch(InstalledShellsActions.updateInstalledShells(updates))
         executeShellsChangedCallbacks()
     }
 
     async function setUninstalledShellNames(names: string[]) {
         await Promise.resolve()
         const updates = toShellToggleSet(names, false)
-        getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
+        getStore().dispatch(InstalledShellsActions.updateInstalledShells(updates))
         executeShellsChangedCallbacks()
     }
 
@@ -249,7 +244,7 @@ function createAppHostImpl(): AppHost {
     }
 
     function isShellInstalled(name: string): boolean {
-        const installedShellsSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
+        const installedShellsSet = InstalledShellsSelectors.getInstalledShellsSet(getStore().getState())
         return installedShellsSet[name] === true
     }
 
