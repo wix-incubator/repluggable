@@ -6,11 +6,11 @@ export type ReactComponentContributor = () => React.ReactNode
 export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
-export type LazyFeatureFactory = () => Promise<FeatureLifecycle>
-export type InstalledFeaturesChangedCallback = (installedFeatureNames: string[]) => void
-export interface LazyFeatureDescriptor {
+export type LazyEntryPointFactory = () => Promise<EntryPoint>
+export type InstalledShellsChangedCallback = (installedShellNames: string[]) => void
+export interface LazyEntryPointDescriptor {
     readonly name: string
-    readonly factory: LazyFeatureFactory
+    readonly factory: LazyEntryPointFactory
 }
 
 export interface AnySlotKey {
@@ -22,23 +22,23 @@ export interface SlotKey<T> extends AnySlotKey {
     readonly empty?: T // holds no value, only triggers type-checking of T
 }
 
-export interface FeatureLifecycle {
+export interface EntryPoint {
     readonly name: string
     getDependencyApis?(): AnySlotKey[]
     declareApis?(): AnySlotKey[]
-    install?(host: FeatureHost): void
-    extend?(host: FeatureHost): void
-    uninstall?(host: FeatureHost): void
+    install?(shell: Shell): void
+    extend?(shell: Shell): void
+    uninstall?(shell: Shell): void
 }
 
-export type AnyLifecycle = FeatureLifecycle | LazyFeatureDescriptor
-export type AnyFeature = AnyLifecycle | AnyLifecycle[]
+export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
+export type AnyPackage = AnyEntryPoint | AnyEntryPoint[]
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
-    contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void
+    contribute(item: T, condition?: ContributionPredicate, shell?: PrivateShell): void
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
@@ -47,7 +47,7 @@ export interface ExtensionSlot<T> {
 
 export interface ExtensionItem<T> {
     readonly name?: string
-    readonly feature: PrivateFeatureHost
+    readonly shell: PrivateShell
     readonly contribution: T
     readonly condition: ContributionPredicate
 }
@@ -62,17 +62,17 @@ export interface AppHost {
     getApi<TApi>(key: SlotKey<TApi>): TApi
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     getAllSlotKeys(): AnySlotKey[]
-    getAllFeatures(): FeatureInfo[]
-    isFeatureInstalled(name: string): boolean
-    isLazyFeature(name: string): boolean
-    installFeatures(features: AnyFeature[]): void
-    uninstallFeatures(names: string[]): void
-    onFeaturesChanged(callback: InstalledFeaturesChangedCallback): string
-    removeFeaturesChangedCallback(callbackId: string): void
+    getAllEntryPoints(): EntryPointsInfo[]
+    isShellInstalled(name: string): boolean
+    isLazyEntryPoint(name: string): boolean
+    installPackages(packages: AnyPackage[]): void
+    uninstallShells(names: string[]): void
+    onShellsChanged(callback: InstalledShellsChangedCallback): string
+    removeShellsChangedCallback(callbackId: string): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
 
-export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
     readonly name: string
     getStore<TState>(): ScopedStore<TState>
     canUseApis(): boolean
@@ -81,16 +81,16 @@ export interface FeatureHost extends Pick<AppHost, Exclude<keyof AppHost, 'getSt
     contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(contributor: ReactComponentContributor): void
-    // readonly log: FeatureLogger; //TODO: define logging abstraction
+    // readonly log: ShellLogger; //TODO: define logging abstraction
 }
 
-export interface PrivateFeatureHost extends FeatureHost {
-    readonly lifecycle: FeatureLifecycle
+export interface PrivateShell extends Shell {
+    readonly entryPoint: EntryPoint
     setDependencyApis(apis: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableApis: boolean): void
 }
 
-export interface FeatureInfo {
+export interface EntryPointsInfo {
     readonly name: string
     readonly lazy: boolean
     readonly installed: boolean
@@ -110,7 +110,7 @@ export interface HostLogger {
         spanFlag?: LogSpanFlag): void;
 }
 
-export interface FeatureLogger {
+export interface ShellLogger {
     debug(messageId: string, keyValuePairs?: Object): void;
     info(messageId: string, keyValuePairs?: Object): void;
     warning(messageId: string, keyValuePairs?: Object): void;

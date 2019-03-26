@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
 import { AnyAction } from 'redux'
-import { FeatureHost, FeatureLifecycle, SlotKey } from '../src/api'
+import { Shell, EntryPoint, SlotKey } from '../src/api'
 
 export interface MockFeatureAPI {
     stubTrue(): boolean
@@ -17,7 +17,7 @@ export const MockFeaturePublicAPI: SlotKey<MockFeaturePublicAPI> = {
     public: true
 }
 
-const createMockFeatureAPI = (host: FeatureHost): MockFeatureAPI => ({
+const createMockFeatureAPI = (shell: Shell): MockFeatureAPI => ({
     stubTrue: _.stubTrue
 })
 
@@ -41,26 +41,26 @@ const mockFeatureReducer = (state: MockFeatureState = mockFeatureInitialState, a
 
 export const mockFeatureStateKey = 'mockFeature'
 
-export const mockFeature: FeatureLifecycle = {
+export const mockFeature: EntryPoint = {
     name: 'MOCK_FEATURE',
     declareApis() {
         return [MockFeatureAPI]
     },
-    install(host: FeatureHost) {
-        host.contributeApi(MockFeatureAPI, () => createMockFeatureAPI(host))
-        host.contributeState(() => ({
+    install(shell: Shell) {
+        shell.contributeApi(MockFeatureAPI, () => createMockFeatureAPI(shell))
+        shell.contributeState(() => ({
             [mockFeatureStateKey]: mockFeatureReducer
         }))
     }
 }
 
-export const mockFeatureWithPublicAPI: FeatureLifecycle = {
+export const mockFeatureWithPublicAPI: EntryPoint = {
     name: 'MOCK_FEATURE_PUBLIC',
     declareApis() {
         return [MockFeaturePublicAPI]
     },
-    install(host: FeatureHost) {
-        host.contributeApi(MockFeaturePublicAPI, () => ({
+    install(shell: Shell) {
+        shell.contributeApi(MockFeaturePublicAPI, () => ({
             stubTrue: () => true
         }))
     }

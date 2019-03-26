@@ -1,8 +1,8 @@
 import React, { ErrorInfo } from 'react'
-import { PrivateFeatureHost } from './api'
+import { PrivateShell } from './api'
 
 interface ErrorBoundaryProps {
-    readonly feature: PrivateFeatureHost
+    readonly feature: PrivateShell
     readonly componentName?: string
     readonly errorClassName?: string
 }

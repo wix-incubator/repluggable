@@ -1,18 +1,18 @@
 import { combineReducers, createStore, ReducersMapObject, Store } from 'redux'
 
 import {
-    AnyFeature,
-    AnyLifecycle,
+    AnyEntryPoint,
+    AnyPackage,
     AnySlotKey,
     AppHost,
+    EntryPoint,
+    EntryPointsInfo,
     ExtensionItem,
     ExtensionSlot,
-    FeatureInfo,
-    FeatureLifecycle,
-    InstalledFeaturesChangedCallback,
-    LazyFeatureDescriptor,
-    LazyFeatureFactory,
-    PrivateFeatureHost,
+    InstalledShellsChangedCallback,
+    LazyEntryPointDescriptor,
+    LazyEntryPointFactory,
+    PrivateShell,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
@@ -22,17 +22,17 @@ import {
 import _ from 'lodash'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import {
-    contributeInstalledFeaturesState,
-    FeatureToggleSet,
+    contributeInstalledFeaturesState as contributeInstalledShellsState,
     InstalledFeaturesActions,
-    InstalledFeaturesSelectors
+    InstalledFeaturesSelectors,
+    ShellToggleSet
 } from './installedFeaturesState'
 
-interface FeaturesReducersMap {
-    [featureName: string]: ReducersMapObject
+interface ShellsReducersMap {
+    [shellName: string]: ReducersMapObject
 }
 
-export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): LazyFeatureDescriptor => {
+export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory): LazyEntryPointDescriptor => {
     return {
         name,
         factory
@@ -40,19 +40,19 @@ export const makeLazyFeature = (name: string, factory: LazyFeatureFactory): Lazy
 }
 
 export function createAppHost(
-    features: AnyFeature[]
+    packages: AnyPackage[]
     /*, log?: HostLogger */ // TODO: define logging abstraction
 ): AppHost {
     const host = createAppHostImpl()
-    host.installFeatures(features)
+    host.installPackages(packages)
     return host
 }
 
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = { name: 'mainView' }
 export const stateSlotKey: SlotKey<ReducersMapObjectContributor> = { name: 'state' }
 
-const toFeatureToggleSet = (names: string[], isInstalled: boolean): FeatureToggleSet => {
-    return names.reduce<FeatureToggleSet>((result: FeatureToggleSet, name: string) => {
+const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet => {
+    return names.reduce<ShellToggleSet>((result: ShellToggleSet, name: string) => {
         result[name] = isInstalled
         return result
     }, {})
@@ -60,44 +60,44 @@ const toFeatureToggleSet = (names: string[], isInstalled: boolean): FeatureToggl
 
 function createAppHostImpl(): AppHost {
     let store: Store | null = null
-    let currentLifecycleFeature: PrivateFeatureHost | null = null
-    let lastInstallLazyFeatureNames: string[] = []
-    let canInstallReadyFeatures: boolean = true
-    let unReadyFeatureLifecycles: FeatureLifecycle[] = []
+    let currentShell: PrivateShell | null = null
+    let lastInstallLazyEntryPointNames: string[] = []
+    let canInstallReadyEntryPoints: boolean = true
+    let unReadyEntryPoints: EntryPoint[] = []
 
     const readyAPIs = new Set<AnySlotKey>()
 
-    const uniqueFeatureNames = new Set<string>()
+    const uniqueShellNames = new Set<string>()
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const slotKeysByName = new Map<string, AnySlotKey>()
-    const installedFeatures = new Map<string, PrivateFeatureHost>()
-    const featureInstallers = new WeakMap<PrivateFeatureHost, string[]>()
-    const lazyFeatures = new Map<string, LazyFeatureFactory>()
-    const installedFeaturesChangedCallbacks = new Map<string, InstalledFeaturesChangedCallback>()
+    const installedShells = new Map<string, PrivateShell>()
+    const shellInstallers = new WeakMap<PrivateShell, string[]>()
+    const lazyShells = new Map<string, LazyEntryPointFactory>()
+    const installedShellsChangedCallbacks = new Map<string, InstalledShellsChangedCallback>()
 
     const host: AppHost = {
         getStore,
         getApi,
         getSlot,
         getAllSlotKeys,
-        getAllFeatures,
-        isFeatureInstalled,
-        isLazyFeature,
-        installFeatures,
-        uninstallFeatures,
-        onFeaturesChanged,
-        removeFeaturesChangedCallback
+        getAllEntryPoints,
+        isShellInstalled,
+        isLazyEntryPoint,
+        installPackages,
+        uninstallShells,
+        onShellsChanged,
+        removeShellsChangedCallback
     }
 
     // TODO: Conditionally with parameter
     window.reactAppLegoDebug = {
         host,
-        uniqueFeatureNames,
+        uniqueShellNames,
         extensionSlots,
-        installedFeatures,
-        lazyFeatures,
+        installedShells,
+        lazyShells,
         readyAPIs,
-        featureInstallers
+        shellInstallers
     }
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
@@ -105,33 +105,33 @@ function createAppHostImpl(): AppHost {
 
     return host
 
-    function isLazyFeatureDescriptor(value: AnyLifecycle): value is LazyFeatureDescriptor {
-        return typeof (value as LazyFeatureDescriptor).factory === 'function'
+    function isLazyEntryPointDescriptor(value: AnyEntryPoint): value is LazyEntryPointDescriptor {
+        return typeof (value as LazyEntryPointDescriptor).factory === 'function'
     }
 
-    function installFeatures(features: AnyFeature[]): void {
-        console.log(`Adding ${features.length} features.`)
+    function installPackages(packages: AnyPackage[]): void {
+        console.log(`Adding ${packages.length} packages.`)
 
-        const lifecycles = _.flatten(features)
+        const entryPoints = _.flatten(packages)
 
-        validateUniqueFeatureNames(lifecycles)
+        validateUniqueShellNames(entryPoints)
 
-        const [lazyFeatureList, readyFeatureList] = _.partition(lifecycles, isLazyFeatureDescriptor) as [
-            LazyFeatureDescriptor[],
-            FeatureLifecycle[]
+        const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
+            LazyEntryPointDescriptor[],
+            EntryPoint[]
         ]
 
-        executeInstallLifecycle(readyFeatureList)
-        lazyFeatureList.forEach(registerLazyFeature)
+        executeInstallShell(readyEntryPointsList)
+        lazyEntryPointsList.forEach(registerLazyEntryPoint)
 
-        setInstalledFeatureNames(getInstalledFeatureNames().concat(_.map(lazyFeatureList, 'name')))
+        setInstalledShellNames(getInstalledShellNames().concat(_.map(lazyEntryPointsList, 'name')))
     }
 
-    function executeInstallLifecycle(lifecycles: FeatureLifecycle[]): void {
-        lastInstallLazyFeatureNames = []
+    function executeInstallShell(entryPoints: EntryPoint[]): void {
+        lastInstallLazyEntryPointNames = []
 
-        const [readyLifecycles, unReadyLifecycles] = _.partition(lifecycles, lifecycle =>
-            _.chain(lifecycle)
+        const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint =>
+            _.chain(entryPoint)
                 .invoke('getDependencyApis')
                 .defaultTo([])
                 .find(key => !readyAPIs.has(getOwnSlotKey(key)))
@@ -139,74 +139,74 @@ function createAppHostImpl(): AppHost {
                 .value()
         )
 
-        unReadyFeatureLifecycles = _(unReadyFeatureLifecycles)
-            .difference(readyLifecycles)
-            .union(unReadyLifecycles)
+        unReadyEntryPoints = _(unReadyEntryPoints)
+            .difference(readyEntryPoints)
+            .union(currentUnReadyEntryPoints)
             .value()
 
-        if (store && _.isEmpty(readyLifecycles)) {
+        if (store && _.isEmpty(readyEntryPoints)) {
             return
         }
 
-        const featureHosts = readyLifecycles.map(createFeatureHost)
-        executeReadyFeaturesLifecycle(featureHosts)
+        const shells = readyEntryPoints.map(createShell)
+        executeReadyEntryPoints(shells)
     }
 
-    function executeReadyFeaturesLifecycle(featureHosts: PrivateFeatureHost[]): void {
-        canInstallReadyFeatures = false
+    function executeReadyEntryPoints(shells: PrivateShell[]): void {
+        canInstallReadyEntryPoints = false
         try {
-            invokeFeaturePhase(
+            invokeEntryPointPhase(
                 'getDependencyApis',
-                featureHosts,
-                f => f.lifecycle.getDependencyApis && f.setDependencyApis(f.lifecycle.getDependencyApis()),
-                f => !!f.lifecycle.getDependencyApis
+                shells,
+                f => f.entryPoint.getDependencyApis && f.setDependencyApis(f.entryPoint.getDependencyApis()),
+                f => !!f.entryPoint.getDependencyApis
             )
 
-            invokeFeaturePhase('install', featureHosts, f => f.lifecycle.install && f.lifecycle.install(f), f => !!f.lifecycle.install)
+            invokeEntryPointPhase('install', shells, f => f.entryPoint.install && f.entryPoint.install(f), f => !!f.entryPoint.install)
 
             buildStore()
-            featureHosts.forEach(f => f.setLifecycleState(true, true))
+            shells.forEach(f => f.setLifecycleState(true, true))
 
-            invokeFeaturePhase('extend', featureHosts, f => f.lifecycle.extend && f.lifecycle.extend(f), f => !!f.lifecycle.extend)
+            invokeEntryPointPhase('extend', shells, f => f.entryPoint.extend && f.entryPoint.extend(f), f => !!f.entryPoint.extend)
 
-            featureHosts.forEach(f => installedFeatures.set(f.lifecycle.name, f))
+            shells.forEach(f => installedShells.set(f.entryPoint.name, f))
         } finally {
-            canInstallReadyFeatures = true
+            canInstallReadyEntryPoints = true
         }
-        executeInstallLifecycle(unReadyFeatureLifecycles)
+        executeInstallShell(unReadyEntryPoints)
     }
 
-    function executeFeaturesChangedCallbacks() {
-        installedFeaturesChangedCallbacks.forEach(f => f(_.keys(InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState()))))
+    function executeShellsChangedCallbacks() {
+        installedShellsChangedCallbacks.forEach(f => f(_.keys(InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState()))))
     }
 
-    async function setInstalledFeatureNames(names: string[]) {
-        await ensureLazyFeaturesInstalled(names)
-        const updates = toFeatureToggleSet(names, true)
+    async function setInstalledShellNames(names: string[]) {
+        await ensureLazyShellsInstalled(names)
+        const updates = toShellToggleSet(names, true)
         getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
-        executeFeaturesChangedCallbacks()
+        executeShellsChangedCallbacks()
     }
 
-    async function setUninstalledFeatureNames(names: string[]) {
+    async function setUninstalledShellNames(names: string[]) {
         await Promise.resolve()
-        const updates = toFeatureToggleSet(names, false)
+        const updates = toShellToggleSet(names, false)
         getStore().dispatch(InstalledFeaturesActions.updateInstalledFeatures(updates))
-        executeFeaturesChangedCallbacks()
+        executeShellsChangedCallbacks()
     }
 
-    function onFeaturesChanged(callback: InstalledFeaturesChangedCallback) {
-        const callbackId = _.uniqueId('features-changed-callback-')
-        installedFeaturesChangedCallbacks.set(callbackId, callback)
+    function onShellsChanged(callback: InstalledShellsChangedCallback) {
+        const callbackId = _.uniqueId('shells-changed-callback-')
+        installedShellsChangedCallbacks.set(callbackId, callback)
         return callbackId
     }
 
-    function removeFeaturesChangedCallback(callbackId: string) {
-        installedFeaturesChangedCallbacks.delete(callbackId)
+    function removeShellsChangedCallback(callbackId: string) {
+        installedShellsChangedCallbacks.delete(callbackId)
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
         if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
-            const newSlot = createExtensionSlot<TItem>(key, host, getCurrentLifecycleFeature)
+            const newSlot = createExtensionSlot<TItem>(key, host, getCurrentEntryPoint)
 
             extensionSlots.set(key, newSlot)
             slotKeysByName.set(key.name, key)
@@ -244,21 +244,21 @@ function createAppHostImpl(): AppHost {
         return Array.from(extensionSlots.keys())
     }
 
-    function getAllFeatures(): FeatureInfo[] {
+    function getAllEntryPoints(): EntryPointsInfo[] {
         throw new Error('not implemented')
     }
 
-    function isFeatureInstalled(name: string): boolean {
-        const installedFeatureSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
-        return installedFeatureSet[name] === true
+    function isShellInstalled(name: string): boolean {
+        const installedShellsSet = InstalledFeaturesSelectors.getInstalledFeatureSet(getStore().getState())
+        return installedShellsSet[name] === true
     }
 
-    function isLazyFeature(name: string): boolean {
-        return lazyFeatures.has(name)
+    function isLazyEntryPoint(name: string): boolean {
+        return lazyShells.has(name)
     }
 
-    function registerLazyFeature(descriptor: LazyFeatureDescriptor): void {
-        lazyFeatures.set(descriptor.name, descriptor.factory)
+    function registerLazyEntryPoint(descriptor: LazyEntryPointDescriptor): void {
+        lazyShells.set(descriptor.name, descriptor.factory)
     }
 
     function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
@@ -271,32 +271,32 @@ function createAppHostImpl(): AppHost {
         return key
     }
 
-    function validateUniqueFeatureNames(features: AnyLifecycle[]): void {
-        features.forEach(f => validateUniqueFeatureName(f.name))
+    function validateUniqueShellNames(entryPoints: AnyEntryPoint[]): void {
+        entryPoints.forEach(f => validateUniqueShellName(f.name))
     }
 
-    function validateUniqueFeatureName(name: string): void {
-        if (!uniqueFeatureNames.has(name)) {
-            uniqueFeatureNames.add(name)
+    function validateUniqueShellName(name: string): void {
+        if (!uniqueShellNames.has(name)) {
+            uniqueShellNames.add(name)
         } else {
-            throw new Error(`Feature named '${name}' already exists`)
+            throw new Error(`Shell named '${name}' already exists`)
         }
     }
 
-    function loadLazyFeature(name: string): Promise<FeatureLifecycle> {
-        const factory = lazyFeatures.get(name)
+    function loadLazyShell(name: string): Promise<EntryPoint> {
+        const factory = lazyShells.get(name)
 
         if (factory) {
             return factory()
         }
 
-        throw new Error(`Feature '${name}' could not be found.`)
+        throw new Error(`Shell '${name}' could not be found.`)
     }
 
-    async function ensureLazyFeaturesInstalled(names: string[]) {
-        const lazyLoadPromises = names.filter(name => !installedFeatures.has(name)).map(loadLazyFeature)
-        const featuresToInstall = await Promise.all(lazyLoadPromises)
-        executeInstallLifecycle(featuresToInstall)
+    async function ensureLazyShellsInstalled(names: string[]) {
+        const lazyLoadPromises = names.filter(name => !installedShells.has(name)).map(loadLazyShell)
+        const shellsToInstall = await Promise.all(lazyLoadPromises)
+        executeInstallShell(shellsToInstall)
     }
 
     function buildStore(): Store {
@@ -313,39 +313,39 @@ function createAppHostImpl(): AppHost {
         return store
     }
 
-    function getPerFeatureReducersMapObject(): FeaturesReducersMap {
+    function getPerShellReducersMapObject(): ShellsReducersMap {
         const stateSlot = getSlot(stateSlotKey)
-        return stateSlot.getItems().reduce((reducersMap: FeaturesReducersMap, item) => {
-            const featureName = item.feature.name
-            reducersMap[featureName] = { ...reducersMap[featureName], ...item.contribution() }
+        return stateSlot.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
+            const shellName = item.shell.name
+            reducersMap[shellName] = { ...reducersMap[shellName], ...item.contribution() }
             return reducersMap
         }, {})
     }
 
-    function getCombinedFeatureReducers(): ReducersMapObject {
-        const featuresReducerMaps = getPerFeatureReducersMapObject()
-        return Object.keys(featuresReducerMaps).reduce((reducersMap: ReducersMapObject, featureName: string) => {
-            reducersMap[featureName] = combineReducers(featuresReducerMaps[featureName])
+    function getCombinedShellReducers(): ReducersMapObject {
+        const shellsReducerMaps = getPerShellReducersMapObject()
+        return Object.keys(shellsReducerMaps).reduce((reducersMap: ReducersMapObject, shellName: string) => {
+            reducersMap[shellName] = combineReducers(shellsReducerMaps[shellName])
             return reducersMap
         }, {})
     }
 
     function buildReducersMapObject(): ReducersMapObject {
         // TODO: get rid of builtInReducersMaps
-        const builtInReducersMaps: ReducersMapObject = { ...contributeInstalledFeaturesState() }
-        return { ...builtInReducersMaps, ...getCombinedFeatureReducers() }
+        const builtInReducersMaps: ReducersMapObject = { ...contributeInstalledShellsState() }
+        return { ...builtInReducersMaps, ...getCombinedShellReducers() }
     }
 
-    function invokeFeaturePhase(
-        phase: string,
-        features: PrivateFeatureHost[],
-        action: (feature: PrivateFeatureHost) => void,
-        predicate?: (feature: PrivateFeatureHost) => boolean
+    function invokeEntryPointPhase(
+        phase: keyof EntryPoint, // TODO: Exclude 'name'
+        shell: PrivateShell[],
+        action: (shell: PrivateShell) => void,
+        predicate?: (shell: PrivateShell) => boolean
     ): void {
         console.log(`--- ${phase} phase ---`)
 
         try {
-            features.filter(f => !predicate || predicate(f)).forEach(f => invokeFeature(f, action, phase))
+            shell.filter(f => !predicate || predicate(f)).forEach(f => invokeShell(f, action, phase))
         } catch (err) {
             console.error(`${phase} phase FAILED`, err)
             throw err
@@ -354,37 +354,37 @@ function createAppHostImpl(): AppHost {
         console.log(`--- End of ${phase} phase ---`)
     }
 
-    function invokeFeature(feature: PrivateFeatureHost, action: (feature: PrivateFeatureHost) => void, phase: string): void {
-        console.log(`${phase} : ${feature.lifecycle.name}`)
+    function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
+        console.log(`${phase} : ${shell.entryPoint.name}`)
 
         try {
-            currentLifecycleFeature = feature
-            action(feature)
+            currentShell = shell
+            action(shell)
         } catch (err) {
-            console.error(`Feature '${feature.name}' FAILED ${phase} phase`, err)
+            console.error(`Shell '${shell.name}' FAILED ${phase} phase`, err)
             throw err
         } finally {
-            currentLifecycleFeature = null
+            currentShell = null
         }
     }
 
-    function getCurrentLifecycleFeature(): PrivateFeatureHost {
-        if (currentLifecycleFeature) {
-            return currentLifecycleFeature
+    function getCurrentEntryPoint(): PrivateShell {
+        if (currentShell) {
+            return currentShell
         }
-        throw new Error('Current lifecycle feature does not exist.')
+        throw new Error('Current entry point does not exist.')
     }
 
-    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateFeatureHost | undefined {
+    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateShell | undefined {
         const ownKey = getOwnSlotKey(key)
-        return extensionSlots.has(ownKey) ? _.get(getSlot<TApi>(ownKey).getSingleItem(), 'feature') : undefined
+        return extensionSlots.has(ownKey) ? _.get(getSlot<TApi>(ownKey).getSingleItem(), 'shell') : undefined
     }
 
-    function doesExtensionItemBelongToFeatures(extensionItem: ExtensionItem<any>, featureNames: string[]) {
+    function doesExtensionItemBelongToShells(extensionItem: ExtensionItem<any>, shellNames: string[]) {
         return (
-            _.includes(featureNames, extensionItem.feature.name) ||
-            _.some(_.invoke(extensionItem.feature.lifecycle, 'getDependencyApis'), apiKey =>
-                _.includes(featureNames, _.get(getApiContributor(apiKey), 'name'))
+            _.includes(shellNames, extensionItem.shell.name) ||
+            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyApis'), apiKey =>
+                _.includes(shellNames, _.get(getApiContributor(apiKey), 'name'))
             )
         )
     }
@@ -394,12 +394,12 @@ function createAppHostImpl(): AppHost {
         return !extensionSlots.has(ownKey)
     }
 
-    function uninstallIfDependencyApisRemoved(featureHost: PrivateFeatureHost) {
-        const dependencyApis = _.invoke(featureHost.lifecycle, 'getDependencyApis')
+    function uninstallIfDependencyApisRemoved(shell: PrivateShell) {
+        const dependencyApis = _.invoke(shell.entryPoint, 'getDependencyApis')
 
         if (_.some(dependencyApis, isApiMissing)) {
-            unReadyFeatureLifecycles.push(featureHost.lifecycle)
-            executeUninstallFeatures([featureHost.name])
+            unReadyEntryPoints.push(shell.entryPoint)
+            executeUninstallShells([shell.name])
         }
     }
 
@@ -413,49 +413,49 @@ function createAppHostImpl(): AppHost {
         console.log(`-- Removed API: ${ownKey.name} --`)
     }
 
-    function executeUninstallFeatures(names: string[]): void {
+    function executeUninstallShells(names: string[]): void {
         console.log(`-- Uninstalling ${names} --`)
 
-        invokeFeaturePhase('uninstall', names.map(name => installedFeatures.get(name)) as PrivateFeatureHost[], f =>
-            _.invoke(f.lifecycle, 'uninstall', f)
+        invokeEntryPointPhase('uninstall', names.map(name => installedShells.get(name)) as PrivateShell[], f =>
+            _.invoke(f.entryPoint, 'uninstall', f)
         )
 
         const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, _.get(getApiContributor(apiKey), 'name')))
         extensionSlots.forEach(extensionSlot =>
-            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToFeatures(extensionItem, names))
+            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToShells(extensionItem, names))
         )
 
         names.forEach(name => {
-            installedFeatures.delete(name)
-            uniqueFeatureNames.delete(name)
+            installedShells.delete(name)
+            uniqueShellNames.delete(name)
         })
         apisToDiscard.forEach(discardApi)
 
         console.log(`Done uninstalling ${names}`)
 
-        installedFeatures.forEach(uninstallIfDependencyApisRemoved)
+        installedShells.forEach(uninstallIfDependencyApisRemoved)
     }
 
-    function getInstalledFeatureNames(): string[] {
-        return [...installedFeatures].map(([v]) => v)
+    function getInstalledShellNames(): string[] {
+        return [...installedShells].map(([v]) => v)
     }
 
-    function uninstallFeatures(names: string[]): void {
-        const lifecycleNames = getInstalledFeatureNames()
-        executeUninstallFeatures(names)
-        setUninstalledFeatureNames(_.difference(lifecycleNames, getInstalledFeatureNames()))
+    function uninstallShells(names: string[]): void {
+        const shellNames = getInstalledShellNames()
+        executeUninstallShells(names)
+        setUninstalledShellNames(_.difference(shellNames, getInstalledShellNames()))
     }
 
-    function createFeatureHost(lifecycle: FeatureLifecycle): PrivateFeatureHost {
+    function createShell(entryPoint: EntryPoint): PrivateShell {
         let storeEnabled = false
         let apisEnabled = false
         let dependencyApis: AnySlotKey[] = []
 
-        const isOwnContributedApi = <TApi>(key: SlotKey<TApi>): boolean => getApiContributor(key) === featureHost
+        const isOwnContributedApi = <TApi>(key: SlotKey<TApi>): boolean => getApiContributor(key) === shell
 
-        const featureHost: PrivateFeatureHost = {
-            name: lifecycle.name,
-            lifecycle,
+        const shell: PrivateShell = {
+            name: entryPoint.name,
+            entryPoint,
 
             ...host,
             declareSlot,
@@ -477,29 +477,29 @@ function createAppHostImpl(): AppHost {
                 return storeEnabled
             },
 
-            installFeatures(features: AnyFeature[]): void {
-                const featureNamesToBeinstalled = _.chain(features)
+            installPackages(packages: AnyPackage[]): void {
+                const shellNamesToBeinstalled = _.chain(packages)
                     .flatten()
                     .map('name')
                     .value()
-                const featureNamesInstalledByCurrentFeature = featureInstallers.get(featureHost) || []
-                featureInstallers.set(featureHost, [...featureNamesInstalledByCurrentFeature, ...featureNamesToBeinstalled])
-                host.installFeatures(features)
+                const shellNamesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
+                shellInstallers.set(shell, [...shellNamesInstalledByCurrentEntryPoint, ...shellNamesToBeinstalled])
+                host.installPackages(packages)
             },
 
-            uninstallFeatures(names: string[]): void {
-                const namesInstalledByCurrentFeature = featureInstallers.get(featureHost) || []
-                const namesNotInstalledByCurrentFeature = _.difference(names, namesInstalledByCurrentFeature)
-                // TODO: Allow feature to uninstall itself?
-                if (!_.isEmpty(namesNotInstalledByCurrentFeature)) {
+            uninstallShells(names: string[]): void {
+                const namesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
+                const namesNotInstalledByCurrentEntryPoint = _.difference(names, namesInstalledByCurrentEntryPoint)
+                // TODO: Allow entry point to uninstall its own shell?
+                if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
-                        `Feature ${lifecycle.name} is trying to uninstall features: ${names} which is are not installed by ${
-                            lifecycle.name
+                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${
+                            entryPoint.name
                         } - This is not allowed`
                     )
                 }
-                featureInstallers.set(featureHost, _.without(namesInstalledByCurrentFeature, ...names))
-                host.uninstallFeatures(names)
+                shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
+                host.uninstallShells(names)
             },
 
             getApi<TApi>(key: SlotKey<TApi>): TApi {
@@ -507,8 +507,8 @@ function createAppHostImpl(): AppHost {
                     return host.getApi(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by feature '${
-                        lifecycle.name
+                    `API '${key.name}' is not declared as dependency by entry point '${
+                        entryPoint.name
                     }' (forgot to return it from getDependencyApis?)`
                 )
             },
@@ -516,34 +516,34 @@ function createAppHostImpl(): AppHost {
             contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi {
                 console.log(`Contributing API ${key.name}.`)
 
-                if (!_.includes(_.invoke(lifecycle, 'declareApis') || [], key)) {
-                    throw new Error(`Feature '${lifecycle.name}' is trying to contribute API '${key.name}' which it didn't declare`)
+                if (!_.includes(_.invoke(entryPoint, 'declareApis') || [], key)) {
+                    throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
                 const api = factory()
                 const apiSlot = declareSlot<TApi>(key)
-                apiSlot.contribute(api, undefined, featureHost)
+                apiSlot.contribute(api, undefined, shell)
 
                 readyAPIs.add(key)
 
-                if (canInstallReadyFeatures) {
-                    const lifecycleNames = _.map(unReadyFeatureLifecycles, 'name')
-                    executeInstallLifecycle(unReadyFeatureLifecycles)
-                    setInstalledFeatureNames(_.difference(lifecycleNames, _.map(unReadyFeatureLifecycles, 'name')))
+                if (canInstallReadyEntryPoints) {
+                    const shellNames = _.map(unReadyEntryPoints, 'name')
+                    executeInstallShell(unReadyEntryPoints)
+                    setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
                 }
 
                 return api
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
-                getSlot(stateSlotKey).contribute(contributor, undefined, featureHost)
+                getSlot(stateSlotKey).contribute(contributor, undefined, shell)
             },
 
             getStore<TState>(): ScopedStore<TState> {
                 return {
                     dispatch: host.getStore().dispatch,
                     subscribe: host.getStore().subscribe,
-                    getState: () => host.getStore().getState()[featureHost.name]
+                    getState: () => host.getStore().getState()[shell.name]
                 }
             },
 
@@ -552,6 +552,6 @@ function createAppHostImpl(): AppHost {
             }
         }
 
-        return featureHost
+        return shell
     }
 }

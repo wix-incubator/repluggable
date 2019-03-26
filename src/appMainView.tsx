@@ -2,8 +2,8 @@ import React, { SFC } from 'react'
 import { connect, Provider } from 'react-redux'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
-import { FeatureContext } from './featureContext'
-import { FeatureToggleSet, InstalledFeaturesSelectors } from './installedFeaturesState'
+import { ShellContext } from './featureContext'
+import { InstalledFeaturesSelectors, ShellToggleSet } from './installedFeaturesState'
 import { renderSlotComponents } from './renderSlotComponents'
 
 export interface AppMainViewProps {
@@ -12,7 +12,7 @@ export interface AppMainViewProps {
 
 interface SfcProps {
     host: AppHost
-    installedFeatures: FeatureToggleSet
+    installedFeatures: ShellToggleSet
 }
 
 const sfc: SFC<SfcProps> = props => {
@@ -22,7 +22,7 @@ const sfc: SFC<SfcProps> = props => {
         ...props.host
     }
 
-    return <FeatureContext.Provider value={rootFeatureContext}>{contextProviderChildren}</FeatureContext.Provider>
+    return <ShellContext.Provider value={rootFeatureContext}>{contextProviderChildren}</ShellContext.Provider>
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({

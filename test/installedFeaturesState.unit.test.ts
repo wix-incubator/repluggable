@@ -1,9 +1,9 @@
 import {
-    FeatureToggleSet,
     InstalledFeaturesActions,
     installedFeaturesReducer,
     InstalledFeaturesSelectors,
-    InstalledFeaturesState
+    InstalledFeaturesState,
+    ShellToggleSet
 } from '../src/installedFeaturesState'
 
 const initialState: InstalledFeaturesState = {
@@ -13,7 +13,7 @@ const initialState: InstalledFeaturesState = {
     }
 }
 
-const featureToggleSet: FeatureToggleSet = {
+const featureToggleSet: ShellToggleSet = {
     featureB: false,
     featureC: true
 }

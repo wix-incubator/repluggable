@@ -2,15 +2,15 @@ import _ from 'lodash'
 import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { AnyFeature, ScopedStore, SlotKey } from './api'
-import { FeatureContext } from './featureContext'
+import { AnyPackage, ScopedStore, SlotKey } from './api'
+import { ShellContext } from './featureContext'
 
-export interface FeatureContextWithApi extends FeatureContext {
+export interface ShellContextWithApi extends ShellContext {
     getApi<TApi>(key: SlotKey<TApi>): TApi
     getStore<TState>(): ScopedStore<TState>
     isFeatureInstalled(name: string): boolean
-    installFeatures(features: AnyFeature[]): void
-    uninstallFeatures(names: string[]): void
+    installPackages(packages: AnyPackage[]): void
+    uninstallShells(names: string[]): void
 }
 
 interface WrapperMembers<S, OP, SP, DP> {
@@ -21,9 +21,9 @@ interface WrapperMembers<S, OP, SP, DP> {
 
 type Maybe<T> = T | undefined
 type Returns<T> = () => T
-type MapStateToProps<S, OP, SP> = Maybe<(context: FeatureContextWithApi, state: S, ownProps?: OP) => SP>
-type MapDispatchToProps<OP, DP> = Maybe<(context: FeatureContextWithApi, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
-type WrappedComponentOwnProps<OP> = OP & { featureContext: FeatureContextWithApi }
+type MapStateToProps<S, OP, SP> = Maybe<(context: ShellContextWithApi, state: S, ownProps?: OP) => SP>
+type MapDispatchToProps<OP, DP> = Maybe<(context: ShellContextWithApi, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
+type WrappedComponentOwnProps<OP> = OP & { featureContext: ShellContextWithApi }
 
 function wrapWithFeatureContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
@@ -54,9 +54,9 @@ function wrapWithFeatureContext<S, OP, SP, DP>(
     }
 
     return (props: OP) => (
-        <FeatureContext.Consumer>
-            {featureContext => <ConnectedComponent {...props} featureContext={featureContext as FeatureContextWithApi} />}
-        </FeatureContext.Consumer>
+        <ShellContext.Consumer>
+            {featureContext => <ConnectedComponent {...props} featureContext={featureContext as ShellContextWithApi} />}
+        </ShellContext.Consumer>
     )
 }
 

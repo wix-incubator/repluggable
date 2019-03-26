@@ -2,8 +2,8 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { AnyFeature, AnySlotKey, AppHost, AppMainView, createAppHost, FeatureHost, SlotKey } from '../index'
-import { FeatureLifecycle, PrivateFeatureHost } from '../src/api'
+import { AnyPackage, AnySlotKey, AppHost, AppMainView, createAppHost, Shell, SlotKey } from '../index'
+import { EntryPoint, PrivateShell } from '../src/api'
 import { renderFeatureComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
@@ -17,26 +17,26 @@ export interface PactApi<T> extends PactApiBase {
     getApiKey(): SlotKey<T>
 }
 
-function forEachDeclaredApi(allFeatures: AnyFeature[], iteration: (dependency: AnySlotKey, feature: FeatureLifecycle) => void) {
-    _.forEach(_.flatten(allFeatures), (feature: FeatureLifecycle) => {
+function forEachDeclaredApi(allFeatures: AnyPackage[], iteration: (dependency: AnySlotKey, feature: EntryPoint) => void) {
+    _.forEach(_.flatten(allFeatures), (feature: EntryPoint) => {
         _.forEach(feature.declareApis ? feature.declareApis() : [], dependency => {
             iteration(dependency, feature)
         })
     })
 }
 
-export const getFeaturesDependencies = (allFeatures: AnyFeature[], requiredFeatures: AnyFeature[]): AnyFeature[] => {
-    const tree = new Map<AnySlotKey, FeatureLifecycle | undefined>()
+export const getFeaturesDependencies = (allFeatures: AnyPackage[], requiredFeatures: AnyPackage[]): AnyPackage[] => {
+    const tree = new Map<AnySlotKey, EntryPoint | undefined>()
 
     forEachDeclaredApi(allFeatures, (dependency, feature) => {
         tree.set(dependency, feature)
     })
 
-    const featuresList: AnyFeature[] = []
-    const featuresQueue: FeatureLifecycle[] = _.flatten(requiredFeatures)
+    const featuresList: AnyPackage[] = []
+    const featuresQueue: EntryPoint[] = _.flatten(requiredFeatures)
 
     while (featuresQueue.length) {
-        const currFeature = featuresQueue.shift() as FeatureLifecycle
+        const currFeature = featuresQueue.shift() as EntryPoint
         featuresList.push(currFeature)
         const dependencies = currFeature.getDependencyApis ? currFeature.getDependencyApis() : []
         const dependecyFeatures = dependencies.map(api => tree.get(api))
@@ -46,20 +46,20 @@ export const getFeaturesDependencies = (allFeatures: AnyFeature[], requiredFeatu
     return _.uniq(featuresList)
 }
 
-export function createAppHostWithPacts(features: AnyFeature[], pacts: PactApiBase[]) {
-    const pactsFeature: FeatureLifecycle = {
+export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactApiBase[]) {
+    const pactsFeature: EntryPoint = {
         name: 'PACTS_FEATURE',
         declareApis() {
             return pacts.map(pact => pact.getApiKey())
         },
-        install(host: FeatureHost): void {
+        install(shell: Shell): void {
             _.each(pacts, pact => {
-                host.contributeApi(pact.getApiKey(), () => pact)
+                shell.contributeApi(pact.getApiKey(), () => pact)
             })
         }
     }
 
-    return createAppHost([...features, pactsFeature])
+    return createAppHost([...packages, pactsFeature])
 }
 
 export const renderHost = (host: AppHost): { root: ReactWrapper | null; DOMNode: HTMLElement | null } => {
@@ -80,11 +80,11 @@ export const renderInHost = (
     DOMNode: HTMLElement | null
     host: AppHost
 } => {
-    const feature = createFeatureHost(host)
+    const shell = createShell(host)
 
     const root = mount(
         <Provider store={host.getStore()}>
-            {renderFeatureComponent(feature, <div data-feature-in-host="true">{reactElement}</div>, '')}
+            {renderFeatureComponent(shell, <div data-feature-in-host="true">{reactElement}</div>, '')}
         </Provider>
     )
 
@@ -101,14 +101,14 @@ export const renderInHost = (
     }
 }
 
-function createFeatureHost(host: AppHost): PrivateFeatureHost {
-    const lifecycle: FeatureLifecycle = {
+function createShell(host: AppHost): PrivateShell {
+    const lifecycle: EntryPoint = {
         name: 'test'
     }
 
     return {
         name: lifecycle.name,
-        lifecycle,
+        entryPoint: lifecycle,
         ...host,
         declareSlot() {
             const slot: any = {}

@@ -1,5 +1,5 @@
 import { AnySlotKey, AppHost } from '..'
-import { LazyFeatureFactory, PrivateFeatureHost } from './api'
+import { LazyEntryPointFactory, PrivateShell } from './api'
 import { AnyExtensionSlot } from './extensionSlot'
 
 declare global {
@@ -10,10 +10,10 @@ declare global {
 
 export interface ReactAppLegoDebugInfo {
     host: AppHost
-    uniqueFeatureNames: Set<string>
+    uniqueShellNames: Set<string>
     extensionSlots: Map<AnySlotKey, AnyExtensionSlot>
-    installedFeatures: Map<string, PrivateFeatureHost>
-    lazyFeatures: Map<string, LazyFeatureFactory>
+    installedShells: Map<string, PrivateShell>
+    lazyShells: Map<string, LazyEntryPointFactory>
     readyAPIs: Set<AnySlotKey>
-    featureInstallers: WeakMap<PrivateFeatureHost, string[]>
+    shellInstallers: WeakMap<PrivateShell, string[]>
 }

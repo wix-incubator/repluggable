@@ -1,8 +1,8 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, makeLazyFeature, stateSlotKey } from '../src/appHost'
+import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, FeatureHost, FeatureLifecycle, SlotKey } from '../src/api'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey } from '../src/api'
 import {
     mockFeature,
     MockFeatureAPI,
@@ -14,7 +14,7 @@ import {
 
 const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
-    const dependentFeature: FeatureLifecycle[] = [
+    const dependentFeature: EntryPoint[] = [
         {
             name: 'DEPENDENT_MOCK_FEATURE_1',
             getDependencyApis() {
@@ -29,13 +29,13 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
             declareApis() {
                 return [MockAPI2]
             },
-            install(host: FeatureHost) {
-                host.contributeApi(MockAPI2, () => ({}))
+            install(shell: Shell) {
+                shell.contributeApi(MockAPI2, () => ({}))
             }
         }
     ]
 
-    const deeplyDependentFeature: FeatureLifecycle[] = [
+    const deeplyDependentFeature: EntryPoint[] = [
         {
             name: 'DEPENDENT_MOCK_FEATURE_3',
             getDependencyApis() {
@@ -44,16 +44,16 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
         }
     ]
 
-    let getHelperFeatureHost: () => FeatureHost = () => {
+    let getHelperShell: () => Shell = () => {
         throw new Error()
     }
-    const helperLifecycle: FeatureLifecycle = {
+    const helperLifecycle: EntryPoint = {
         name: 'TEST_HELPER',
         declareApis() {
             return [DependencyAPI]
         },
-        install(host: FeatureHost) {
-            getHelperFeatureHost = () => host
+        install(shell: Shell) {
+            getHelperShell = () => shell
         }
     }
 
@@ -61,7 +61,7 @@ const createHostWithDependantFeatures = (DependencyAPI: AnySlotKey) => {
         host: createAppHost([dependentFeature, deeplyDependentFeature, helperLifecycle]),
         dependentFeature,
         deeplyDependentFeature,
-        helperFeatureHost: getHelperFeatureHost()
+        helperShell: getHelperShell()
     }
 }
 
@@ -74,31 +74,31 @@ describe('App Host', () => {
     describe('Features Installation', () => {
         it('should install initial features', async () => {
             const host = createAppHost([mockFeature])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isFeatureInstalled(mockFeature.name)).toBe(true)
+            expect(host.isShellInstalled(mockFeature.name)).toBe(true)
         })
 
         it('should install features after initial installations', async () => {
             const host = createAppHost([])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isFeatureInstalled(mockFeature.name)).toBe(false)
+            expect(host.isShellInstalled(mockFeature.name)).toBe(false)
 
-            host.installFeatures([mockFeature])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            host.installPackages([mockFeature])
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isFeatureInstalled(mockFeature.name)).toBe(true)
+            expect(host.isShellInstalled(mockFeature.name)).toBe(true)
         })
 
         it('should uninstall feature', async () => {
             const host = createAppHost([mockFeature])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            host.uninstallFeatures([mockFeature.name])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            host.uninstallShells([mockFeature.name])
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isFeatureInstalled(mockFeature.name)).toBe(false)
+            expect(host.isShellInstalled(mockFeature.name)).toBe(false)
         })
 
         it('should not install multiple features with the same name', () => {
@@ -106,11 +106,11 @@ describe('App Host', () => {
         })
 
         it('should install lazy featues', async () => {
-            const lazyFeature = makeLazyFeature(mockFeature.name, async () => mockFeature)
+            const lazyFeature = makeLazyEntryPoint(mockFeature.name, async () => mockFeature)
             const host = createAppHost([lazyFeature])
-            await new Promise(resolve => host.onFeaturesChanged(resolve))
+            await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isFeatureInstalled(lazyFeature.name)).toBe(true)
+            expect(host.isShellInstalled(lazyFeature.name)).toBe(true)
         })
     })
 
@@ -127,63 +127,63 @@ describe('App Host', () => {
             describe(`Dependecy features installation (${testCase})`, () => {
                 it('should not install dependent feature until dependency is installed', async () => {
                     const { host, dependentFeature } = createHostWithDependantFeatures(dependencyAPI)
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(false)
 
-                    host.installFeatures([providerLifecycle])
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    host.installPackages([providerLifecycle])
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(true)
                 })
 
                 it('should install all dependent features chain when dependencies are installed from lifecycle', async () => {
                     const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(dependencyAPI)
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
-                    expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
-                    expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[1].name)).toBe(false)
+                    expect(host.isShellInstalled(deeplyDependentFeature[0].name)).toBe(false)
 
-                    host.installFeatures([providerLifecycle])
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    host.installPackages([providerLifecycle])
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
-                    expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(true)
-                    expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(true)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(true)
+                    expect(host.isShellInstalled(dependentFeature[1].name)).toBe(true)
+                    expect(host.isShellInstalled(deeplyDependentFeature[0].name)).toBe(true)
                 })
 
                 it('should install all dependent features chain when dependencies are installed outside of lifecycle', async () => {
-                    const { host, dependentFeature, deeplyDependentFeature, helperFeatureHost } = createHostWithDependantFeatures(
+                    const { host, dependentFeature, deeplyDependentFeature, helperShell: helperShell } = createHostWithDependantFeatures(
                         dependencyAPI
                     )
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
-                    expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
-                    expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[1].name)).toBe(false)
+                    expect(host.isShellInstalled(deeplyDependentFeature[0].name)).toBe(false)
 
-                    helperFeatureHost.contributeApi(dependencyAPI, () => ({ stubTrue: () => true }))
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    helperShell.contributeApi(dependencyAPI, () => ({ stubTrue: () => true }))
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(true)
-                    expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(true)
-                    expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(true)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(true)
+                    expect(host.isShellInstalled(dependentFeature[1].name)).toBe(true)
+                    expect(host.isShellInstalled(deeplyDependentFeature[0].name)).toBe(true)
                 })
 
                 it('should uninstall all dependent features chain when dependencies are uninstalled', async () => {
                     const { host, dependentFeature, deeplyDependentFeature } = createHostWithDependantFeatures(dependencyAPI)
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    host.installFeatures([providerLifecycle])
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    host.installPackages([providerLifecycle])
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    host.uninstallFeatures([providerLifecycle.name])
-                    await new Promise(resolve => host.onFeaturesChanged(resolve))
+                    host.uninstallShells([providerLifecycle.name])
+                    await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isFeatureInstalled(dependentFeature[0].name)).toBe(false)
-                    expect(host.isFeatureInstalled(dependentFeature[1].name)).toBe(false)
-                    expect(host.isFeatureInstalled(deeplyDependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[0].name)).toBe(false)
+                    expect(host.isShellInstalled(dependentFeature[1].name)).toBe(false)
+                    expect(host.isShellInstalled(deeplyDependentFeature[0].name)).toBe(false)
                 })
             })
         }
@@ -313,7 +313,7 @@ describe('App Host', () => {
             const host = createAppHost([])
             expect(() => host.getApi(MockFeatureAPI)).toThrow()
 
-            host.installFeatures([mockFeature])
+            host.installPackages([mockFeature])
             expect(host.getApi(MockFeatureAPI)).toBeTruthy()
         })
 
@@ -323,49 +323,49 @@ describe('App Host', () => {
             const appHost = createAppHost([])
             expect(getMockFeatureState(appHost)).toBeNull()
 
-            appHost.installFeatures([mockFeature])
+            appHost.installPackages([mockFeature])
             expect(getMockFeatureState(appHost)).toEqual(mockFeatureInitialState)
         })
     })
 
     describe('Feature Context', () => {
         it('should be able to call an API declared in dependencies', () => {
-            const featureThatCallsAPI: FeatureLifecycle = {
+            const featureThatCallsAPI: EntryPoint = {
                 name: 'FEATURE_WITH_API_CALL',
                 getDependencyApis() {
                     return [MockFeatureAPI]
                 },
-                extend(host: FeatureHost) {
-                    host.getApi(MockFeatureAPI).stubTrue()
+                extend(shell: Shell) {
+                    shell.getApi(MockFeatureAPI).stubTrue()
                 }
             }
             const appHost = createAppHost([mockFeature])
-            expect(() => appHost.installFeatures([featureThatCallsAPI])).not.toThrow()
+            expect(() => appHost.installPackages([featureThatCallsAPI])).not.toThrow()
         })
 
         it('should not be able to call an API not declared in dependencies', () => {
-            const featureThatCallsAPI: FeatureLifecycle = {
+            const featureThatCallsAPI: EntryPoint = {
                 name: 'FEATURE_WITH_API_CALL',
-                extend(host: FeatureHost) {
-                    host.getApi(MockFeatureAPI).stubTrue()
+                extend(shell: Shell) {
+                    shell.getApi(MockFeatureAPI).stubTrue()
                 }
             }
             const appHost = createAppHost([mockFeature])
-            expect(() => appHost.installFeatures([featureThatCallsAPI])).toThrow()
+            expect(() => appHost.installPackages([featureThatCallsAPI])).toThrow()
         })
 
         it('should get scoped state', done => {
             const state = {}
             const MOCK_STATE_KEY = 'mockStateKey'
-            const featureWithState: FeatureLifecycle = {
+            const featureWithState: EntryPoint = {
                 name: 'FEATURE_WITH_STATE',
-                install(host: FeatureHost) {
-                    host.contributeState(() => ({
+                install(shell: Shell) {
+                    shell.contributeState(() => ({
                         [MOCK_STATE_KEY]: () => state
                     }))
                 },
-                extend(host: FeatureHost) {
-                    expect(_.get(host.getStore().getState(), MOCK_STATE_KEY)).toBe(state)
+                extend(shell: Shell) {
+                    expect(_.get(shell.getStore().getState(), MOCK_STATE_KEY)).toBe(state)
                     done()
                 }
             }
@@ -373,21 +373,21 @@ describe('App Host', () => {
         })
 
         it('should be able to uninstall own installed features', () => {
-            const featureThatInstallsOtherFeature: FeatureLifecycle = {
+            const featureThatInstallsOtherFeature: EntryPoint = {
                 name: 'FEATURE_THAT_INSTALLS_A_FEATURE',
-                extend(host: FeatureHost) {
-                    host.installFeatures([mockFeature])
-                    host.uninstallFeatures([mockFeature.name])
+                extend(shell: Shell) {
+                    shell.installPackages([mockFeature])
+                    shell.uninstallShells([mockFeature.name])
                 }
             }
             expect(() => createAppHost([featureThatInstallsOtherFeature])).not.toThrow()
         })
 
         it('should not be able to uninstall not own installed features', () => {
-            const featureThatInstallsOtherFeature: FeatureLifecycle = {
+            const featureThatInstallsOtherFeature: EntryPoint = {
                 name: 'FEATURE_THAT_INSTALLS_A_FEATURE',
-                extend(host: FeatureHost) {
-                    host.uninstallFeatures([mockFeature.name])
+                extend(shell: Shell) {
+                    shell.uninstallShells([mockFeature.name])
                 }
             }
             expect(() => createAppHost([mockFeature, featureThatInstallsOtherFeature])).toThrow()

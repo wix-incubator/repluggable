@@ -1,13 +1,4 @@
-import {
-    AppHost,
-    ContributionPredicate,
-    ExtensionItem,
-    ExtensionItemFilter,
-    ExtensionSlot,
-    FeatureLifecycle,
-    PrivateFeatureHost,
-    SlotKey
-} from './api'
+import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, PrivateShell, SlotKey } from './api'
 
 export interface AnyExtensionSlot {
     readonly name: string
@@ -15,11 +6,7 @@ export interface AnyExtensionSlot {
 
 const alwaysTrue = () => true
 
-export function createExtensionSlot<T>(
-    key: SlotKey<T>,
-    host: AppHost,
-    getCurrentLifecycleFeature: () => PrivateFeatureHost
-): ExtensionSlot<T> & AnyExtensionSlot {
+export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, getShell: () => PrivateShell): ExtensionSlot<T> & AnyExtensionSlot {
     let items: Array<ExtensionItem<T>> = []
 
     return {
@@ -32,9 +19,9 @@ export function createExtensionSlot<T>(
         discardBy
     }
 
-    function contribute(item: T, condition?: ContributionPredicate, feature?: PrivateFeatureHost): void {
+    function contribute(item: T, condition?: ContributionPredicate, shell?: PrivateShell): void {
         items.push({
-            feature: feature || getCurrentLifecycleFeature(),
+            shell: shell || getShell(),
             contribution: item,
             condition: condition || alwaysTrue
         })

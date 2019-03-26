@@ -1,8 +1,8 @@
 export {
-    AnyFeature,
-    FeatureLifecycle,
+    AnyPackage,
+    EntryPoint,
     AppHost,
-    FeatureHost,
+    Shell,
     ExtensionSlot,
     ExtensionItem,
     AnySlotKey,
@@ -14,7 +14,7 @@ export {
 
 export { AppMainView } from './src/appMainView'
 
-export { createAppHost, makeLazyFeature, mainViewSlotKey, stateSlotKey } from './src/appHost'
+export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './src/appHost'
 
 export { renderSlotComponents, renderSlotComponentsConnected, SlotRenderer } from './src/renderSlotComponents'
 

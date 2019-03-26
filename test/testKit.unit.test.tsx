@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AnyFeature, FeatureLifecycle } from '../src/api'
+import { AnyPackage, EntryPoint } from '../src/api'
 import { AnyExtensionSlot } from '../src/extensionSlot'
 import { getFeaturesDependencies } from '../testKit'
 
@@ -15,7 +15,7 @@ const APIs: APIKeys = {
     F: { name: 'F' }
 }
 interface FeaturesMap {
-    [name: string]: AnyFeature
+    [name: string]: AnyPackage
 }
 const allFeatures: FeaturesMap = {
     A: {
@@ -60,12 +60,12 @@ const allFeatures: FeaturesMap = {
 
 describe('App Host TestKit', () => {
     it('should get feature dependencies', () => {
-        const toResult = (features: AnyFeature[]) =>
+        const toResult = (features: AnyPackage[]) =>
             _(features)
                 .flatten()
                 .sortBy('name')
                 .value()
-        const getDependencies = (features: AnyFeature[]) => toResult(getFeaturesDependencies(_.values(allFeatures), features))
+        const getDependencies = (features: AnyPackage[]) => toResult(getFeaturesDependencies(_.values(allFeatures), features))
         const { A, B, C, D, F } = allFeatures
 
         expect(getDependencies([])).toEqual(toResult([]))
@@ -76,6 +76,6 @@ describe('App Host TestKit', () => {
         expect(getDependencies([D, B, A])).toEqual(toResult([B, C, D, A]))
 
         // TODO: Should 'E' be included ?
-        expect(getDependencies([F])).toEqual(toResult([B, C, (D as FeatureLifecycle[])[0], F]))
+        expect(getDependencies([F])).toEqual(toResult([B, C, (D as EntryPoint[])[0], F]))
     })
 })
