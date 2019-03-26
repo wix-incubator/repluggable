@@ -15,6 +15,7 @@ interface SfcProps {
     installedShells: ShellToggleSet
 }
 
+// TODO: Either create shell for root context or render root slot without context provider
 const sfc: SFC<SfcProps> = props => {
     const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
     const rootFeatureContext = {

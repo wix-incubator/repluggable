@@ -2,16 +2,8 @@ import _ from 'lodash'
 import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { AnyPackage, ScopedStore, SlotKey } from './api'
+import { Shell } from './api'
 import { ShellContext } from './featureContext'
-
-export interface ShellContextWithApi extends ShellContext {
-    getApi<TApi>(key: SlotKey<TApi>): TApi
-    getStore<TState>(): ScopedStore<TState>
-    isFeatureInstalled(name: string): boolean
-    installPackages(packages: AnyPackage[]): void
-    uninstallShells(names: string[]): void
-}
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -21,11 +13,11 @@ interface WrapperMembers<S, OP, SP, DP> {
 
 type Maybe<T> = T | undefined
 type Returns<T> = () => T
-type MapStateToProps<S, OP, SP> = Maybe<(context: ShellContextWithApi, state: S, ownProps?: OP) => SP>
-type MapDispatchToProps<OP, DP> = Maybe<(context: ShellContextWithApi, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
-type WrappedComponentOwnProps<OP> = OP & { featureContext: ShellContextWithApi }
+type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
+type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
+type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
-function wrapWithFeatureContext<S, OP, SP, DP>(
+function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>
@@ -38,11 +30,10 @@ function wrapWithFeatureContext<S, OP, SP, DP>(
         constructor(props: WrappedComponentOwnProps<OP>) {
             super(props)
             this.mapStateToProps = mapStateToProps
-                ? (__, ownProps?) =>
-                      mapStateToProps(this.props.featureContext, this.props.featureContext.getStore<S>().getState(), ownProps)
+                ? (__, ownProps?) => mapStateToProps(this.props.shell, this.props.shell.getStore<S>().getState(), ownProps)
                 : (_.stubObject as Returns<SP>)
             this.mapDispatchToProps = mapDispatchToProps
-                ? (dispatch, ownProps?) => mapDispatchToProps(this.props.featureContext, dispatch, ownProps)
+                ? (dispatch, ownProps?) => mapDispatchToProps(this.props.shell, dispatch, ownProps)
                 : (_.stubObject as Returns<DP>)
             this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component as any) as any
         }
@@ -53,18 +44,14 @@ function wrapWithFeatureContext<S, OP, SP, DP>(
         }
     }
 
-    return (props: OP) => (
-        <ShellContext.Consumer>
-            {featureContext => <ConnectedComponent {...props} featureContext={featureContext as ShellContextWithApi} />}
-        </ShellContext.Consumer>
-    )
+    return (props: OP) => <ShellContext.Consumer>{shell => <ConnectedComponent {...props} shell={shell} />}</ShellContext.Consumer>
 }
 
-export function connectWithFeature<S = {}, OP = {}, SP = {}, DP = {}>(
+export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>
 ) {
     return (component: React.ComponentType<OP & SP & DP>) => {
-        return wrapWithFeatureContext(component, mapStateToProps, mapDispatchToProps)
+        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps)
     }
 }
