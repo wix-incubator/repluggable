@@ -3,19 +3,19 @@ import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
 import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, SoloReactComponentContributor } from './api'
 import { ErrorBoundary } from './errorBoundary'
-import { ShellContext } from './featureContext'
+import { ShellContext } from './shellContext'
 
-export function renderFeatureComponent(feature: PrivateShell, component: React.ReactNode, key: any, name?: string): React.ReactNode {
+export function renderShellComponent(shell: PrivateShell, component: React.ReactNode, key: any, name?: string): React.ReactNode {
     return (
-        <ErrorBoundary key={key} feature={feature} componentName={name}>
-            <ShellContext.Provider value={feature}>{component}</ShellContext.Provider>
+        <ErrorBoundary key={key} shell={shell} componentName={name}>
+            <ShellContext.Provider value={shell}>{component}</ShellContext.Provider>
         </ErrorBoundary>
     )
 }
 
 export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
     return slot.getItems().map((item, index) =>
-        renderFeatureComponent(
+        renderShellComponent(
             item.shell,
             item.contribution(),
             index, // index is the key prop
@@ -53,7 +53,7 @@ interface SlotRendererConnectedProps {
 export const SlotRenderer = connect((state, { slot }: SlotRendererConnectedProps) => ({ items: slot.getItems() }))(SlotRendererPure)
 
 const renderExtensionItem = (item: ReactContributorExtensionItem, index: number, children?: ReactNode) =>
-    renderFeatureComponent(
+    renderShellComponent(
         item.shell,
         <ConnectedPredicateHoc index={index} item={item}>
             {children}

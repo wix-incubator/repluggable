@@ -2,7 +2,7 @@ import React, { ErrorInfo } from 'react'
 import { PrivateShell } from './api'
 
 interface ErrorBoundaryProps {
-    readonly feature: PrivateShell
+    readonly shell: PrivateShell
     readonly componentName?: string
     readonly errorClassName?: string
 }
@@ -12,8 +12,8 @@ interface ErrorBoundaryState {
     readonly errorMessage: string | null
 }
 
-function getQualifiedName(featureName: string, componentName: string | undefined): string {
-    return componentName ? `${featureName} / ${componentName}` : featureName
+function getQualifiedName(shellName: string, componentName: string | undefined): string {
+    return componentName ? `${shellName} / ${componentName}` : shellName
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         if (this.state.hasError) {
             return (
                 <div className={`component-error ${this.props.errorClassName || ''}`} title={this.state.errorMessage || '(unknown error)'}>
-                    error in {getQualifiedName(this.props.feature.name, this.props.componentName)}
+                    error in {getQualifiedName(this.props.shell.name, this.props.componentName)}
                 </div>
             )
         }

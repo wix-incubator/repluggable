@@ -4,10 +4,10 @@ import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
 import { AnyPackage, AnySlotKey, AppHost, AppMainView, createAppHost, Shell, SlotKey } from '../index'
 import { EntryPoint, PrivateShell } from '../src/api'
-import { renderFeatureComponent } from '../src/renderSlotComponents'
+import { renderShellComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
-export * from './mockFeature'
+export * from './mockPackage'
 
 interface PactApiBase {
     getApiKey(): AnySlotKey
@@ -17,38 +17,38 @@ export interface PactApi<T> extends PactApiBase {
     getApiKey(): SlotKey<T>
 }
 
-function forEachDeclaredApi(allFeatures: AnyPackage[], iteration: (dependency: AnySlotKey, feature: EntryPoint) => void) {
-    _.forEach(_.flatten(allFeatures), (feature: EntryPoint) => {
-        _.forEach(feature.declareApis ? feature.declareApis() : [], dependency => {
-            iteration(dependency, feature)
+function forEachDeclaredApi(allPackages: AnyPackage[], iteration: (dependency: AnySlotKey, entryPoint: EntryPoint) => void) {
+    _.forEach(_.flatten(allPackages), (entryPoint: EntryPoint) => {
+        _.forEach(entryPoint.declareApis ? entryPoint.declareApis() : [], dependency => {
+            iteration(dependency, entryPoint)
         })
     })
 }
 
-export const getFeaturesDependencies = (allFeatures: AnyPackage[], requiredFeatures: AnyPackage[]): AnyPackage[] => {
+export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPackages: AnyPackage[]): AnyPackage[] => {
     const tree = new Map<AnySlotKey, EntryPoint | undefined>()
 
-    forEachDeclaredApi(allFeatures, (dependency, feature) => {
-        tree.set(dependency, feature)
+    forEachDeclaredApi(allPackages, (dependency, entryPoint) => {
+        tree.set(dependency, entryPoint)
     })
 
-    const featuresList: AnyPackage[] = []
-    const featuresQueue: EntryPoint[] = _.flatten(requiredFeatures)
+    const packagesList: AnyPackage[] = []
+    const entryPointsQueue: EntryPoint[] = _.flatten(requiredPackages)
 
-    while (featuresQueue.length) {
-        const currFeature = featuresQueue.shift() as EntryPoint
-        featuresList.push(currFeature)
-        const dependencies = currFeature.getDependencyApis ? currFeature.getDependencyApis() : []
-        const dependecyFeatures = dependencies.map(api => tree.get(api))
-        featuresQueue.push(..._.compact(dependecyFeatures))
+    while (entryPointsQueue.length) {
+        const currEntryPoint = entryPointsQueue.shift() as EntryPoint
+        packagesList.push(currEntryPoint)
+        const dependencies = currEntryPoint.getDependencyApis ? currEntryPoint.getDependencyApis() : []
+        const dependecyEntryPoints = dependencies.map(api => tree.get(api))
+        entryPointsQueue.push(..._.compact(dependecyEntryPoints))
     }
 
-    return _.uniq(featuresList)
+    return _.uniq(packagesList)
 }
 
 export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactApiBase[]) {
-    const pactsFeature: EntryPoint = {
-        name: 'PACTS_FEATURE',
+    const pactsEntryPoint: EntryPoint = {
+        name: 'PACTS_ENTRY_POINT',
         declareApis() {
             return pacts.map(pact => pact.getApiKey())
         },
@@ -59,7 +59,7 @@ export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactApiBas
         }
     }
 
-    return createAppHost([...packages, pactsFeature])
+    return createAppHost([...packages, pactsEntryPoint])
 }
 
 export const renderHost = (host: AppHost): { root: ReactWrapper | null; DOMNode: HTMLElement | null } => {
@@ -83,12 +83,10 @@ export const renderInHost = (
     const shell = createShell(host)
 
     const root = mount(
-        <Provider store={host.getStore()}>
-            {renderFeatureComponent(shell, <div data-feature-in-host="true">{reactElement}</div>, '')}
-        </Provider>
+        <Provider store={host.getStore()}>{renderShellComponent(shell, <div data-shell-in-host="true">{reactElement}</div>, '')}</Provider>
     )
 
-    const parentWrapper = root.find('[data-feature-in-host="true"]')
+    const parentWrapper = root.find('[data-shell-in-host="true"]')
 
     return {
         root,
@@ -102,13 +100,13 @@ export const renderInHost = (
 }
 
 function createShell(host: AppHost): PrivateShell {
-    const lifecycle: EntryPoint = {
+    const entryPoint: EntryPoint = {
         name: 'test'
     }
 
     return {
-        name: lifecycle.name,
-        entryPoint: lifecycle,
+        name: entryPoint.name,
+        entryPoint,
         ...host,
         declareSlot() {
             const slot: any = {}

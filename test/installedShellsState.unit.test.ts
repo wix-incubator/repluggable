@@ -26,7 +26,7 @@ const expectedState: InstalledShellsState = {
 }
 
 describe('Installed Shells State', () => {
-    it('should toggle shells according to feature toggles', () => {
+    it('should toggle shells according to shell toggles', () => {
         const actualState = installedShellsReducer(initialState, InstalledShellsActions.updateInstalledShells(shellsToggleSet))
 
         expect(actualState).toEqual(expectedState)

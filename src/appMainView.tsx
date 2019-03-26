@@ -2,9 +2,9 @@ import React, { SFC } from 'react'
 import { connect, Provider } from 'react-redux'
 import { AppHost } from './api'
 import { mainViewSlotKey } from './appHost'
-import { ShellContext } from './featureContext'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { renderSlotComponents } from './renderSlotComponents'
+import { ShellContext } from './shellContext'
 
 export interface AppMainViewProps {
     host: AppHost
@@ -18,12 +18,12 @@ interface SfcProps {
 // TODO: Either create shell for root context or render root slot without context provider
 const sfc: SFC<SfcProps> = props => {
     const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
-    const rootFeatureContext = {
+    const rootShell = {
         name: '$root',
         ...props.host
     }
 
-    return <ShellContext.Provider value={rootFeatureContext}>{contextProviderChildren}</ShellContext.Provider>
+    return <ShellContext.Provider value={rootShell}>{contextProviderChildren}</ShellContext.Provider>
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({

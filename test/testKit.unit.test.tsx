@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { AnyPackage, EntryPoint } from '../src/api'
 import { AnyExtensionSlot } from '../src/extensionSlot'
-import { getFeaturesDependencies } from '../testKit'
+import { getPackagesDependencies } from '../testKit'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot
@@ -14,10 +14,10 @@ const APIs: APIKeys = {
     E: { name: 'E' },
     F: { name: 'F' }
 }
-interface FeaturesMap {
+interface PackagesMap {
     [name: string]: AnyPackage
 }
-const allFeatures: FeaturesMap = {
+const allPackages: PackagesMap = {
     A: {
         name: 'A'
     },
@@ -59,14 +59,14 @@ const allFeatures: FeaturesMap = {
 }
 
 describe('App Host TestKit', () => {
-    it('should get feature dependencies', () => {
-        const toResult = (features: AnyPackage[]) =>
-            _(features)
+    it('should get packages dependencies', () => {
+        const toResult = (packages: AnyPackage[]) =>
+            _(packages)
                 .flatten()
                 .sortBy('name')
                 .value()
-        const getDependencies = (features: AnyPackage[]) => toResult(getFeaturesDependencies(_.values(allFeatures), features))
-        const { A, B, C, D, F } = allFeatures
+        const getDependencies = (packages: AnyPackage[]) => toResult(getPackagesDependencies(_.values(allPackages), packages))
+        const { A, B, C, D, F } = allPackages
 
         expect(getDependencies([])).toEqual(toResult([]))
         expect(getDependencies([A])).toEqual(toResult([A]))

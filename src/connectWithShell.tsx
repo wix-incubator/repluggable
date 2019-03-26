@@ -3,7 +3,7 @@ import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './api'
-import { ShellContext } from './featureContext'
+import { ShellContext } from './shellContext'
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
