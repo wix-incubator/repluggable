@@ -9,17 +9,17 @@ import { renderShellComponent } from '../src/renderSlotComponents'
 export { AppHost, createAppHost } from '../index'
 export * from './mockPackage'
 
-interface PactApiBase {
-    getApiKey(): AnySlotKey
+interface PactAPIBase {
+    getAPIKey(): AnySlotKey
 }
 
-export interface PactApi<T> extends PactApiBase {
-    getApiKey(): SlotKey<T>
+export interface PactAPI<T> extends PactAPIBase {
+    getAPIKey(): SlotKey<T>
 }
 
-function forEachDeclaredApi(allPackages: AnyPackage[], iteration: (dependency: AnySlotKey, entryPoint: EntryPoint) => void) {
+function forEachDeclaredAPI(allPackages: AnyPackage[], iteration: (dependency: AnySlotKey, entryPoint: EntryPoint) => void) {
     _.forEach(_.flatten(allPackages), (entryPoint: EntryPoint) => {
-        _.forEach(entryPoint.declareApis ? entryPoint.declareApis() : [], dependency => {
+        _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
             iteration(dependency, entryPoint)
         })
     })
@@ -28,7 +28,7 @@ function forEachDeclaredApi(allPackages: AnyPackage[], iteration: (dependency: A
 export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPackages: AnyPackage[]): AnyPackage[] => {
     const tree = new Map<AnySlotKey, EntryPoint | undefined>()
 
-    forEachDeclaredApi(allPackages, (dependency, entryPoint) => {
+    forEachDeclaredAPI(allPackages, (dependency, entryPoint) => {
         tree.set(dependency, entryPoint)
     })
 
@@ -38,7 +38,7 @@ export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPacka
     while (entryPointsQueue.length) {
         const currEntryPoint = entryPointsQueue.shift() as EntryPoint
         packagesList.push(currEntryPoint)
-        const dependencies = currEntryPoint.getDependencyApis ? currEntryPoint.getDependencyApis() : []
+        const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
         const dependecyEntryPoints = dependencies.map(api => tree.get(api))
         entryPointsQueue.push(..._.compact(dependecyEntryPoints))
     }
@@ -46,15 +46,15 @@ export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPacka
     return _.uniq(packagesList)
 }
 
-export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactApiBase[]) {
+export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactAPIBase[]) {
     const pactsEntryPoint: EntryPoint = {
         name: 'PACTS_ENTRY_POINT',
-        declareApis() {
-            return pacts.map(pact => pact.getApiKey())
+        declareAPIs() {
+            return pacts.map(pact => pact.getAPIKey())
         },
         install(shell: Shell): void {
             _.each(pacts, pact => {
-                shell.contributeApi(pact.getApiKey(), () => pact)
+                shell.contributeAPI(pact.getAPIKey(), () => pact)
             })
         }
     }
@@ -113,14 +113,14 @@ function createShell(host: AppHost): PrivateShell {
             return slot
         },
         setLifecycleState: _.noop,
-        setDependencyApis: _.noop,
-        canUseApis(): boolean {
+        setDependencyAPIs: _.noop,
+        canUseAPIs(): boolean {
             return true
         },
         canUseStore(): boolean {
             return true
         },
-        contributeApi<TApi>(): TApi {
+        contributeAPI<TAPI>(): TAPI {
             const api: any = {}
             return api
         },

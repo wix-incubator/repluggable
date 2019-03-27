@@ -43,11 +43,11 @@ export const mockShellStateKey = 'mockEntryPoint'
 
 export const mockPackage: EntryPoint = {
     name: 'MOCK_ENTRY_POINT',
-    declareApis() {
+    declareAPIs() {
         return [MockAPI]
     },
     install(shell: Shell) {
-        shell.contributeApi(MockAPI, () => createMockAPI(shell))
+        shell.contributeAPI(MockAPI, () => createMockAPI(shell))
         shell.contributeState(() => ({
             [mockShellStateKey]: mockReducer
         }))
@@ -56,11 +56,11 @@ export const mockPackage: EntryPoint = {
 
 export const mockPackageWithPublicAPI: EntryPoint = {
     name: 'MOCK_ENTRY_POINT_PUBLIC',
-    declareApis() {
+    declareAPIs() {
         return [MockPublicAPI]
     },
     install(shell: Shell) {
-        shell.contributeApi(MockPublicAPI, () => ({
+        shell.contributeAPI(MockPublicAPI, () => ({
             stubTrue: () => true
         }))
     }

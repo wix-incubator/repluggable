@@ -72,7 +72,7 @@ function createAppHostImpl(): AppHost {
 
     const host: AppHost = {
         getStore,
-        getApi,
+        getAPI,
         getSlot,
         getAllSlotKeys,
         getAllEntryPoints,
@@ -127,7 +127,7 @@ function createAppHostImpl(): AppHost {
 
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint =>
             _.chain(entryPoint)
-                .invoke('getDependencyApis')
+                .invoke('getDependencyAPIs')
                 .defaultTo([])
                 .find(key => !readyAPIs.has(getOwnSlotKey(key)))
                 .isEmpty()
@@ -151,10 +151,10 @@ function createAppHostImpl(): AppHost {
         canInstallReadyEntryPoints = false
         try {
             invokeEntryPointPhase(
-                'getDependencyApis',
+                'getDependencyAPIs',
                 shells,
-                f => f.entryPoint.getDependencyApis && f.setDependencyApis(f.entryPoint.getDependencyApis()),
-                f => !!f.entryPoint.getDependencyApis
+                f => f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs()),
+                f => !!f.entryPoint.getDependencyAPIs
             )
 
             invokeEntryPointPhase('install', shells, f => f.entryPoint.install && f.entryPoint.install(f), f => !!f.entryPoint.install)
@@ -223,8 +223,8 @@ function createAppHostImpl(): AppHost {
         }
     }
 
-    function getApi<TApi>(key: SlotKey<TApi>): TApi {
-        const apiSlot = getSlot<TApi>(key)
+    function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+        const apiSlot = getSlot<TAPI>(key)
         return apiSlot.getSingleItem().contribution
     }
 
@@ -370,35 +370,35 @@ function createAppHostImpl(): AppHost {
         throw new Error('Current entry point does not exist.')
     }
 
-    function getApiContributor<TApi>(key: SlotKey<TApi>): PrivateShell | undefined {
+    function getAPIContributor<TAPI>(key: SlotKey<TAPI>): PrivateShell | undefined {
         const ownKey = getOwnSlotKey(key)
-        return extensionSlots.has(ownKey) ? _.get(getSlot<TApi>(ownKey).getSingleItem(), 'shell') : undefined
+        return extensionSlots.has(ownKey) ? _.get(getSlot<TAPI>(ownKey).getSingleItem(), 'shell') : undefined
     }
 
     function doesExtensionItemBelongToShells(extensionItem: ExtensionItem<any>, shellNames: string[]) {
         return (
             _.includes(shellNames, extensionItem.shell.name) ||
-            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyApis'), apiKey =>
-                _.includes(shellNames, _.get(getApiContributor(apiKey), 'name'))
+            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyAPIs'), apiKey =>
+                _.includes(shellNames, _.get(getAPIContributor(apiKey), 'name'))
             )
         )
     }
 
-    function isApiMissing(apiKey: AnySlotKey): boolean {
+    function isAPIMissing(apiKey: AnySlotKey): boolean {
         const ownKey = getOwnSlotKey(apiKey)
         return !extensionSlots.has(ownKey)
     }
 
-    function uninstallIfDependencyApisRemoved(shell: PrivateShell) {
-        const dependencyApis = _.invoke(shell.entryPoint, 'getDependencyApis')
+    function uninstallIfDependencyAPIsRemoved(shell: PrivateShell) {
+        const dependencyAPIs = _.invoke(shell.entryPoint, 'getDependencyAPIs')
 
-        if (_.some(dependencyApis, isApiMissing)) {
+        if (_.some(dependencyAPIs, isAPIMissing)) {
             unReadyEntryPoints.push(shell.entryPoint)
             executeUninstallShells([shell.name])
         }
     }
 
-    function discardApi<TApi>(apiKey: SlotKey<TApi>) {
+    function discardAPI<TAPI>(apiKey: SlotKey<TAPI>) {
         const ownKey = getOwnSlotKey(apiKey)
 
         readyAPIs.delete(ownKey)
@@ -415,7 +415,7 @@ function createAppHostImpl(): AppHost {
             _.invoke(f.entryPoint, 'uninstall', f)
         )
 
-        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, _.get(getApiContributor(apiKey), 'name')))
+        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, _.get(getAPIContributor(apiKey), 'name')))
         extensionSlots.forEach(extensionSlot =>
             (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToShells(extensionItem, names))
         )
@@ -424,11 +424,11 @@ function createAppHostImpl(): AppHost {
             installedShells.delete(name)
             uniqueShellNames.delete(name)
         })
-        apisToDiscard.forEach(discardApi)
+        apisToDiscard.forEach(discardAPI)
 
         console.log(`Done uninstalling ${names}`)
 
-        installedShells.forEach(uninstallIfDependencyApisRemoved)
+        installedShells.forEach(uninstallIfDependencyAPIsRemoved)
     }
 
     function getInstalledShellNames(): string[] {
@@ -444,9 +444,9 @@ function createAppHostImpl(): AppHost {
     function createShell(entryPoint: EntryPoint): PrivateShell {
         let storeEnabled = false
         let apisEnabled = false
-        let dependencyApis: AnySlotKey[] = []
+        let dependencyAPIs: AnySlotKey[] = []
 
-        const isOwnContributedApi = <TApi>(key: SlotKey<TApi>): boolean => getApiContributor(key) === shell
+        const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
 
         const shell: PrivateShell = {
             name: entryPoint.name,
@@ -455,16 +455,16 @@ function createAppHostImpl(): AppHost {
             ...host,
             declareSlot,
 
-            setLifecycleState(enableStore: boolean, enableApis: boolean) {
+            setLifecycleState(enableStore: boolean, enableAPIs: boolean) {
                 storeEnabled = enableStore
-                apisEnabled = enableApis
+                apisEnabled = enableAPIs
             },
 
-            setDependencyApis(apis: AnySlotKey[]): void {
-                dependencyApis = apis
+            setDependencyAPIs(apis: AnySlotKey[]): void {
+                dependencyAPIs = apis
             },
 
-            canUseApis(): boolean {
+            canUseAPIs(): boolean {
                 return apisEnabled
             },
 
@@ -497,26 +497,26 @@ function createAppHostImpl(): AppHost {
                 host.uninstallShells(names)
             },
 
-            getApi<TApi>(key: SlotKey<TApi>): TApi {
-                if (dependencyApis.indexOf(key) >= 0 || isOwnContributedApi(key)) {
-                    return host.getApi(key)
+            getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+                if (dependencyAPIs.indexOf(key) >= 0 || isOwnContributedAPI(key)) {
+                    return host.getAPI(key)
                 }
                 throw new Error(
                     `API '${key.name}' is not declared as dependency by entry point '${
                         entryPoint.name
-                    }' (forgot to return it from getDependencyApis?)`
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
-            contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi {
+            contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI {
                 console.log(`Contributing API ${key.name}.`)
 
-                if (!_.includes(_.invoke(entryPoint, 'declareApis') || [], key)) {
+                if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
                 const api = factory()
-                const apiSlot = declareSlot<TApi>(key)
+                const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(api, undefined, shell)
 
                 readyAPIs.add(key)

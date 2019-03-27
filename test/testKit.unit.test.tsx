@@ -23,26 +23,26 @@ const allPackages: PackagesMap = {
     },
     B: {
         name: 'B',
-        declareApis() {
+        declareAPIs() {
             return [APIs.B]
         }
     },
     C: {
         name: 'C',
-        getDependencyApis() {
+        getDependencyAPIs() {
             return [APIs.B]
         },
-        declareApis() {
+        declareAPIs() {
             return [APIs.C]
         }
     },
     D: [
         {
             name: 'D',
-            getDependencyApis() {
+            getDependencyAPIs() {
                 return [APIs.C]
             },
-            declareApis() {
+            declareAPIs() {
                 return [APIs.E]
             }
         },
@@ -52,7 +52,7 @@ const allPackages: PackagesMap = {
     ],
     F: {
         name: 'F',
-        getDependencyApis() {
+        getDependencyAPIs() {
             return [APIs.E]
         }
     }

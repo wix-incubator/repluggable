@@ -24,8 +24,8 @@ export interface SlotKey<T> extends AnySlotKey {
 
 export interface EntryPoint {
     readonly name: string
-    getDependencyApis?(): AnySlotKey[]
-    declareApis?(): AnySlotKey[]
+    getDependencyAPIs?(): AnySlotKey[]
+    declareAPIs?(): AnySlotKey[]
     install?(shell: Shell): void
     extend?(shell: Shell): void
     uninstall?(shell: Shell): void
@@ -59,7 +59,7 @@ export interface JsxWithContainerCss {
 
 export interface AppHost {
     getStore(): Redux.Store
-    getApi<TApi>(key: SlotKey<TApi>): TApi
+    getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     getAllSlotKeys(): AnySlotKey[]
     getAllEntryPoints(): EntryPointsInfo[]
@@ -75,10 +75,10 @@ export interface AppHost {
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
     readonly name: string
     getStore<TState>(): ScopedStore<TState>
-    canUseApis(): boolean
+    canUseAPIs(): boolean
     canUseStore(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    contributeApi<TApi>(key: SlotKey<TApi>, factory: () => TApi): TApi
+    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(contributor: ReactComponentContributor): void
     // readonly log: ShellLogger; //TODO: define logging abstraction
@@ -86,8 +86,8 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>>
 
 export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
-    setDependencyApis(apis: AnySlotKey[]): void
-    setLifecycleState(enableStore: boolean, enableApis: boolean): void
+    setDependencyAPIs(apis: AnySlotKey[]): void
+    setLifecycleState(enableStore: boolean, enableAPIs: boolean): void
 }
 
 export interface EntryPointsInfo {

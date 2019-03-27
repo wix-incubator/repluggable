@@ -17,20 +17,20 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const dependentPackage: EntryPoint[] = [
         {
             name: 'DEPENDENT_MOCK_ENTRY_POINT_1',
-            getDependencyApis() {
+            getDependencyAPIs() {
                 return [DependencyAPI]
             }
         },
         {
             name: 'DEPENDENT_MOCK_ENTRY_POINT_2',
-            getDependencyApis() {
+            getDependencyAPIs() {
                 return [DependencyAPI]
             },
-            declareApis() {
+            declareAPIs() {
                 return [MockAPI2]
             },
             install(shell: Shell) {
-                shell.contributeApi(MockAPI2, () => ({}))
+                shell.contributeAPI(MockAPI2, () => ({}))
             }
         }
     ]
@@ -38,7 +38,7 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const deeplyDependentPackage: EntryPoint[] = [
         {
             name: 'DEPENDENT_MOCK_ENTRY_POINT_3',
-            getDependencyApis() {
+            getDependencyAPIs() {
                 return [MockAPI2]
             }
         }
@@ -49,7 +49,7 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     }
     const helperEntryPoint: EntryPoint = {
         name: 'TEST_HELPER',
-        declareApis() {
+        declareAPIs() {
             return [DependencyAPI]
         },
         install(shell: Shell) {
@@ -165,7 +165,7 @@ describe('App Host', () => {
                     expect(host.isShellInstalled(dependentPackage[1].name)).toBe(false)
                     expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(false)
 
-                    helperShell.contributeApi(dependencyAPI, () => ({ stubTrue: () => true }))
+                    helperShell.contributeAPI(dependencyAPI, () => ({ stubTrue: () => true }))
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
                     expect(host.isShellInstalled(dependentPackage[0].name)).toBe(true)
@@ -217,7 +217,7 @@ describe('App Host', () => {
             it('should equal itself', () => {
                 const host = createAppHost([mockPackage])
 
-                const api = host.getApi(MockAPI)
+                const api = host.getAPI(MockAPI)
 
                 expect(api).toBeTruthy()
             })
@@ -227,7 +227,7 @@ describe('App Host', () => {
                 const fakeKey: SlotKey<MockAPI> = { name: MockAPI.name }
 
                 expect(() => {
-                    host.getApi(fakeKey)
+                    host.getAPI(fakeKey)
                 }).toThrowError(new RegExp(MockAPI.name))
             })
 
@@ -246,9 +246,9 @@ describe('App Host', () => {
                     public: 'zzz'
                 }
 
-                expect(() => host.getApi(fakeKey1)).toThrowError(new RegExp(MockAPI.name))
-                expect(() => host.getApi(fakeKey2)).toThrowError(new RegExp(MockAPI.name))
-                expect(() => host.getApi(fakeKey3)).toThrowError(new RegExp(MockAPI.name))
+                expect(() => host.getAPI(fakeKey1)).toThrowError(new RegExp(MockAPI.name))
+                expect(() => host.getAPI(fakeKey2)).toThrowError(new RegExp(MockAPI.name))
+                expect(() => host.getAPI(fakeKey3)).toThrowError(new RegExp(MockAPI.name))
             })
         })
 
@@ -256,7 +256,7 @@ describe('App Host', () => {
             it('should equal itself', () => {
                 const host = createAppHost([mockPackageWithPublicAPI])
 
-                const api = host.getApi(MockPublicAPI)
+                const api = host.getAPI(MockPublicAPI)
 
                 expect(api).toBeTruthy()
             })
@@ -268,7 +268,7 @@ describe('App Host', () => {
                     public: true
                 }
 
-                const api = host.getApi(anotherKey)
+                const api = host.getAPI(anotherKey)
 
                 expect(api).toBeTruthy()
             })
@@ -287,9 +287,9 @@ describe('App Host', () => {
                     public: 'zzz'
                 }
 
-                expect(() => host.getApi(anotherKey1)).toThrowError(new RegExp(MockPublicAPI.name))
-                expect(() => host.getApi(anotherKey2)).toThrowError(new RegExp(MockPublicAPI.name))
-                expect(() => host.getApi(anotherKey3)).toThrowError(new RegExp(MockPublicAPI.name))
+                expect(() => host.getAPI(anotherKey1)).toThrowError(new RegExp(MockPublicAPI.name))
+                expect(() => host.getAPI(anotherKey2)).toThrowError(new RegExp(MockPublicAPI.name))
+                expect(() => host.getAPI(anotherKey3)).toThrowError(new RegExp(MockPublicAPI.name))
             })
         })
     })
@@ -308,15 +308,15 @@ describe('App Host', () => {
     describe('Entry Point Contributions', () => {
         it('should contribute API', () => {
             const host = createAppHost([mockPackage])
-            expect(host.getApi(MockAPI)).toBeTruthy()
+            expect(host.getAPI(MockAPI)).toBeTruthy()
         })
 
         it('should contribute API after initial installations', () => {
             const host = createAppHost([])
-            expect(() => host.getApi(MockAPI)).toThrow()
+            expect(() => host.getAPI(MockAPI)).toThrow()
 
             host.installPackages([mockPackage])
-            expect(host.getApi(MockAPI)).toBeTruthy()
+            expect(host.getAPI(MockAPI)).toBeTruthy()
         })
 
         it('should contribute state', () => {
@@ -334,11 +334,11 @@ describe('App Host', () => {
         it('should be able to call an API declared in dependencies', () => {
             const entryPointThatCallsAPI: EntryPoint = {
                 name: 'ENTRY_POINT_WITH_API_CALL',
-                getDependencyApis() {
+                getDependencyAPIs() {
                     return [MockAPI]
                 },
                 extend(shell: Shell) {
-                    shell.getApi(MockAPI).stubTrue()
+                    shell.getAPI(MockAPI).stubTrue()
                 }
             }
             const appHost = createAppHost([mockPackage])
@@ -349,7 +349,7 @@ describe('App Host', () => {
             const entryPointThatCallsAPI: EntryPoint = {
                 name: 'ENTRY_POINT_WITH_API_CALL',
                 extend(shell: Shell) {
-                    shell.getApi(MockAPI).stubTrue()
+                    shell.getAPI(MockAPI).stubTrue()
                 }
             }
             const appHost = createAppHost([mockPackage])
