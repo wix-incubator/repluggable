@@ -2,20 +2,20 @@ import { combineReducers, createStore, ReducersMapObject, Store } from 'redux'
 
 import {
     AnyEntryPoint,
-    AnyPackage,
     AnySlotKey,
     AppHost,
     EntryPoint,
+    EntryPointOrPackage,
     EntryPointsInfo,
     ExtensionItem,
     ExtensionSlot,
-    InstalledShellsChangedCallback,
     LazyEntryPointDescriptor,
     LazyEntryPointFactory,
     PrivateShell,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
+    ShellsChangedCallback,
     SlotKey
 } from './API'
 
@@ -35,11 +35,11 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
 }
 
 export function createAppHost(
-    packages: AnyPackage[]
+    entryPointsOrPackages: EntryPointOrPackage[]
     /*, log?: HostLogger */ // TODO: define logging abstraction
 ): AppHost {
     const host = createAppHostImpl()
-    host.installPackages(packages)
+    host.addShells(entryPointsOrPackages)
     return host
 }
 
@@ -65,10 +65,10 @@ function createAppHostImpl(): AppHost {
     const uniqueShellNames = new Set<string>()
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const slotKeysByName = new Map<string, AnySlotKey>()
-    const installedShells = new Map<string, PrivateShell>()
+    const addedShells = new Map<string, PrivateShell>()
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
-    const installedShellsChangedCallbacks = new Map<string, InstalledShellsChangedCallback>()
+    const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
 
     const host: AppHost = {
         getStore,
@@ -76,10 +76,10 @@ function createAppHostImpl(): AppHost {
         getSlot,
         getAllSlotKeys,
         getAllEntryPoints,
-        isShellInstalled,
+        hasShell,
         isLazyEntryPoint,
-        installPackages,
-        uninstallShells,
+        addShells,
+        removeShells,
         onShellsChanged,
         removeShellsChangedCallback
     }
@@ -89,7 +89,7 @@ function createAppHostImpl(): AppHost {
         host,
         uniqueShellNames,
         extensionSlots,
-        installedShells,
+        addedShells,
         lazyShells,
         readyAPIs,
         shellInstallers
@@ -104,10 +104,10 @@ function createAppHostImpl(): AppHost {
         return typeof (value as LazyEntryPointDescriptor).factory === 'function'
     }
 
-    function installPackages(packages: AnyPackage[]): void {
-        console.log(`Adding ${packages.length} packages.`)
+    function addShells(entryPointsOrPackages: EntryPointOrPackage[]): void {
+        console.log(`Adding ${entryPointsOrPackages.length} packages.`)
 
-        const entryPoints = _.flatten(packages)
+        const entryPoints = _.flatten(entryPointsOrPackages)
 
         validateUniqueShellNames(entryPoints)
 
@@ -164,7 +164,7 @@ function createAppHostImpl(): AppHost {
 
             invokeEntryPointPhase('extend', shells, f => f.entryPoint.extend && f.entryPoint.extend(f), f => !!f.entryPoint.extend)
 
-            shells.forEach(f => installedShells.set(f.entryPoint.name, f))
+            shells.forEach(f => addedShells.set(f.entryPoint.name, f))
         } finally {
             canInstallReadyEntryPoints = true
         }
@@ -172,7 +172,7 @@ function createAppHostImpl(): AppHost {
     }
 
     function executeShellsChangedCallbacks() {
-        installedShellsChangedCallbacks.forEach(f => f(_.keys(InstalledShellsSelectors.getInstalledShellsSet(getStore().getState()))))
+        shellsChangedCallbacks.forEach(f => f(_.keys(InstalledShellsSelectors.getInstalledShellsSet(getStore().getState()))))
     }
 
     async function setInstalledShellNames(names: string[]) {
@@ -189,14 +189,14 @@ function createAppHostImpl(): AppHost {
         executeShellsChangedCallbacks()
     }
 
-    function onShellsChanged(callback: InstalledShellsChangedCallback) {
+    function onShellsChanged(callback: ShellsChangedCallback) {
         const callbackId = _.uniqueId('shells-changed-callback-')
-        installedShellsChangedCallbacks.set(callbackId, callback)
+        shellsChangedCallbacks.set(callbackId, callback)
         return callbackId
     }
 
     function removeShellsChangedCallback(callbackId: string) {
-        installedShellsChangedCallbacks.delete(callbackId)
+        shellsChangedCallbacks.delete(callbackId)
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
@@ -243,7 +243,7 @@ function createAppHostImpl(): AppHost {
         throw new Error('not implemented')
     }
 
-    function isShellInstalled(name: string): boolean {
+    function hasShell(name: string): boolean {
         const installedShellsSet = InstalledShellsSelectors.getInstalledShellsSet(getStore().getState())
         return installedShellsSet[name] === true
     }
@@ -289,7 +289,7 @@ function createAppHostImpl(): AppHost {
     }
 
     async function ensureLazyShellsInstalled(names: string[]) {
-        const lazyLoadPromises = names.filter(name => !installedShells.has(name)).map(loadLazyShell)
+        const lazyLoadPromises = names.filter(name => !addedShells.has(name)).map(loadLazyShell)
         const shellsToInstall = await Promise.all(lazyLoadPromises)
         executeInstallShell(shellsToInstall)
     }
@@ -411,7 +411,7 @@ function createAppHostImpl(): AppHost {
     function executeUninstallShells(names: string[]): void {
         console.log(`-- Uninstalling ${names} --`)
 
-        invokeEntryPointPhase('detach', names.map(name => installedShells.get(name)) as PrivateShell[], f =>
+        invokeEntryPointPhase('detach', names.map(name => addedShells.get(name)) as PrivateShell[], f =>
             _.invoke(f.entryPoint, 'detach', f)
         )
 
@@ -421,21 +421,21 @@ function createAppHostImpl(): AppHost {
         )
 
         names.forEach(name => {
-            installedShells.delete(name)
+            addedShells.delete(name)
             uniqueShellNames.delete(name)
         })
         APIsToDiscard.forEach(discardAPI)
 
         console.log(`Done uninstalling ${names}`)
 
-        installedShells.forEach(uninstallIfDependencyAPIsRemoved)
+        addedShells.forEach(uninstallIfDependencyAPIsRemoved)
     }
 
     function getInstalledShellNames(): string[] {
-        return [...installedShells].map(([v]) => v)
+        return [...addedShells].map(([v]) => v)
     }
 
-    function uninstallShells(names: string[]): void {
+    function removeShells(names: string[]): void {
         const shellNames = getInstalledShellNames()
         executeUninstallShells(names)
         setUninstalledShellNames(_.difference(shellNames, getInstalledShellNames()))
@@ -472,17 +472,17 @@ function createAppHostImpl(): AppHost {
                 return storeEnabled
             },
 
-            installPackages(packages: AnyPackage[]): void {
-                const shellNamesToBeinstalled = _.chain(packages)
+            addShells(entryPointsOrPackages: EntryPointOrPackage[]): void {
+                const shellNamesToBeinstalled = _.chain(entryPointsOrPackages)
                     .flatten()
                     .map('name')
                     .value()
                 const shellNamesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 shellInstallers.set(shell, [...shellNamesInstalledByCurrentEntryPoint, ...shellNamesToBeinstalled])
-                host.installPackages(packages)
+                host.addShells(entryPointsOrPackages)
             },
 
-            uninstallShells(names: string[]): void {
+            removeShells(names: string[]): void {
                 const namesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 const namesNotInstalledByCurrentEntryPoint = _.difference(names, namesInstalledByCurrentEntryPoint)
                 // TODO: Allow entry point to uninstall its own shell?
@@ -494,7 +494,7 @@ function createAppHostImpl(): AppHost {
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
-                host.uninstallShells(names)
+                host.removeShells(names)
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {

@@ -12,7 +12,7 @@ export interface ReactAppLegoDebugInfo {
     host: AppHost
     uniqueShellNames: Set<string>
     extensionSlots: Map<AnySlotKey, AnyExtensionSlot>
-    installedShells: Map<string, PrivateShell>
+    addedShells: Map<string, PrivateShell>
     lazyShells: Map<string, LazyEntryPointFactory>
     readyAPIs: Set<AnySlotKey>
     shellInstallers: WeakMap<PrivateShell, string[]>

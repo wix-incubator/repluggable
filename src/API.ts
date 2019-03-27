@@ -7,7 +7,7 @@ export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
 export type LazyEntryPointFactory = () => Promise<EntryPoint>
-export type InstalledShellsChangedCallback = (installedShellNames: string[]) => void
+export type ShellsChangedCallback = (shellNames: string[]) => void
 export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
@@ -32,7 +32,7 @@ export interface EntryPoint {
 }
 
 export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
-export type AnyPackage = AnyEntryPoint | AnyEntryPoint[]
+export type EntryPointOrPackage = AnyEntryPoint | AnyEntryPoint[]
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
@@ -57,17 +57,21 @@ export interface JsxWithContainerCss {
     containerCss: string | object
 }
 
+// addEntryPoints(entryPoints: EntryPoint[])
+// addPackages(packages: EntryPointOrPackage[])
+//
+
 export interface AppHost {
     getStore(): Redux.Store
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     getAllSlotKeys(): AnySlotKey[]
     getAllEntryPoints(): EntryPointsInfo[]
-    isShellInstalled(name: string): boolean
+    hasShell(name: string): boolean
     isLazyEntryPoint(name: string): boolean
-    installPackages(packages: AnyPackage[]): void
-    uninstallShells(names: string[]): void
-    onShellsChanged(callback: InstalledShellsChangedCallback): string
+    addShells(entryPointsOrPackages: EntryPointOrPackage[]): void
+    removeShells(names: string[]): void
+    onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     // readonly log: HostLogger; //TODO: define logging abstraction
 }
@@ -93,7 +97,7 @@ export interface PrivateShell extends Shell {
 export interface EntryPointsInfo {
     readonly name: string
     readonly lazy: boolean
-    readonly installed: boolean
+    readonly attached: boolean
 }
 
 // TODO: define logging abstraction

@@ -2,7 +2,7 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { AnyPackage, AnySlotKey, AppHost, AppMainView, createAppHost, Shell, SlotKey } from '../index'
+import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../index'
 import { EntryPoint, PrivateShell } from '../src/API'
 import { renderShellComponent } from '../src/renderSlotComponents'
 
@@ -17,7 +17,7 @@ export interface PactAPI<T> extends PactAPIBase {
     getAPIKey(): SlotKey<T>
 }
 
-function forEachDeclaredAPI(allPackages: AnyPackage[], iteration: (dependency: AnySlotKey, entryPoint: EntryPoint) => void) {
+function forEachDeclaredAPI(allPackages: EntryPointOrPackage[], iteration: (dependency: AnySlotKey, entryPoint: EntryPoint) => void) {
     _.forEach(_.flatten(allPackages), (entryPoint: EntryPoint) => {
         _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
             iteration(dependency, entryPoint)
@@ -25,14 +25,17 @@ function forEachDeclaredAPI(allPackages: AnyPackage[], iteration: (dependency: A
     })
 }
 
-export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPackages: AnyPackage[]): AnyPackage[] => {
+export const getPackagesDependencies = (
+    allPackages: EntryPointOrPackage[],
+    requiredPackages: EntryPointOrPackage[]
+): EntryPointOrPackage[] => {
     const tree = new Map<AnySlotKey, EntryPoint | undefined>()
 
     forEachDeclaredAPI(allPackages, (dependency, entryPoint) => {
         tree.set(dependency, entryPoint)
     })
 
-    const packagesList: AnyPackage[] = []
+    const packagesList: EntryPointOrPackage[] = []
     const entryPointsQueue: EntryPoint[] = _.flatten(requiredPackages)
 
     while (entryPointsQueue.length) {
@@ -46,7 +49,7 @@ export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPacka
     return _.uniq(packagesList)
 }
 
-export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactAPIBase[]) {
+export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: PactAPIBase[]) {
     const pactsEntryPoint: EntryPoint = {
         name: 'PACTS_ENTRY_POINT',
         declareAPIs() {

@@ -76,29 +76,29 @@ describe('App Host', () => {
             const host = createAppHost([mockPackage])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isShellInstalled(mockPackage.name)).toBe(true)
+            expect(host.hasShell(mockPackage.name)).toBe(true)
         })
 
         it('should install packages after initial installations', async () => {
             const host = createAppHost([])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isShellInstalled(mockPackage.name)).toBe(false)
+            expect(host.hasShell(mockPackage.name)).toBe(false)
 
-            host.installPackages([mockPackage])
+            host.addShells([mockPackage])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isShellInstalled(mockPackage.name)).toBe(true)
+            expect(host.hasShell(mockPackage.name)).toBe(true)
         })
 
         it('should uninstall shell', async () => {
             const host = createAppHost([mockPackage])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            host.uninstallShells([mockPackage.name])
+            host.removeShells([mockPackage.name])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isShellInstalled(mockPackage.name)).toBe(false)
+            expect(host.hasShell(mockPackage.name)).toBe(false)
         })
 
         it('should not install multiple shells with the same name', () => {
@@ -110,7 +110,7 @@ describe('App Host', () => {
             const host = createAppHost([lazyEntryPoint])
             await new Promise(resolve => host.onShellsChanged(resolve))
 
-            expect(host.isShellInstalled(lazyEntryPoint.name)).toBe(true)
+            expect(host.hasShell(lazyEntryPoint.name)).toBe(true)
         })
     })
 
@@ -129,12 +129,12 @@ describe('App Host', () => {
                     const { host, dependentPackage: dependentPackage } = createHostWithDependantPackages(dependencyAPI)
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(false)
 
-                    host.installPackages([providerPackage])
+                    host.addShells([providerPackage])
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(true)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(true)
                 })
 
                 it('should install all dependent entry points chain when dependencies are installed from entry point', async () => {
@@ -143,16 +143,16 @@ describe('App Host', () => {
                     )
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(false)
-                    expect(host.isShellInstalled(dependentPackage[1].name)).toBe(false)
-                    expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[1].name)).toBe(false)
+                    expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(false)
 
-                    host.installPackages([providerPackage])
+                    host.addShells([providerPackage])
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(true)
-                    expect(host.isShellInstalled(dependentPackage[1].name)).toBe(true)
-                    expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(true)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(true)
+                    expect(host.hasShell(dependentPackage[1].name)).toBe(true)
+                    expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(true)
                 })
 
                 it('should install all dependent entry points chain when dependencies are installed outside of entry point', async () => {
@@ -161,31 +161,31 @@ describe('App Host', () => {
                     )
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(false)
-                    expect(host.isShellInstalled(dependentPackage[1].name)).toBe(false)
-                    expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[1].name)).toBe(false)
+                    expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(false)
 
                     helperShell.contributeAPI(dependencyAPI, () => ({ stubTrue: () => true }))
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(true)
-                    expect(host.isShellInstalled(dependentPackage[1].name)).toBe(true)
-                    expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(true)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(true)
+                    expect(host.hasShell(dependentPackage[1].name)).toBe(true)
+                    expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(true)
                 })
 
                 it('should uninstall all dependent entry points chain when dependencies are uninstalled', async () => {
                     const { host, dependentPackage, deeplyDependentPackage } = createHostWithDependantPackages(dependencyAPI)
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    host.installPackages([providerPackage])
+                    host.addShells([providerPackage])
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    host.uninstallShells([providerPackage.name])
+                    host.removeShells([providerPackage.name])
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
-                    expect(host.isShellInstalled(dependentPackage[0].name)).toBe(false)
-                    expect(host.isShellInstalled(dependentPackage[1].name)).toBe(false)
-                    expect(host.isShellInstalled(deeplyDependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[0].name)).toBe(false)
+                    expect(host.hasShell(dependentPackage[1].name)).toBe(false)
+                    expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(false)
                 })
             })
         }
@@ -315,7 +315,7 @@ describe('App Host', () => {
             const host = createAppHost([])
             expect(() => host.getAPI(MockAPI)).toThrow()
 
-            host.installPackages([mockPackage])
+            host.addShells([mockPackage])
             expect(host.getAPI(MockAPI)).toBeTruthy()
         })
 
@@ -325,7 +325,7 @@ describe('App Host', () => {
             const appHost = createAppHost([])
             expect(getMockShellState(appHost)).toBeNull()
 
-            appHost.installPackages([mockPackage])
+            appHost.addShells([mockPackage])
             expect(getMockShellState(appHost)).toEqual(mockShellInitialState)
         })
     })
@@ -342,7 +342,7 @@ describe('App Host', () => {
                 }
             }
             const appHost = createAppHost([mockPackage])
-            expect(() => appHost.installPackages([entryPointThatCallsAPI])).not.toThrow()
+            expect(() => appHost.addShells([entryPointThatCallsAPI])).not.toThrow()
         })
 
         it('should not be able to call an API not declared in dependencies', () => {
@@ -353,7 +353,7 @@ describe('App Host', () => {
                 }
             }
             const appHost = createAppHost([mockPackage])
-            expect(() => appHost.installPackages([entryPointThatCallsAPI])).toThrow()
+            expect(() => appHost.addShells([entryPointThatCallsAPI])).toThrow()
         })
 
         it('should get scoped state', done => {
@@ -378,8 +378,8 @@ describe('App Host', () => {
             const packageThatInstallsAPackage: EntryPoint = {
                 name: 'ENTRY_POINT_THAT_INSTALLS_A_PACKAGE',
                 extend(shell: Shell) {
-                    shell.installPackages([mockPackage])
-                    shell.uninstallShells([mockPackage.name])
+                    shell.addShells([mockPackage])
+                    shell.removeShells([mockPackage.name])
                 }
             }
             expect(() => createAppHost([packageThatInstallsAPackage])).not.toThrow()
@@ -389,7 +389,7 @@ describe('App Host', () => {
             const packageThatTriesToUninstallAPackage: EntryPoint = {
                 name: 'ENTRY_POINT_THAT_TRYIES_TO_UNINSTALL_A_PACKAGE',
                 extend(shell: Shell) {
-                    shell.uninstallShells([mockPackage.name])
+                    shell.removeShells([mockPackage.name])
                 }
             }
             expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage])).toThrow()

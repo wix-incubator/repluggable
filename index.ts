@@ -1,5 +1,5 @@
 export {
-    AnyPackage,
+    EntryPointOrPackage,
     EntryPoint,
     AppHost,
     Shell,

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AnyPackage, EntryPoint } from '../src/API'
+import { EntryPoint, EntryPointOrPackage } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
 import { getPackagesDependencies } from '../testKit'
 
@@ -15,7 +15,7 @@ const APIs: APIKeys = {
     F: { name: 'F' }
 }
 interface PackagesMap {
-    [name: string]: AnyPackage
+    [name: string]: EntryPointOrPackage
 }
 const allPackages: PackagesMap = {
     A: {
@@ -60,12 +60,12 @@ const allPackages: PackagesMap = {
 
 describe('App Host TestKit', () => {
     it('should get packages dependencies', () => {
-        const toResult = (packages: AnyPackage[]) =>
+        const toResult = (packages: EntryPointOrPackage[]) =>
             _(packages)
                 .flatten()
                 .sortBy('name')
                 .value()
-        const getDependencies = (packages: AnyPackage[]) => toResult(getPackagesDependencies(_.values(allPackages), packages))
+        const getDependencies = (packages: EntryPointOrPackage[]) => toResult(getPackagesDependencies(_.values(allPackages), packages))
         const { A, B, C, D, F } = allPackages
 
         expect(getDependencies([])).toEqual(toResult([]))
