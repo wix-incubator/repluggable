@@ -3,7 +3,7 @@ import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
 import { AnyPackage, AnySlotKey, AppHost, AppMainView, createAppHost, Shell, SlotKey } from '../index'
-import { EntryPoint, PrivateShell } from '../src/api'
+import { EntryPoint, PrivateShell } from '../src/API'
 import { renderShellComponent } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../index'
@@ -39,7 +39,7 @@ export const getPackagesDependencies = (allPackages: AnyPackage[], requiredPacka
         const currEntryPoint = entryPointsQueue.shift() as EntryPoint
         packagesList.push(currEntryPoint)
         const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
-        const dependecyEntryPoints = dependencies.map(api => tree.get(api))
+        const dependecyEntryPoints = dependencies.map(API => tree.get(API))
         entryPointsQueue.push(..._.compact(dependecyEntryPoints))
     }
 
@@ -121,8 +121,8 @@ function createShell(host: AppHost): PrivateShell {
             return true
         },
         contributeAPI<TAPI>(): TAPI {
-            const api: any = {}
-            return api
+            const API: any = {}
+            return API
         },
         contributeState: _.noop,
         contributeMainView: _.noop

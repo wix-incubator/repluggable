@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AnyPackage, EntryPoint } from '../src/api'
+import { AnyPackage, EntryPoint } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
 import { getPackagesDependencies } from '../testKit'
 

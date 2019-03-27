@@ -1,6 +1,6 @@
 import React, { SFC } from 'react'
 import { connect, Provider } from 'react-redux'
-import { AppHost } from './api'
+import { AppHost } from './API'
 import { mainViewSlotKey } from './appHost'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { renderSlotComponents } from './renderSlotComponents'

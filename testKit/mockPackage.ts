@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
 import { AnyAction } from 'redux'
-import { EntryPoint, Shell, SlotKey } from '../src/api'
+import { EntryPoint, Shell, SlotKey } from '../src/API'
 
 export interface MockAPI {
     stubTrue(): boolean

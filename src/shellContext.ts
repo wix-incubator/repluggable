@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import { Shell } from './api'
+import { Shell } from './API'
 
 type ShellContext = Shell
 

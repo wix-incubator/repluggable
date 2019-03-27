@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell } from './api'
+import { Shell } from './API'
 import { ShellContext } from './shellContext'
 
 interface WrapperMembers<S, OP, SP, DP> {

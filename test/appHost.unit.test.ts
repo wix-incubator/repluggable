@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey } from '../src/api'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey } from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -217,9 +217,9 @@ describe('App Host', () => {
             it('should equal itself', () => {
                 const host = createAppHost([mockPackage])
 
-                const api = host.getAPI(MockAPI)
+                const API = host.getAPI(MockAPI)
 
-                expect(api).toBeTruthy()
+                expect(API).toBeTruthy()
             })
 
             it('should not equal another key with same name', () => {
@@ -256,9 +256,9 @@ describe('App Host', () => {
             it('should equal itself', () => {
                 const host = createAppHost([mockPackageWithPublicAPI])
 
-                const api = host.getAPI(MockPublicAPI)
+                const API = host.getAPI(MockPublicAPI)
 
-                expect(api).toBeTruthy()
+                expect(API).toBeTruthy()
             })
 
             it('should equal another key with same name that claims it is public', () => {
@@ -268,9 +268,9 @@ describe('App Host', () => {
                     public: true
                 }
 
-                const api = host.getAPI(anotherKey)
+                const API = host.getAPI(anotherKey)
 
-                expect(api).toBeTruthy()
+                expect(API).toBeTruthy()
             })
 
             it('should not equal another key with same name than does not claim it is public', () => {

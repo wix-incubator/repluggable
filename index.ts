@@ -10,7 +10,7 @@ export {
     ReactComponentContributor,
     SoloReactComponentContributor,
     ReducersMapObjectContributor
-} from './src/api'
+} from './src/API'
 
 export { AppMainView } from './src/appMainView'
 

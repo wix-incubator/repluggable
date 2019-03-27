@@ -17,7 +17,7 @@ import {
     ReducersMapObjectContributor,
     ScopedStore,
     SlotKey
-} from './api'
+} from './API'
 
 import _ from 'lodash'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
@@ -224,8 +224,8 @@ function createAppHostImpl(): AppHost {
     }
 
     function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
-        const apiSlot = getSlot<TAPI>(key)
-        return apiSlot.getSingleItem().contribution
+        const APISlot = getSlot<TAPI>(key)
+        return APISlot.getSingleItem().contribution
     }
 
     function getStore(): Store {
@@ -378,14 +378,14 @@ function createAppHostImpl(): AppHost {
     function doesExtensionItemBelongToShells(extensionItem: ExtensionItem<any>, shellNames: string[]) {
         return (
             _.includes(shellNames, extensionItem.shell.name) ||
-            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyAPIs'), apiKey =>
-                _.includes(shellNames, _.get(getAPIContributor(apiKey), 'name'))
+            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyAPIs'), APIKey =>
+                _.includes(shellNames, _.get(getAPIContributor(APIKey), 'name'))
             )
         )
     }
 
-    function isAPIMissing(apiKey: AnySlotKey): boolean {
-        const ownKey = getOwnSlotKey(apiKey)
+    function isAPIMissing(APIKey: AnySlotKey): boolean {
+        const ownKey = getOwnSlotKey(APIKey)
         return !extensionSlots.has(ownKey)
     }
 
@@ -398,8 +398,8 @@ function createAppHostImpl(): AppHost {
         }
     }
 
-    function discardAPI<TAPI>(apiKey: SlotKey<TAPI>) {
-        const ownKey = getOwnSlotKey(apiKey)
+    function discardAPI<TAPI>(APIKey: SlotKey<TAPI>) {
+        const ownKey = getOwnSlotKey(APIKey)
 
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
@@ -415,7 +415,7 @@ function createAppHostImpl(): AppHost {
             _.invoke(f.entryPoint, 'uninstall', f)
         )
 
-        const apisToDiscard = [...readyAPIs].filter(apiKey => _.includes(names, _.get(getAPIContributor(apiKey), 'name')))
+        const APIsToDiscard = [...readyAPIs].filter(APIKey => _.includes(names, _.get(getAPIContributor(APIKey), 'name')))
         extensionSlots.forEach(extensionSlot =>
             (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToShells(extensionItem, names))
         )
@@ -424,7 +424,7 @@ function createAppHostImpl(): AppHost {
             installedShells.delete(name)
             uniqueShellNames.delete(name)
         })
-        apisToDiscard.forEach(discardAPI)
+        APIsToDiscard.forEach(discardAPI)
 
         console.log(`Done uninstalling ${names}`)
 
@@ -443,7 +443,7 @@ function createAppHostImpl(): AppHost {
 
     function createShell(entryPoint: EntryPoint): PrivateShell {
         let storeEnabled = false
-        let apisEnabled = false
+        let APIsEnabled = false
         let dependencyAPIs: AnySlotKey[] = []
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
@@ -457,15 +457,15 @@ function createAppHostImpl(): AppHost {
 
             setLifecycleState(enableStore: boolean, enableAPIs: boolean) {
                 storeEnabled = enableStore
-                apisEnabled = enableAPIs
+                APIsEnabled = enableAPIs
             },
 
-            setDependencyAPIs(apis: AnySlotKey[]): void {
-                dependencyAPIs = apis
+            setDependencyAPIs(APIs: AnySlotKey[]): void {
+                dependencyAPIs = APIs
             },
 
             canUseAPIs(): boolean {
-                return apisEnabled
+                return APIsEnabled
             },
 
             canUseStore(): boolean {
@@ -515,9 +515,9 @@ function createAppHostImpl(): AppHost {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                const api = factory()
-                const apiSlot = declareSlot<TAPI>(key)
-                apiSlot.contribute(api, undefined, shell)
+                const API = factory()
+                const APISlot = declareSlot<TAPI>(key)
+                APISlot.contribute(API, undefined, shell)
 
                 readyAPIs.add(key)
 
@@ -527,7 +527,7 @@ function createAppHostImpl(): AppHost {
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
                 }
 
-                return api
+                return API
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {

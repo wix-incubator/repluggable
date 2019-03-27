@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, SoloReactComponentContributor } from './api'
+import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, SoloReactComponentContributor } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
