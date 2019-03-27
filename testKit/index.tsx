@@ -52,7 +52,7 @@ export function createAppHostWithPacts(packages: AnyPackage[], pacts: PactAPIBas
         declareAPIs() {
             return pacts.map(pact => pact.getAPIKey())
         },
-        install(shell: Shell): void {
+        attach(shell: Shell): void {
             _.each(pacts, pact => {
                 shell.contributeAPI(pact.getAPIKey(), () => pact)
             })

@@ -29,7 +29,7 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
             declareAPIs() {
                 return [MockAPI2]
             },
-            install(shell: Shell) {
+            attach(shell: Shell) {
                 shell.contributeAPI(MockAPI2, () => ({}))
             }
         }
@@ -52,7 +52,7 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
         declareAPIs() {
             return [DependencyAPI]
         },
-        install(shell: Shell) {
+        attach(shell: Shell) {
             getHelperShell = () => shell
         }
     }
@@ -361,7 +361,7 @@ describe('App Host', () => {
             const MOCK_STATE_KEY = 'mockStateKey'
             const entryPointWithState: EntryPoint = {
                 name: 'ENTRY_POINT_WITH_STATE',
-                install(shell: Shell) {
+                attach(shell: Shell) {
                     shell.contributeState(() => ({
                         [MOCK_STATE_KEY]: () => state
                     }))

@@ -157,7 +157,7 @@ function createAppHostImpl(): AppHost {
                 f => !!f.entryPoint.getDependencyAPIs
             )
 
-            invokeEntryPointPhase('install', shells, f => f.entryPoint.install && f.entryPoint.install(f), f => !!f.entryPoint.install)
+            invokeEntryPointPhase('attach', shells, f => f.entryPoint.attach && f.entryPoint.attach(f), f => !!f.entryPoint.attach)
 
             buildStore()
             shells.forEach(f => f.setLifecycleState(true, true))
@@ -411,8 +411,8 @@ function createAppHostImpl(): AppHost {
     function executeUninstallShells(names: string[]): void {
         console.log(`-- Uninstalling ${names} --`)
 
-        invokeEntryPointPhase('uninstall', names.map(name => installedShells.get(name)) as PrivateShell[], f =>
-            _.invoke(f.entryPoint, 'uninstall', f)
+        invokeEntryPointPhase('detach', names.map(name => installedShells.get(name)) as PrivateShell[], f =>
+            _.invoke(f.entryPoint, 'detach', f)
         )
 
         const APIsToDiscard = [...readyAPIs].filter(APIKey => _.includes(names, _.get(getAPIContributor(APIKey), 'name')))

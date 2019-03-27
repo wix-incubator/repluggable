@@ -26,9 +26,9 @@ export interface EntryPoint {
     readonly name: string
     getDependencyAPIs?(): AnySlotKey[]
     declareAPIs?(): AnySlotKey[]
-    install?(shell: Shell): void
+    attach?(shell: Shell): void
     extend?(shell: Shell): void
-    uninstall?(shell: Shell): void
+    detach?(shell: Shell): void
 }
 
 export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor

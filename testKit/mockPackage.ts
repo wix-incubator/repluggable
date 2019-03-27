@@ -46,7 +46,7 @@ export const mockPackage: EntryPoint = {
     declareAPIs() {
         return [MockAPI]
     },
-    install(shell: Shell) {
+    attach(shell: Shell) {
         shell.contributeAPI(MockAPI, () => createMockAPI(shell))
         shell.contributeState(() => ({
             [mockShellStateKey]: mockReducer
@@ -59,7 +59,7 @@ export const mockPackageWithPublicAPI: EntryPoint = {
     declareAPIs() {
         return [MockPublicAPI]
     },
-    install(shell: Shell) {
+    attach(shell: Shell) {
         shell.contributeAPI(MockPublicAPI, () => ({
             stubTrue: () => true
         }))
