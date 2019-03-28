@@ -1,5 +1,7 @@
 # Table of contents
 
+
+
 - [**Concept**](#concept)
   - [Main application](#main-application)
   - [Pluggable packages](#pluggable-packages)
@@ -23,11 +25,17 @@
 - [**API Reference**](#api-reference)
   - AppHost
   - EntryPointHost
-  - EntryPoint interface
+  - EntryPoint interface.3
   - connectWithEntryPoint
   - SlotKey
   - ExtensionSlot
   - renderExtensionSlot
+
+# Introduction
+
+`react-app-lego` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
+
+Loaded packages can be extended by subsequently loaded packages. For that, one package defines ane xtension slot
 
 # Concept
 
