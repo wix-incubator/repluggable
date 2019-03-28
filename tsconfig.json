@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "allowJs": true,
+    "downlevelIteration": true,
+    "skipLibCheck": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "lib": ["es6", "dom"]
+  },
+  "include": [
+    "src",
+    "../../sdk/**/*",
+    "../../packages/**/*"
+  ]
+}
