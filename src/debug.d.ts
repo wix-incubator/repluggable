@@ -1,4 +1,4 @@
-import { AnySlotKey, AppHost } from '..'
+import { AnySlotKey, AppHost } from '.'
 import { LazyEntryPointFactory, PrivateShell } from './API'
 import { AnyExtensionSlot } from './extensionSlot'
 

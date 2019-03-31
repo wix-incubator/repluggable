@@ -23,7 +23,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     mapDispatchToProps: MapDispatchToProps<OP, DP>
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
-        public connectedComponent: ConnectedComponentClass<ComponentType<never>, OP>
+        public connectedComponent: ConnectedComponentClass<ComponentType<any>, OP>
         public mapStateToProps: (state: S, ownProps?: OP) => SP
         public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OP) => DP
 
@@ -44,7 +44,11 @@ function wrapWithShellContext<S, OP, SP, DP>(
         }
     }
 
-    return (props: OP) => <ShellContext.Consumer>{shell => <ConnectedComponent {...props} shell={shell} />}</ShellContext.Consumer>
+    return (props: OP) => (
+        <ShellContext.Consumer>
+            {shell => <ConnectedComponent {...props} shell={shell} />}
+        </ShellContext.Consumer>
+    )
 }
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(

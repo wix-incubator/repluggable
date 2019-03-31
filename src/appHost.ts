@@ -22,6 +22,7 @@ import {
 import _ from 'lodash'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
+import { AppHostServicesProvider, createAppHostServicesEntryPoint, AppHostAPI } from './appHostServices'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -69,8 +70,10 @@ function createAppHostImpl(): AppHost {
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
-
-    const host: AppHost = {
+    
+    const hostAPI: AppHostAPI = {}
+    const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
+    const host: AppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
         getSlot,
@@ -81,7 +84,8 @@ function createAppHostImpl(): AppHost {
         addShells,
         removeShells,
         onShellsChanged,
-        removeShellsChangedCallback
+        removeShellsChangedCallback,
+        getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell
     }
 
     // TODO: Conditionally with parameter
@@ -97,6 +101,7 @@ function createAppHostImpl(): AppHost {
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
+    addShells([appHostServicesEntryPoint])
 
     return host
 

@@ -16,6 +16,8 @@
     "test": "jest",
     "release": "wnpm-release"
   },
+  "main": "dist/react-app-lego.js",
+  "types": "dist/types/index.d.ts",
   "dependencies": {
     "lodash": "^4.17.11",
     "react": "^16.6.0",

@@ -5,6 +5,7 @@ import { mainViewSlotKey } from './appHost'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { renderSlotComponents } from './renderSlotComponents'
 import { ShellContext } from './shellContext'
+import { AppHostServicesProvider } from './appHostServices'
 
 export interface AppMainViewProps {
     host: AppHost
@@ -15,15 +16,15 @@ interface SfcProps {
     installedShells: ShellToggleSet
 }
 
-// TODO: Either create shell for root context or render root slot without context provider
 const sfc: SFC<SfcProps> = props => {
+    const appHostServicesShell = (props.host as unknown as AppHostServicesProvider).getAppHostServicesShell()
     const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
-    const rootShell = {
-        name: '$root',
-        ...props.host
-    }
-
-    return <ShellContext.Provider value={rootShell}>{contextProviderChildren}</ShellContext.Provider>
+    
+    return (
+        <ShellContext.Provider value={appHostServicesShell}>
+            {contextProviderChildren}
+        </ShellContext.Provider>
+    )
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
