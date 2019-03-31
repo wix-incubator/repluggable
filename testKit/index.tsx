@@ -2,11 +2,11 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../index'
+import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { EntryPoint, PrivateShell } from '../src/API'
 import { renderShellComponent } from '../src/renderSlotComponents'
 
-export { AppHost, createAppHost } from '../index'
+export { AppHost, createAppHost } from '../src/index'
 export * from './mockPackage'
 
 interface PactAPIBase {

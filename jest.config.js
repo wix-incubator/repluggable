@@ -9,5 +9,5 @@ module.exports = {
     ],
     clearMocks: true,
     coverageDirectory: "coverage",
-    // "setupTestFrameworkScriptFile": "<rootDir>/app/react/setupTests.js",
+    setupFilesAfterEnv: ["./testSetup.js"]
 }
