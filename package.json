@@ -1,6 +1,6 @@
 {
   "name": "repluggable",
-  "version": "0.5.2",
+  "version": "0.5.5",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "author": "",
   "license": "ISC",
