@@ -89,7 +89,7 @@ function createAppHostImpl(): AppHost {
     }
 
     // TODO: Conditionally with parameter
-    window.reactAppLegoDebug = {
+    window.repluggableAppDebug = {
         host,
         uniqueShellNames,
         extensionSlots,

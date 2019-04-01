@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>com.wixpress.infra</groupId>
-    <artifactId>react-app-lego</artifactId>
-    <name>react-app-lego</name>
+    <artifactId>repluggable</artifactId>
+    <name>repluggable</name>
     <description>Develop React app as a shell for pluggable features</description>
 
     <parent>

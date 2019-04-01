@@ -33,13 +33,13 @@
 
 # Introduction
 
-`react-app-lego` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
+`repluggable` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
 
 Loaded packages can be extended by subsequently loaded packages. For that, one package defines ane xtension slot
 
 # Concept
 
-`react-app-lego` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
+`repluggable` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
 
 A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
 
@@ -72,7 +72,7 @@ Every entry point contributes one or more pieces to the whole lego of the applic
 
 Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. They can be anything, provided that they are expected by the lego. Here _expected_ means that some package provides an API, through which it accepts contributions of this specific type.
 
-There are also two kinds of contributions supported directly by `react-app-lego`: _APIs_ and _reducers_.
+There are also two kinds of contributions supported directly by `repluggable`: _APIs_ and _reducers_.
 
 Besides contributing lego pieces, entry points may contain additional lifecycle hooks.
 
@@ -94,7 +94,7 @@ In order to consume an API, a consumer package does:
 
 ## Reducers 
 
-`react-app-lego` requires all state of the application to be managed in Redux store. This ensures that all pieces are connected to a single event-driven mechanism. This in turn, guarantees that pure React components mapped to values returned by APIs, will re-render once these values change.
+`repluggable` requires all state of the application to be managed in Redux store. This ensures that all pieces are connected to a single event-driven mechanism. This in turn, guarantees that pure React components mapped to values returned by APIs, will re-render once these values change.
 
 A package that has state must contribute one or more reducers responsible for managing that state. If such package contributes APIs, it can also include selectors and action dispatchers in the APIs.
 
@@ -104,7 +104,7 @@ The Redux store of the main application is combined from reducers contributed by
 
 When a package accepts contributions from other packages, it must store contributed pieces in some kind of array. 
 
-`react-app-lego` provides a "smart" array for this purpose, named _extension slot_. Extension slot is a generic object `ExtensionSlot<T>`, which accpets contributions of type `T`. 
+`repluggable` provides a "smart" array for this purpose, named _extension slot_. Extension slot is a generic object `ExtensionSlot<T>`, which accpets contributions of type `T`. 
 
 Its additional responsibility is remembering which package and entry point each contribution was received from. This allows applying package boundaries and easily handling other cross-cutting concerns.
 
@@ -137,7 +137,7 @@ Such association provides several aspects to the children:
 
 ## Progressive loading 
 
-To make application loading reliable and fast, `react-app-lego` allows flexible control over package loading process. 
+To make application loading reliable and fast, `repluggable` allows flexible control over package loading process. 
 
 The loading process is abstracted from any concrete module system or loader. Packages can be in a monolith bundle, or loaded with dynamic imports, or with loaders like RequireJS. To add a package to an `AppHost`, all that's needed is a `Promise` of package default export. 
 
@@ -168,17 +168,17 @@ Such approach guarantees that code dependent on an API from another package, wil
 
 ## TypeScript
 
-`react-app-lego` primarily supports development in TypeScript. While development in JavaScript (and anything that transpiles into JavaScript) is possible, many design decisions bear TypeScript in mind.
+`repluggable` primarily supports development in TypeScript. While development in JavaScript (and anything that transpiles into JavaScript) is possible, many design decisions bear TypeScript in mind.
 
 ## Developing main application
 
-The main application is a React application, which uses `react-app-lego` package.
+The main application is a React application, which uses `repluggable` package.
 
 The `index.ts` of the application must perform the following steps.
 
-1. Import from `react-app-lego`
+1. Import from `repluggable`
    ```TypeScript
-   import { createAppHost, AppMainView } from 'react-app-lego'
+   import { createAppHost, AppMainView } from 'repluggable'
    ```
 
 1. Provide loaders of pluggable packages. Here we give an example of three packages, each loaded in a different way:
@@ -216,7 +216,7 @@ The `index.ts` of the application must perform the following steps.
 
 ```TypeScript
 import ReactDOM from 'react-dom'
-import { createAppHost, AppMainView } from 'react-app-lego'
+import { createAppHost, AppMainView } from 'repluggable'
 
 import packageOne from 'package-one'
 const packageTwo = () => import('package-two').then(m => m.default)
@@ -240,7 +240,7 @@ ReactDOM.render(
 
 A package project is a regular Node project. 
 
-Typically, it is set up with TypeScript, React, and Redux. The project must include dependency on `react-app-lego`. 
+Typically, it is set up with TypeScript, React, and Redux. The project must include dependency on `repluggable`. 
 
 The rest of the configuration (Babel, WebPack, Jest, etc) heavily depends on organization of you codebase and release pipeline, and is out of scope of this README.
 
@@ -250,7 +250,7 @@ As we mentioned, each package must export one or more entry points, in order to 
 
 An entry point is an object which implements `EntryPoint` interface:
 ```TypeScript
-import { EntryPoint } from 'react-app-lego'
+import { EntryPoint } from 'repluggable'
 
 const FooEntryPoint: EntryPoint = {
 
@@ -325,7 +325,7 @@ To create an API, perform these steps:
 
 1. Declare an API key, which is a const named after the interface, as follows:
    ```TypeScript
-   import { SlotKey } from 'react-app-lego'
+   import { SlotKey } from 'repluggable'
 
    export const FooAPI: SlotKey<FooAPI> = { 
        name: 'Foo API', 
@@ -479,7 +479,7 @@ To contribute the reducers, perform these steps:
 
 When creating a React component, we strongly recommend to follow the React-Redux pattern, and separate your component into a stateless render and a `connect` container. 
 
-In `react-app-lego`, components often need to consume APIs. Although APIs can be obtained through `EntryPointHost` passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
+In `repluggable`, components often need to consume APIs. Although APIs can be obtained through `EntryPointHost` passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
 
 A more elegant solution is to use `connectWithEntryPoint()` function instead of the regular `connect()`. This provides connector with the ability to obtain APIs.
 

@@ -4,11 +4,11 @@ import { AnyExtensionSlot } from './extensionSlot'
 
 declare global {
     interface Window {
-        reactAppLegoDebug: ReactAppLegoDebugInfo
+        repluggableAppDebug: RepluggableAppDebugInfo
     }
 }
 
-export interface ReactAppLegoDebugInfo {
+export interface RepluggableAppDebugInfo {
     host: AppHost
     uniqueShellNames: Set<string>
     extensionSlots: Map<AnySlotKey, AnyExtensionSlot>

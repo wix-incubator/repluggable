@@ -1,6 +1,6 @@
 {
-  "name": "react-app-lego",
-  "version": "0.5.1",
+  "name": "repluggable",
+  "version": "0.5.2",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "author": "",
   "license": "ISC",
@@ -16,7 +16,7 @@
     "test": "jest",
     "release": "wnpm-release"
   },
-  "main": "dist/react-app-lego.js",
+  "main": "dist/repluggable.js",
   "types": "dist/types/index.d.ts",
   "dependencies": {
     "lodash": "^4.17.11",

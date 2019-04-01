@@ -7,8 +7,8 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'react-app-lego.js',
-    library: 'react-app-lego',
+    filename: 'repluggable.js',
+    library: 'repluggable',
     libraryTarget: 'umd',
     umdNamedDefine: true
   },
