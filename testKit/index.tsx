@@ -76,17 +76,20 @@ export const renderHost = (host: AppHost): { root: ReactWrapper | null; DOMNode:
 
 export const renderInHost = (
     reactElement: ReactElement<any>,
-    host: AppHost = createAppHost([])
+    host: AppHost = createAppHost([]),
+    customShell?: Shell
 ): {
     root: ReactWrapper | null
     parentWrapper: ReactWrapper | null
     DOMNode: HTMLElement | null
     host: AppHost
 } => {
-    const shell = createShell(host)
+    const shell = customShell || createShell(host)
 
     const root = mount(
-        <Provider store={host.getStore()}>{renderShellComponent(shell, <div data-shell-in-host="true">{reactElement}</div>, '')}</Provider>
+        <Provider store={host.getStore()}>
+            {renderShellComponent(shell as PrivateShell, <div data-shell-in-host="true">{reactElement}</div>, '')}
+        </Provider>
     )
 
     const parentWrapper = root.find('[data-shell-in-host="true"]')

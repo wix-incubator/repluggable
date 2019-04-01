@@ -21,7 +21,7 @@ const createMockAPI = (shell: Shell): MockAPI => ({
     stubTrue: _.stubTrue
 })
 
-interface MockState {
+export interface MockState {
     mockValue: boolean
 }
 

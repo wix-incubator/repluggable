@@ -15,12 +15,14 @@ type Maybe<T> = T | undefined
 type Returns<T> = () => T
 type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
+type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
-    mapDispatchToProps: MapDispatchToProps<OP, DP>
+    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+    boundShell?: Shell
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
         public connectedComponent: ConnectedComponentClass<ComponentType<any>, OP>
@@ -40,22 +42,31 @@ function wrapWithShellContext<S, OP, SP, DP>(
 
         public render() {
             const Component = this.connectedComponent
-            return <Component {...this.props} />
+            return <Component {..._.omit(this.props, 'shell')} />
         }
     }
 
-    return (props: OP) => (
+    const wrapChildrenInNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
+        boundShell && props.children
+            ? {
+                  ...props,
+                  children: <ShellContext.Provider value={originalShell}>{props.children}</ShellContext.Provider>
+              }
+            : props
+
+    return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
-            {shell => <ConnectedComponent {...props} shell={shell} />}
+            {shell => <ConnectedComponent {...wrapChildrenInNeeded(props, shell)} shell={boundShell || shell} />}
         </ShellContext.Consumer>
     )
 }
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
-    mapDispatchToProps: MapDispatchToProps<OP, DP>
+    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+    boundShell?: Shell
 ) {
     return (component: React.ComponentType<OP & SP & DP>) => {
-        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps)
+        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
     }
 }
