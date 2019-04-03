@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, SoloReactComponentContributor } from './API'
+import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
@@ -24,51 +24,34 @@ export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContribut
     )
 }
 
-type ReactContributorExtensionItem = ExtensionItem<ReactComponentContributor> | ExtensionItem<SoloReactComponentContributor>
-type ReactContributorExtensionSlot = ExtensionSlot<ReactComponentContributor> | ExtensionSlot<SoloReactComponentContributor>
-
-interface SlotRendererPureProps {
-    items: ReactContributorExtensionItem[]
-    Wrapper?: React.ComponentType<any>
-    wrapperPropsGetter?: (item: ExtensionItem<any>, index: number) => object
+interface SlotRendererPureProps<T> {
+    items: ExtensionItem<T>[]
+    mapFunc: (item: T) => ReactComponentContributor
+    filterFunc?: (item: T) => boolean
 }
-const SlotRendererPure: React.FunctionComponent<SlotRendererPureProps> = ({ items, Wrapper, wrapperPropsGetter }) => (
+const SlotRendererPure: React.FunctionComponent<SlotRendererPureProps<any>> = ({ items, mapFunc, filterFunc }) => (
     <>
-        {items.map((item, index) => {
-            const props = (wrapperPropsGetter || _.stubObject)(item, index)
-            return Wrapper ? (
-                <Wrapper {...props} key={index}>
-                    {renderExtensionItem(item, index, props.children)}
-                </Wrapper>
-            ) : (
-                renderExtensionItem(item, index)
+        {items.filter(item => (!filterFunc || filterFunc(item.contribution))).map((item, index) => {
+          return (
+                 renderShellComponent(
+                  item.shell,
+                  <ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc}>
+                    {/*{children}*/}
+                  </ConnectedPredicateHoc>,
+                  index, // index is the key prop
+                  item.name
+                )
             )
         })}
     </>
 )
 
-interface SlotRendererConnectedProps {
-    slot: ReactContributorExtensionSlot
+interface SlotRendererConnectedProps<T> {
+    slot: ExtensionSlot<T>
+    mapFunc: (item: T) => ReactComponentContributor
+    filterFunc?: (item: T) => boolean
 }
-export const SlotRenderer = connect((state, { slot }: SlotRendererConnectedProps) => ({ items: slot.getItems() }))(SlotRendererPure)
-
-const renderExtensionItem = (item: ReactContributorExtensionItem, index: number, children?: ReactNode) =>
-    renderShellComponent(
-        item.shell,
-        <ConnectedPredicateHoc index={index} item={item}>
-            {children}
-        </ConnectedPredicateHoc>,
-        index, // index is the key prop
-        item.name
-    )
-
-export function renderSlotComponentsConnected(
-    slot: ReactContributorExtensionSlot,
-    Wrapper?: React.ComponentType<any>,
-    wrapperPropsGetter?: (item: ExtensionItem<any>, index: number) => object
-): ReactNode {
-    return <SlotRenderer slot={slot} Wrapper={Wrapper} wrapperPropsGetter={wrapperPropsGetter} />
-}
+export const SlotRenderer = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({ items: slot.getItems() }))(SlotRendererPure)
 
 interface PredicateHocProps {
     index: number
@@ -81,15 +64,16 @@ const PredicateHoc: React.FunctionComponent<PredicateHocProps> = props => (
     <>{props.predicateResult ? props.children || props.render() : null}</>
 )
 
-interface ConnectedPredicateHocProps {
+interface ConnectedPredicateHocProps<T> {
     index: number
-    item: ExtensionItem<ReactComponentContributor>
+    item: ExtensionItem<T>
     children?: ReactNode
+    mapFunc: (item: T) => ReactComponentContributor
 }
 
-const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps): PredicateHocProps => ({
+const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps<any>): PredicateHocProps => ({
     index: ownProps.index,
-    render: ownProps.item.contribution,
+    render: ownProps.mapFunc(ownProps.item.contribution),
     children: ownProps.children,
     predicateResult: ownProps.item.condition()
 })

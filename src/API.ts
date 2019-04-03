@@ -3,7 +3,6 @@ import * as Redux from 'redux'
 
 export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'subscribe'>
 export type ReactComponentContributor = () => React.ReactNode
-export type SoloReactComponentContributor = () => JsxWithContainerCss
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
 export type LazyEntryPointFactory = () => Promise<EntryPoint>
@@ -50,11 +49,6 @@ export interface ExtensionItem<T> {
     readonly shell: PrivateShell
     readonly contribution: T
     readonly condition: ContributionPredicate
-}
-
-export interface JsxWithContainerCss {
-    jsx: React.ReactNode
-    containerCss: string | object
 }
 
 // addEntryPoints(entryPoints: EntryPoint[])
