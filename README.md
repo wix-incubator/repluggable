@@ -1,174 +1,68 @@
-# Table of contents
+# Welcome to repluggable
 
+Repluggable implements micro-frontends in a React+Redux app. Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends those already loaded by contributing new functionality into them.  Thus pieces of UI contributed by a package can be rendered anywhere, they aren't limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages can be plugged in and out at runtime without the need to reload a page.
 
+Navigate: [FAQ](#FAQ) | [How-to](#How-to) | [Reference](#Reference) | [Architecture](#Architecture)
 
-- [**Concept**](#concept)
-  - [Main application](#main-application)
-  - [Pluggable packages](#pluggable-packages)
-  - [Entry points](#entry-points)
-  - [APIs](#apis)
-  - [Reducers](#reducers)
-  - [Extension slots](#extension-slots)
-  - [Package boundaries](#package-boundaries-in-dom)
-  - [Progressive loading](#progressive-loading)
-  - [API dependencies](#api-dependencies)
-- [**Programmer's Guide**](#programmers-guide)
-  - [Developing main application](#developing-main-application)
-  - [Developing pluggable package](#developing-pluggable-package)
-    - [Creating package project](#creating-package-project)
-    - [Creating entry points](#creating-entry-points)
-    - [Exporting entry points](#exporting-entry-points)
-    - [Creating an API](#creating-an-api)
-    - [Managing state](#managing-state)
-    - [Creating React components](#creating-react-components)
-    - [Exporting React components](#exporting-react-components)
-- [**API Reference**](#api-reference)
-  - AppHost
-  - EntryPointHost
-  - EntryPoint interface.3
-  - connectWithEntryPoint
-  - SlotKey
-  - ExtensionSlot
-  - renderExtensionSlot
+# Getting started
 
-# Introduction
+All code in this README is in TypeScript.
 
-`repluggable` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
+## Installation
 
-Loaded packages can be extended by subsequently loaded packages. For that, one package defines ane xtension slot
+```
+$ npm install repluggable
+```
 
-# Concept
+## Pluggable package
 
-`repluggable` allows composition of a React-with-Redux application entirely from a list of pluggable packages. 
+A pluggable package is an array of one or more entry points. An entry point is an object which contributes pieces of functionality to the application. Below is an example of a simple entry point.
 
-A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
+`foo.ts`
+```TypeScript
+import { EntryPoint } from 'repluggable'
 
-For two pieces to connect, one piece defines a connection point (an _extension slot_) for specific type of other pieces. In order to connect, the other piece has to match the type of the slot. One slot can contain many pieces.
+export const Foo : EntryPoint = {
+    name: 'FOO', 
 
-Packages can be plugged in and out at runtime. Contributed pieces are added and removed from the application on the fly, without the need to reload a page. 
+    install() {
+        alert('FOO is here!')
+    }
+}
+```
+
+Usually, a package is an npm project, which exports an array of entry points. But it isn't a requirement: entry points can also be part of the main app.
 
 ## Main application
 
-This is the application being composed as a lego. We refer to it as _main application_. 
+This is the React+Redux app that's being composed from packages. Suppose we also have `bar.ts` implemented similarly to `Foo` above.
 
-The main application can be as small as an empty shell. Its functionality can be composed completely from the packages, where each plugged package contributes its pieces to the whole.
+`App.tsx`
 
-The minimal responsibilities of the main application are:
+```TypeScript
+import { createAppHost, AppMainView } from 'repluggable'
+import { Foo } from './foo'
+import { Bar } from './bar'
 
-- Initialize an `AppHost` object with a list of pluggable packages. 
-   > The `AppHost` object orchestrates lifecycle of the packages, handles cross-cutting concerns at package boundaries, and provides dependency injection to Redux-connected components.
+const host = createAppHost([ 
+    // the list of initially loaded packages
+    Foo, 
+    Bar 
+])
 
-- Render `AppMainView` component, passing it the initialized `AppHost` in props.
+ReactDOM.render(
+    <AppMainView host={host} />, 
+    document.getElementById('root')
+)
+```
 
-## Pluggable packages
+When run, the application will pop up two alerts, first 'FOO is here!', then 'BAR is here!'.
 
-Pluggable package (or simply _package_) is a regular Node package, which exports an array of _entry points_. 
+# FAQ
 
-The packages are plugged in the order they are listed when passed to `AppHost`. Entry points are invoked in the list order of the packages, in the array order within the package.
+TBD
 
-## Entry points
-
-Every entry point contributes one or more pieces to the whole lego of the application. 
-
-Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. They can be anything, provided that they are expected by the lego. Here _expected_ means that some package provides an API, through which it accepts contributions of this specific type.
-
-There are also two kinds of contributions supported directly by `repluggable`: _APIs_ and _reducers_.
-
-Besides contributing lego pieces, entry points may contain additional lifecycle hooks.
-
-## APIs
-
-Some packages (providers) provide services to other packages (consumers). The services are provided through APIs. An API is an object, which implements a TypeScript interface, and is identified by an API key. An API key is another object declared as a const [TODO: link to example](), and exported from the package. 
-
-In general, APIs allow packages to extend other packages (consumers call APIs, which let them pass contributions to the provider), and otherwise interact. Moreover, APIs are the only allowed way of interaction between packages.
-
-In order to provide an API, a provider package does:
-- declare and export API interface and API key
-- implement API object according to the interface
-- contribute API object under the key
- 
-In order to consume an API, a consumer package does:
-- import API key and API interface from the provider package
-- declare dependency on the API in relevant entry points
-- retrieve API object by calling `getAPI` and passing it the API key [TODO: link to example]().
-
-## Reducers 
-
-`repluggable` requires all state of the application to be managed in Redux store. This ensures that all pieces are connected to a single event-driven mechanism. This in turn, guarantees that pure React components mapped to values returned by APIs, will re-render once these values change.
-
-A package that has state must contribute one or more reducers responsible for managing that state. If such package contributes APIs, it can also include selectors and action dispatchers in the APIs.
-
-The Redux store of the main application is combined from reducers contributed by stateful packages.
-
-## Extension Slots
-
-When a package accepts contributions from other packages, it must store contributed pieces in some kind of array. 
-
-`repluggable` provides a "smart" array for this purpose, named _extension slot_. Extension slot is a generic object `ExtensionSlot<T>`, which accpets contributions of type `T`. 
-
-Its additional responsibility is remembering which package and entry point each contribution was received from. This allows applying package boundaries and easily handling other cross-cutting concerns.
-
-Extension slots are implementation details of a package, and they should never be directly exposed outside of the package. Instead, the package does: 
-
-- internally initialize an extension slot for every kind or group of accepted contributions
-- contribute an API that receives contributions from the outside and pushes them to an internal extension slot.
-
-With that, the `AppHost` also tracks all existing extension slots. This approach allows easy implementation of application-wide aspects. For example, removal of a package with all of its contributions across the application.
-
-## Package boundaries in DOM
-
-Every React component rendered under the `AppMainView` is associated with an _entry point context_. 
-
-The entry point context is a React context, which associates its children with a specific entry point, and thus the package that contains it. 
-
-Such association provides several aspects to the children:
-
-- performance measurements and errors reported by the children, are automatically tagged with the entry point and the package
-
-- in Redux-connected components ([TODO: link to details]()):
-
-  - dependency injection (the `getAPI` function): all dependencies are resolved in the context of the entry point
-
-  - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): returned state object is scoped to reducers contributed by the entry point.  
-
-> TODO: verify that getState() in thunks is actually scoped
-
-- when rendering an extension slot of contributed React components: each component is rendered within the context of the entry point it was contributed by.
-
-## Progressive loading 
-
-To make application loading reliable and fast, `repluggable` allows flexible control over package loading process. 
-
-The loading process is abstracted from any concrete module system or loader. Packages can be in a monolith bundle, or loaded with dynamic imports, or with loaders like RequireJS. To add a package to an `AppHost`, all that's needed is a `Promise` of package default export. 
-
-Packages can be added to an `AppHost` at different phases:
-
-- During initialization of the `AppHost`
-- Right after the `AppMainView` was rendered for the first time
-- Lazily at any later time
-
-Moreover, `AppHost` allows separating a whole package into multiple entry points. Some of the entry points are added right as the package is added to the `AppHost`, while others can be added later. 
-
-Such separation allows incremental contribution of functional parts as they become ready. Some parts may need to dynamically load additional dependencies or request data from backends. Without the separation approach, the user won't be able to interact with any functionality of the package, until the entire package is initialized -- which would hurt the experience.
-
-In addition, `AppHost` supports removal of previously added entry points or entire packages, at any time. Removal of a package means removal of all its entry points. When an entry point is removed, all contributions made from that entry point are removed altogether.
-
-## API dependencies
-
-Since APIs are contributed though entry points, their availability depends on the loading timing of the provider package, and a specific entry point within it. From a consumer package perspective, this creates a situation in which one or more of APIs the package depends on may be temporarily unavailable.
-
-`AppHost` resolves that with the help of explicit dependency declarations. Every entry point must declare APIs on which it depends (including dependencies of all pieces contributed by the entry point). If any of the required APIs is unavailable, the entry point is put on hold. There are two possible cases:
-
-- Attempted to add an entry point, but some of required APIs weren't available: the entry point is put on hold, and will be added as soon as all required APIs will be contributed.
-- An entry point was added, but then some of its required APIs became unavailable: the entry point will be removed together with all its contributions, and put on hold. It will be added again as soon as all required APIs will be available.
-
-Such approach guarantees that code dependent on an API from another package, will not run unless that API is available.
-
-# Programmer's Guide
-
-## TypeScript
-
-`repluggable` primarily supports development in TypeScript. While development in JavaScript (and anything that transpiles into JavaScript) is possible, many design decisions bear TypeScript in mind.
+# How-to
 
 ## Developing main application
 
@@ -579,7 +473,138 @@ TBD (advanced topic)
 
 TBD
 
-# API Reference
+# Reference
 
 TBD
+
+# Architecture
+
+`repluggable` allows composition of a React+Redux application entirely from a list of pluggable packages. 
+
+A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
+
+For two pieces to connect, one piece defines a connection point (an _extension slot_) for specific type of other pieces. In order to connect, the other piece has to match the type of the slot. One slot can contain many pieces.
+
+Packages can be plugged in and out at runtime. Contributed pieces are added and removed from the application on the fly, without the need to reload a page. 
+
+## Main application
+
+This is the application being composed as a lego. We refer to it as _main application_. 
+
+The main application can be as small as an empty shell. Its functionality can be composed completely from the packages, where each plugged package contributes its pieces to the whole.
+
+The minimal responsibilities of the main application are:
+
+- Initialize an `AppHost` object with a list of pluggable packages. 
+   > The `AppHost` object orchestrates lifecycle of the packages, handles cross-cutting concerns at package boundaries, and provides dependency injection to Redux-connected components.
+
+- Render `AppMainView` component, passing it the initialized `AppHost` in props.
+
+## Pluggable packages
+
+Pluggable package (or simply _package_) is a regular Node package, which exports an array of _entry points_. 
+
+The packages are plugged in the order they are listed when passed to `AppHost`. Entry points are invoked in the list order of the packages, in the array order within the package.
+
+## Entry points
+
+Every entry point contributes one or more pieces to the whole lego of the application. 
+
+Examples of contributed pieces include React components, panel item descriptors, UI command descriptors, etc etc. They can be anything, provided that they are expected by the lego. Here _expected_ means that some package provides an API, through which it accepts contributions of this specific type.
+
+There are also two kinds of contributions supported directly by `repluggable`: _APIs_ and _reducers_.
+
+Besides contributing lego pieces, entry points may contain additional lifecycle hooks.
+
+## APIs
+
+Some packages (providers) provide services to other packages (consumers). The services are provided through APIs. An API is an object, which implements a TypeScript interface, and is identified by an API key. An API key is another object declared as a const [TODO: link to example](), and exported from the package. 
+
+In general, APIs allow packages to extend other packages (consumers call APIs, which let them pass contributions to the provider), and otherwise interact. Moreover, APIs are the only allowed way of interaction between packages.
+
+In order to provide an API, a provider package does:
+- declare and export API interface and API key
+- implement API object according to the interface
+- contribute API object under the key
+ 
+In order to consume an API, a consumer package does:
+- import API key and API interface from the provider package
+- declare dependency on the API in relevant entry points
+- retrieve API object by calling `getAPI` and passing it the API key [TODO: link to example]().
+
+## Reducers 
+
+`repluggable` requires all state of the application to be managed in Redux store. This ensures that all pieces are connected to a single event-driven mechanism. This in turn, guarantees that pure React components mapped to values returned by APIs, will re-render once these values change.
+
+A package that has state must contribute one or more reducers responsible for managing that state. If such package contributes APIs, it can also include selectors and action dispatchers in the APIs.
+
+The Redux store of the main application is combined from reducers contributed by stateful packages.
+
+## Extension Slots
+
+When a package accepts contributions from other packages, it must store contributed pieces in some kind of array. 
+
+`repluggable` provides a "smart" array for this purpose, named _extension slot_. Extension slot is a generic object `ExtensionSlot<T>`, which accpets contributions of type `T`. 
+
+Its additional responsibility is remembering which package and entry point each contribution was received from. This allows applying package boundaries and easily handling other cross-cutting concerns.
+
+Extension slots are implementation details of a package, and they should never be directly exposed outside of the package. Instead, the package does: 
+
+- internally initialize an extension slot for every kind or group of accepted contributions
+- contribute an API that receives contributions from the outside and pushes them to an internal extension slot.
+
+With that, the `AppHost` also tracks all existing extension slots. This approach allows easy implementation of application-wide aspects. For example, removal of a package with all of its contributions across the application.
+
+## Package boundaries in DOM
+
+Every React component rendered under the `AppMainView` is associated with an _entry point context_. 
+
+The entry point context is a React context, which associates its children with a specific entry point, and thus the package that contains it. 
+
+Such association provides several aspects to the children:
+
+- performance measurements and errors reported by the children, are automatically tagged with the entry point and the package
+
+- in Redux-connected components ([TODO: link to details]()):
+
+  - dependency injection (the `getAPI` function): all dependencies are resolved in the context of the entry point
+
+  - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): returned state object is scoped to reducers contributed by the entry point.  
+
+> TODO: verify that getState() in thunks is actually scoped
+
+- when rendering an extension slot of contributed React components: each component is rendered within the context of the entry point it was contributed by.
+
+## Progressive loading 
+
+To make application loading reliable and fast, `repluggable` allows flexible control over package loading process. 
+
+The loading process is abstracted from any concrete module system or loader. Packages can be in a monolith bundle, or loaded with dynamic imports, or with loaders like RequireJS. To add a package to an `AppHost`, all that's needed is a `Promise` of package default export. 
+
+Packages can be added to an `AppHost` at different phases:
+
+- During initialization of the `AppHost`
+- Right after the `AppMainView` was rendered for the first time
+- Lazily at any later time
+
+Moreover, `AppHost` allows separating a whole package into multiple entry points. Some of the entry points are added right as the package is added to the `AppHost`, while others can be added later. 
+
+Such separation allows incremental contribution of functional parts as they become ready. Some parts may need to dynamically load additional dependencies or request data from backends. Without the separation approach, the user won't be able to interact with any functionality of the package, until the entire package is initialized -- which would hurt the experience.
+
+In addition, `AppHost` supports removal of previously added entry points or entire packages, at any time. Removal of a package means removal of all its entry points. When an entry point is removed, all contributions made from that entry point are removed altogether.
+
+## API dependencies
+
+Since APIs are contributed though entry points, their availability depends on the loading timing of the provider package, and a specific entry point within it. From a consumer package perspective, this creates a situation in which one or more of APIs the package depends on may be temporarily unavailable.
+
+`AppHost` resolves that with the help of explicit dependency declarations. Every entry point must declare APIs on which it depends (including dependencies of all pieces contributed by the entry point). If any of the required APIs is unavailable, the entry point is put on hold. There are two possible cases:
+
+- Attempted to add an entry point, but some of required APIs weren't available: the entry point is put on hold, and will be added as soon as all required APIs will be contributed.
+- An entry point was added, but then some of its required APIs became unavailable: the entry point will be removed together with all its contributions, and put on hold. It will be added again as soon as all required APIs will be available.
+
+Such approach guarantees that code dependent on an API from another package, will not run unless that API is available.
+
+
+
+
 
