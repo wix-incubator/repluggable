@@ -49,6 +49,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     const wrapChildrenInNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
         boundShell && props.children
             ? {
+                // @ts-ignore
                   ...props,
                   children: <ShellContext.Provider value={originalShell}>{props.children}</ShellContext.Provider>
               }
@@ -56,7 +57,10 @@ function wrapWithShellContext<S, OP, SP, DP>(
 
     return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
-            {shell => <ConnectedComponent {...wrapChildrenInNeeded(props, shell)} shell={boundShell || shell} />}
+            {shell => {
+             // @ts-ignore
+             return <ConnectedComponent {...wrapChildrenInNeeded(props, shell)} shell={boundShell || shell} />
+            }}
         </ShellContext.Consumer>
     )
 }
