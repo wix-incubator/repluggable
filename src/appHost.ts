@@ -462,7 +462,6 @@ function createAppHostImpl(): AppHost {
             getAllEntryPoints: host.getAllEntryPoints,
             hasShell: host.hasShell,
             isLazyEntryPoint: host.isLazyEntryPoint,
-            removeShells: host.removeShells,
             onShellsChanged: host.onShellsChanged,
             removeShellsChangedCallback: host.removeShellsChangedCallback,
 
