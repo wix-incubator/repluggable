@@ -16,6 +16,7 @@ type Returns<T> = () => T
 type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
+// @ts-ignore
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 function wrapWithShellContext<S, OP, SP, DP>(
