@@ -70,7 +70,7 @@ function createAppHostImpl(): AppHost {
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
-    
+
     const hostAPI: AppHostAPI = {}
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
     const host: AppHost & AppHostServicesProvider = {
@@ -457,7 +457,15 @@ function createAppHostImpl(): AppHost {
             name: entryPoint.name,
             entryPoint,
 
-            ...host,
+            getSlot: host.getSlot,
+            getAllSlotKeys: host.getAllSlotKeys,
+            getAllEntryPoints: host.getAllEntryPoints,
+            hasShell: host.hasShell,
+            isLazyEntryPoint: host.isLazyEntryPoint,
+            removeShells: host.removeShells,
+            onShellsChanged: host.onShellsChanged,
+            removeShellsChangedCallback: host.removeShellsChangedCallback,
+
             declareSlot,
 
             setLifecycleState(enableStore: boolean, enableAPIs: boolean) {
