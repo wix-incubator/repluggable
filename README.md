@@ -1,8 +1,8 @@
 # Welcome to repluggable
 
-Repluggable implements micro-frontends in a React+Redux app. Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends those already loaded by contributing new functionality into them.  Thus pieces of UI contributed by a package can be rendered anywhere, they aren't limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages can be plugged in and out at runtime without the need to reload a page.
+Repluggable implements micro-frontends in a React+Redux app. Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends those already loaded by contributing new functionality into them. Pieces of UI contributed by a package can be rendered anywhere, not being limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page.
 
-Navigate: [FAQ](#FAQ) | [How-to](#How-to) | [Reference](#Reference) | [Architecture](#Architecture)
+Navigate: [How-to](#How-to) | [Architecture](#Architecture)
 
 # Getting started
 
@@ -10,13 +10,15 @@ All code in this README is in TypeScript.
 
 ## Installation
 
+To add Repluggable to an existing React+Redux application:
+
 ```
 $ npm install repluggable
 ```
 
-## Pluggable package
+## Writing a pluggable package
 
-A pluggable package is an array of one or more entry points. An entry point is an object which contributes pieces of functionality to the application. Below is an example of a simple entry point.
+Pluggable package is basically an array of entry points. An entry point is an object which contributes pieces of functionality to the application. Below is an example of a simple entry point.
 
 `foo.ts`
 ```TypeScript
@@ -25,17 +27,17 @@ import { EntryPoint } from 'repluggable'
 export const Foo : EntryPoint = {
     name: 'FOO', 
 
-    install() {
-        alert('FOO is here!')
+    attach() {
+        console.log('FOO is here!')
     }
 }
 ```
 
-Usually, a package is an npm project, which exports an array of entry points. But it isn't a requirement: entry points can also be part of the main app.
+Usually, pluggable package will be separate npm project, which exports an array of entry points. But it is not required: entry points can also be part of the main app.
 
-## Main application
+## Bootstrapping main application
 
-This is the React+Redux app that's being composed from packages. Suppose we also have `bar.ts` implemented similarly to `Foo` above.
+Main application is the React+Redux app that's being composed from packages. Suppose we also have `bar.ts` implemented similarly to `Foo` above.
 
 `App.tsx`
 
@@ -56,11 +58,7 @@ ReactDOM.render(
 )
 ```
 
-When run, the application will pop up two alerts, first 'FOO is here!', then 'BAR is here!'.
-
-# FAQ
-
-TBD
+When run, the application will print two messages to console, first 'FOO is here!', then 'BAR is here!'.
 
 # How-to
 
@@ -152,7 +150,7 @@ const FooEntryPoint: EntryPoint = {
     name: 'FOO',
 
     // optional
-    getDependencies() {
+    getDependencyAPIs() {
         return [ 
             // DO list required API keys 
             // DO list components form other packages,
@@ -162,24 +160,24 @@ const FooEntryPoint: EntryPoint = {
     }
 
     // optional
-    install(host: EntryPointHost) {
+    attach(shell: Shell) {
         // DO contribute APIs 
         // DO contribute reducers
         // DO NOT consume APIs
         // DO NOT access store
-        host.contributeAPI(FooAPI, () => createFooAPI(host))
+        shell.contributeAPI(FooAPI, () => createFooAPI(shell))
     },
 
     // optional
-    extend(host: EntryPointHost) {
+    extend(shell: Shell) {
         // DO access store if necessary
-        host.getStore().dispatch(....)
+        shell.getStore().dispatch(....)
         // DO consume APIs and contribute to other packages
-        host.getAPI(BarAPI).contributeBarItem(() => <FooItem />)
+        shell.getAPI(BarAPI).contributeBarItem(() => <FooItem />)
     },
 
     // optional
-    uninstall(host: EntryPointHost) {
+    detach(shell: Shell) {
         // DO perform any necessary cleanup
     }
 }
@@ -187,9 +185,9 @@ const FooEntryPoint: EntryPoint = {
 
 The `EntryPoint` interface consists of:
 - declarations: `name`, `getDependencies()`
-- lifecycle hooks: `install()`, `extend()`, `uninstall()`
+- lifecycle hooks: `attach()`, `extend()`, `uninstall()`
 
-The lifecycle hooks receive an `EntryPointHost` object, which represents the `AppHost` for this specific entry point.
+The lifecycle hooks receive an `Shell` object, which represents the `AppHost` for this specific entry point.
 
 ### Exporting entry points
 
@@ -230,7 +228,7 @@ To create an API, perform these steps:
 
 1. Implement your API. For example:
    ```TypeScript
-   export function createFooAPI(host: EntryPointHost): FooAPI {
+   export function createFooAPI(shell: Shell): FooAPI {
        return {
            doSomething(): void {
                // ...
@@ -250,8 +248,8 @@ To create an API, perform these steps:
 
         ...
 
-        install(host: EntryPointHost) {
-            host.contributeAPI(FooAPI, () => createFooAPI(host))
+        attach(shell: Shell) {
+            shell.contributeAPI(FooAPI, () => createFooAPI(shell))
         }
 
         ...
@@ -317,8 +315,8 @@ To contribute the reducers, perform these steps:
 1. Contribute state in the entry point:
 
     ```TypeScript
-    install(host: EntryPointHost) {
-        host.contributeState<FooState>({
+    attach(shell: Shell) {
+        shell.contributeState<FooState>({
             baz: bazReducer,
             qux: quxReducer
         })
@@ -343,10 +341,10 @@ To contribute the reducers, perform these steps:
     Note that neither of these two functions are passed the state or the `Store` object. This is because their implementations are already bound to the store of the `AppHost`:
 
     ```TypeScript
-    const createFooAPI = (host: EntryPointHost): FooAPI => {
+    const createFooAPI = (shell: Shell): FooAPI => {
         // this returns a scoped wrapper over the full 
         // store of the main application
-        const entryPointStore = host.getStore()
+        const entryPointStore = shell.getStore()
 
         // IMPORTANT! the generic parameter (FooState)
         // must match the one specified when contributing state!
@@ -373,11 +371,11 @@ To contribute the reducers, perform these steps:
 
 When creating a React component, we strongly recommend to follow the React-Redux pattern, and separate your component into a stateless render and a `connect` container. 
 
-In `repluggable`, components often need to consume APIs. Although APIs can be obtained through `EntryPointHost` passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
+In `repluggable`, components often need to consume APIs. Although APIs can be obtained through `Shell` passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
 
-A more elegant solution is to use `connectWithEntryPoint()` function instead of the regular `connect()`. This provides connector with the ability to obtain APIs.
+A more elegant solution is to use `connectWithShell()` function instead of the regular `connect()`. This provides connector with the ability to obtain APIs.
 
-The usage of `connectWithEntryPoint()` is demonstrated in the example below. Suppose we want to create a component `<Foo />`, which would render like this:
+The usage of `connectWithShell()` is demonstrated in the example below. Suppose we want to create a component `<Foo />`, which would render like this:
 
 ```jsx
 (props) => (
@@ -429,25 +427,25 @@ In order to implement such component, follow these steps:
         )
     ```
 
-1. Write the connected container using `connectWithEntryPoint`. The latter differs from `connect` in that it passes `EntryPointHost` as the first parameter to `mapStateToProps` and `mapDispatchToProps`. The new parameter is followed by the regular parameters passed by `connect`. Example:
+1. Write the connected container using `connectWithShell`. The latter differs from `connect` in that it passes `Shell` as the first parameter to `mapStateToProps` and `mapDispatchToProps`. The new parameter is followed by the regular parameters passed by `connect`. Example:
 
     ```TypeScript
-    export const Foo = connectWithEntryPoint(
+    export const Foo = connectWithShell(
         // mapStateToProps
-        // - host: represents the associated entry point
+        // - shell: represents the associated entry point
         // - the rest are regular parameters of mapStateToProps 
-        (host, state) => {
+        (shell, state) => {
             return {
                 // some properties can map from your own state
                 xyzzy: state.baz.xyzzy,
                 // some properties may come from other packages APIs
-                bar: host.getAPI(BarAPI).getCurrentBar()
+                bar: shell.getAPI(BarAPI).getCurrentBar()
             }
         },
         // mapDispatchToProps
-        // - host: represents the associated entry point
+        // - shell: represents the associated entry point
         // - the rest are regular parameters of mapDispatchToProps
-        (host, dispatch) => {
+        (shell, dispatch) => {
             return {
                 // some actions may alter your own state
                 setXyzzy(newValue: string): void {
@@ -455,14 +453,14 @@ In order to implement such component, follow these steps:
                 },
                 // others may request actions from other packages APIs
                 createNewBar() {
-                    host.getAPI(BarAPI).createNewBar()  
+                    shell.getAPI(BarAPI).createNewBar()  
                 }
             }
         }
     )(FooSfc)
     ```
 
-    The `EntryPointHost` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
+    The `Shell` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
 
 
 ### Exporting React components
@@ -470,10 +468,6 @@ In order to implement such component, follow these steps:
 TBD (advanced topic)
 
 ## Testing a package
-
-TBD
-
-# Reference
 
 TBD
 
