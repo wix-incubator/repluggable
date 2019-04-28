@@ -101,7 +101,7 @@ function createPrivateBuilder<S, OP, SP, DP>(): FluentComponentBuilder<S, OP, SP
     const _this = {
         withShell(shell: Shell) {
             _shell = shell
-            return _this as any
+            return _this
         },
         withContributedState<TOwnState>(): FluentComponentBuilder<TOwnState, OP, SP, DP> {
             return _this as any
@@ -118,7 +118,7 @@ function createPrivateBuilder<S, OP, SP, DP>(): FluentComponentBuilder<S, OP, SP
             return _this as any
         },
         wrap(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP> {
-            return connectWithShell<S, OP, SP, DP>(_mapStateToProps, _mapDispatchToProps, _shell)(pure) as any
+            return connectWithShell<S, OP, SP, DP>(_mapStateToProps, _mapDispatchToProps, _shell)(pure)
         }
     }
     return _this
