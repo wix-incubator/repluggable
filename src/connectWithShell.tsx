@@ -20,7 +20,7 @@ type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 function wrapWithShellContext<S, OP, SP, DP>(
-    component: React.ComponentType<OP & SP & DP>,
+    component: React.FunctionComponent<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell?: Shell
@@ -71,7 +71,55 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell?: Shell
 ) {
-    return (component: React.ComponentType<OP & SP & DP>) => {
+    return (component: React.FunctionComponent<OP & SP & DP>) => {
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
     }
+}
+
+interface FluentComponentBuilder<S, OP, SP, DP> {
+    withShell(shell: Shell): FluentComponentBuilder<S, OP, SP, DP>
+
+    withContributedState<TOwnState>(): FluentComponentBuilder<TOwnState, OP, SP, DP>
+
+    withOwnProps<TOwnProps>(): FluentComponentBuilder<S, TOwnProps, SP, DP>
+
+    mapStateToProps<TStateProps>(func: MapStateToProps<S, OP, TStateProps>): FluentComponentBuilder<S, OP, TStateProps, DP>
+
+    mapDispatchToProps<TDispProps>(func: MapDispatchToProps<OP, TDispProps>): FluentComponentBuilder<S, OP, SP, TDispProps>
+
+    render(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP>
+}
+
+export function buildConnectedComponent(): FluentComponentBuilder<any, any, any, any> {
+    return createPrivateBuilder<any, any, any, any>()
+}
+
+function createPrivateBuilder<S, OP, SP, DP>(): FluentComponentBuilder<S, OP, SP, DP> {
+    let _shell: Shell
+    let _mapStateToProps: MapStateToProps<S, OP, any>
+    let _mapDispatchToProps: MapDispatchToProps<OP, any>
+    const _this = {
+        withShell(shell: Shell) {
+            _shell = shell
+            return _this as any
+        },
+        withContributedState<TOwnState>(): FluentComponentBuilder<TOwnState, OP, SP, DP> {
+            return _this as any
+        },
+        withOwnProps<TOwnProps>(): FluentComponentBuilder<S, TOwnProps, SP, DP> {
+            return _this as any
+        },
+        mapStateToProps<TStateProps>(func: MapStateToProps<S, OP, TStateProps>): FluentComponentBuilder<S, OP, TStateProps, DP> {
+            _mapStateToProps = func
+            return _this as any
+        },
+        mapDispatchToProps<TDispProps>(func: MapDispatchToProps<OP, TDispProps>): FluentComponentBuilder<S, OP, SP, TDispProps> {
+            _mapDispatchToProps = func
+            return _this as any
+        },
+        render(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP> {
+            return connectWithShell<S, OP, SP, DP>(_mapStateToProps, _mapDispatchToProps, _shell)(pure) as any
+        }
+    }
+    return _this
 }
