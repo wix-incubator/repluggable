@@ -20,7 +20,7 @@ type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 function wrapWithShellContext<S, OP, SP, DP>(
-    component: React.FunctionComponent<OP & SP & DP>,
+    component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell?: Shell
@@ -66,12 +66,12 @@ function wrapWithShellContext<S, OP, SP, DP>(
     )
 }
 
-export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
+function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell?: Shell
 ) {
-    return (component: React.FunctionComponent<OP & SP & DP>) => {
+    return (component: React.ComponentType<OP & SP & DP>) => {
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
     }
 }
@@ -87,11 +87,11 @@ interface FluentComponentBuilder<S, OP, SP, DP> {
 
     mapDispatchToProps<TDispProps>(func: MapDispatchToProps<OP, TDispProps>): FluentComponentBuilder<S, OP, SP, TDispProps>
 
-    render(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP>
+    wrap(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP>
 }
 
-export function buildConnectedComponent(): FluentComponentBuilder<any, any, any, any> {
-    return createPrivateBuilder<any, any, any, any>()
+export function buildConnectedComponent<S = {}, OP = {}, SP = {}, DP = {}>(): FluentComponentBuilder<S, OP, SP, DP> {
+    return createPrivateBuilder<S, OP, SP, DP>()
 }
 
 function createPrivateBuilder<S, OP, SP, DP>(): FluentComponentBuilder<S, OP, SP, DP> {
@@ -117,7 +117,7 @@ function createPrivateBuilder<S, OP, SP, DP>(): FluentComponentBuilder<S, OP, SP
             _mapDispatchToProps = func
             return _this as any
         },
-        render(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP> {
+        wrap(pure: React.FunctionComponent<OP & SP & DP>): React.FunctionComponent<OP> {
             return connectWithShell<S, OP, SP, DP>(_mapStateToProps, _mapDispatchToProps, _shell)(pure) as any
         }
     }

@@ -41,7 +41,7 @@ describe('buildConnectedComponent', () => {
 
         const ConnectedWithState = buildConnectedComponent()
             .mapStateToProps(mapStateToProps)
-            .render(PureCompNeedsState)
+            .wrap(PureCompNeedsState)
 
         const { parentWrapper: withConnectedState } = renderInHost(<ConnectedWithState />, host)
 
@@ -56,7 +56,7 @@ describe('buildConnectedComponent', () => {
 
         const ConnectedWithDispatch = buildConnectedComponent()
             .mapDispatchToProps(mapDispatchToProps)
-            .render(PureCompNeedsDispatch)
+            .wrap(PureCompNeedsDispatch)
 
         const { parentWrapper: withConnectedDispatch } = renderInHost(<ConnectedWithDispatch />, host)
 
@@ -71,7 +71,7 @@ describe('buildConnectedComponent', () => {
 
         const ConnectedComp = buildConnectedComponent()
             .mapStateToProps(mapStateToProps)
-            .render(PureComp)
+            .wrap(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -86,7 +86,7 @@ describe('buildConnectedComponent', () => {
 
         const ConnectedWithState = buildConnectedComponent()
             .mapStateToProps(mapStateToProps)
-            .render(PureCompNeedsState)
+            .wrap(PureCompNeedsState)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -117,7 +117,7 @@ describe('buildConnectedComponent', () => {
         const ConnectedWithState = buildConnectedComponent()
             .withShell(getBoundShell())
             .mapStateToProps(mapStateToProps)
-            .render(PureComp)
+            .wrap(PureComp)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -161,16 +161,16 @@ describe('buildConnectedComponent', () => {
 
         const ConnectedUnboundComp = buildConnectedComponent()
             .mapStateToProps(mapStateToProps)
-            .render(PureComp)
+            .wrap(PureComp)
 
         const ConnectedUnboundCompWithChildren = buildConnectedComponent()
             .mapStateToProps(mapStateToProps)
-            .render(PureCompWithChildren)
+            .wrap(PureCompWithChildren)
 
         const ConnectedBoundCompWithChildren = buildConnectedComponent()
             .withShell(getBoundShell())
             .mapStateToProps(mapStateToProps)
-            .render(PureCompWithChildren)
+            .wrap(PureCompWithChildren)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(
             <ConnectedUnboundCompWithChildren id="A">
