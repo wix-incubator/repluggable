@@ -27,11 +27,11 @@ module.exports = {
   ],
 
   externals: {
-    'react': 'React',
-    'react-dom': 'ReactDOM',
-    'lodash': '_',
-    'react-redux': 'ReactRedux',
-    'redux': 'Redux'
+    // 'react': 'React',
+    // 'react-dom': 'ReactDOM',
+    // 'lodash': '_',
+    // 'react-redux': 'ReactRedux',
+    // 'redux': 'Redux'
   },
 
   optimization: {
