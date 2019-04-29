@@ -60,10 +60,10 @@ function wrapWithShellContext<S, OP, SP, DP>(
     return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
             {shell => {
-                // @ts-ignore
-                return (<ErrorBoundary shell={boundShell}>
-                    <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
-                </ErrorBoundary>)
+                return (<ErrorBoundary shell={boundShell}>{
+                        // @ts-ignore
+                        <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
+                    }</ErrorBoundary>)
             }}
         </ShellContext.Consumer>
     )
