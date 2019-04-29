@@ -26,13 +26,13 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
   ],
 
-  externals: [
-    'react',
-    'react-dom',
-    'lodash',
-    'react-redux',
-    'redux'
-  ],
+  externals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM',
+    'lodash': '_',
+    'react-redux': 'ReactRedux',
+    'redux': 'Redux'
+  },
 
   optimization: {
      minimize: false
