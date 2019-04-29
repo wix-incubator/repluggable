@@ -4,7 +4,7 @@ import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
 import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { EntryPoint, PrivateShell } from '../src/API'
-import { renderShellComponent } from '../src/renderSlotComponents'
+import { ShellRenderer } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../src/index'
 export * from './mockPackage'
@@ -86,9 +86,13 @@ export const renderInHost = (
 } => {
     const shell = customShell || createShell(host)
 
+
     const root = mount(
         <Provider store={host.getStore()}>
-            {renderShellComponent(shell as PrivateShell, <div data-shell-in-host="true">{reactElement}</div>, '')}
+            <ShellRenderer 
+                shell={shell as PrivateShell} 
+                component={<div data-shell-in-host="true">{reactElement}</div>} 
+                key="" />
         </Provider>
     )
 

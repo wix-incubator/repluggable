@@ -5,22 +5,25 @@ import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentCont
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
-export function renderShellComponent(shell: PrivateShell, component: React.ReactNode, key: any, name?: string): React.ReactNode {
-    return (
-        <ErrorBoundary key={key} shell={shell} componentName={name}>
-            <ShellContext.Provider value={shell}>{component}</ShellContext.Provider>
-        </ErrorBoundary>
-    )
+interface ShellRendererProps {
+    shell: PrivateShell,
+    component: React.ReactNode,
+    key: any,
+    name?: string
 }
 
+export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ shell, component, key, name }) => (
+    <ErrorBoundary key={key} shell={shell} componentName={name}>
+        <ShellContext.Provider value={shell}>{component}</ShellContext.Provider>
+    </ErrorBoundary>
+)
+
 export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
-    return slot.getItems().map((item, index) =>
-        renderShellComponent(
-            item.shell,
-            item.contribution(),
-            index, // index is the key prop
-            item.name
-        )
+    return slot.getItems().map((item, index) => <ShellRenderer
+        shell={item.shell}
+        component={item.contribution()}
+        key={index}
+        name={item.name} />
     )
 }
 
@@ -32,15 +35,12 @@ interface SlotRendererPureProps<T> {
 const SlotRendererPure: React.FunctionComponent<SlotRendererPureProps<any>> = ({ items, mapFunc, filterFunc }) => (
     <>
         {items.filter(item => (!filterFunc || filterFunc(item.contribution))).map((item, index) => {
-          return (
-                 renderShellComponent(
-                  item.shell,
-                  <ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc}>
-                    {/*{children}*/}
-                  </ConnectedPredicateHoc>,
-                  index, // index is the key prop
-                  item.name
-                )
+            return (
+                <ShellRenderer
+                    shell={item.shell}
+                    component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
+                    key={index}
+                    name={item.name} />
             )
         })}
     </>
