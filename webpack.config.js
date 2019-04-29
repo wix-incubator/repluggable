@@ -1,6 +1,5 @@
 const path = require('path');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-const externalsConfigObject = require('./webpack.config.externals');
 
 module.exports = {
   entry: path.resolve(__dirname, 'src', 'index.ts'),
@@ -27,7 +26,13 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
   ],
 
-  externals: externalsConfigObject,
+  externals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM',
+    'lodash': '_',
+    'react-redux': 'ReactRedux',
+    'redux': 'Redux'
+  },
 
   optimization: {
      minimize: false
