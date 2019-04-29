@@ -9,7 +9,7 @@ const externalLibNames = [
 function configExternal(libName) {
     let result = {};
     result[libName] = {
-        root: ['repluggable', 'packages', libName],
+        root: libName,
         commonjs: libName,
         commonjs2: libName
     };
