@@ -1,11 +1,11 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor } from './API'
+import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
-export function renderShellComponent(shell: PrivateShell, component: React.ReactNode, key: any, name?: string): React.ReactNode {
+export function renderShellComponent(shell: Shell, component: React.ReactNode, key: any, name?: string): React.ReactNode {
     return (
         <ErrorBoundary key={key} shell={shell} componentName={name}>
             <ShellContext.Provider value={shell}>{component}</ShellContext.Provider>

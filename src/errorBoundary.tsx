@@ -1,8 +1,8 @@
 import React, { ErrorInfo } from 'react'
-import { PrivateShell } from './API'
+import { Shell } from './API'
 
 interface ErrorBoundaryProps {
-    readonly shell: PrivateShell
+    readonly shell: Shell
     readonly componentName?: string
     readonly errorClassName?: string
 }

@@ -16,7 +16,8 @@ import {
     ReducersMapObjectContributor,
     ScopedStore,
     ShellsChangedCallback,
-    SlotKey
+    SlotKey,
+    Shell
 } from './API'
 
 import _ from 'lodash'
@@ -206,7 +207,7 @@ function createAppHostImpl(): AppHost {
 
     function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
         if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
-            const newSlot = createExtensionSlot<TItem>(key, host, getCurrentEntryPoint)
+            const newSlot = createExtensionSlot<TItem>(key, host)
 
             extensionSlots.set(key, newSlot)
             slotKeysByName.set(key.name, key)
@@ -368,14 +369,7 @@ function createAppHostImpl(): AppHost {
         }
     }
 
-    function getCurrentEntryPoint(): PrivateShell {
-        if (currentShell) {
-            return currentShell
-        }
-        throw new Error('Current entry point does not exist.')
-    }
-
-    function getAPIContributor<TAPI>(key: SlotKey<TAPI>): PrivateShell | undefined {
+    function getAPIContributor<TAPI>(key: SlotKey<TAPI>): Shell | undefined {
         const ownKey = getOwnSlotKey(key)
         return extensionSlots.has(ownKey) ? _.get(getSlot<TAPI>(ownKey).getSingleItem(), 'shell') : undefined
     }
@@ -383,7 +377,7 @@ function createAppHostImpl(): AppHost {
     function doesExtensionItemBelongToShells(extensionItem: ExtensionItem<any>, shellNames: string[]) {
         return (
             _.includes(shellNames, extensionItem.shell.name) ||
-            _.some(_.invoke(extensionItem.shell.entryPoint, 'getDependencyAPIs'), APIKey =>
+            _.some(_.invoke((extensionItem.shell as PrivateShell).entryPoint, 'getDependencyAPIs'), APIKey =>
                 _.includes(shellNames, _.get(getAPIContributor(APIKey), 'name'))
             )
         )
@@ -529,7 +523,7 @@ function createAppHostImpl(): AppHost {
 
                 const API = factory()
                 const APISlot = declareSlot<TAPI>(key)
-                APISlot.contribute(API, undefined, shell)
+                APISlot.contribute(shell, API)
 
                 readyAPIs.add(key)
 
@@ -543,7 +537,7 @@ function createAppHostImpl(): AppHost {
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
-                getSlot(stateSlotKey).contribute(contributor, undefined, shell)
+                getSlot(stateSlotKey).contribute(shell, contributor)
             },
 
             getStore<TState>(): ScopedStore<TState> {
@@ -554,8 +548,8 @@ function createAppHostImpl(): AppHost {
                 }
             },
 
-            contributeMainView(contributor: ReactComponentContributor): void {
-                getSlot(mainViewSlotKey).contribute(contributor)
+            contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void {
+                getSlot(mainViewSlotKey).contribute(fromShell, contributor)
             }
         }
 
