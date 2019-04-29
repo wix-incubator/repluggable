@@ -4,6 +4,7 @@ import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ShellContext } from './shellContext'
+import { ErrorBoundary } from './errorBoundary';
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -47,8 +48,8 @@ function wrapWithShellContext<S, OP, SP, DP>(
         }
     }
 
-    const wrapChildrenInNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
-        boundShell && props.children
+    const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
+        props.children
             ? {
                 // @ts-ignore
                   ...props,
@@ -59,8 +60,10 @@ function wrapWithShellContext<S, OP, SP, DP>(
     return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
             {shell => {
-             // @ts-ignore
-             return <ConnectedComponent {...wrapChildrenInNeeded(props, shell)} shell={boundShell || shell} />
+                // @ts-ignore
+                return (<ErrorBoundary shell={boundShell}>
+                    <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
+                </ErrorBoundary>)
             }}
         </ShellContext.Consumer>
     )
