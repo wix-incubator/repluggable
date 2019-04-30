@@ -38,6 +38,7 @@
     "jest-yoshi-preset": "^4.3.2",
     "lint-staged": "^8.1.5",
     "lodash": "^4.17.11",
+    "puppeteer": "^1.15.0",
     "typescript": "^3.4.5",
     "yoshi": "^4.3.2"
   },

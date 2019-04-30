@@ -2,9 +2,8 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "jsx": "preserve",
+    "jsx": "react",
     "lib": ["es6", "dom"],
-    "declarationDir": "dist/types",
     "declaration": true,
     "target": "es2015",
     "module": "es2015",
@@ -13,6 +12,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "src"
+    "src",
+    "test",
+    "testKit"
   ]
 }
