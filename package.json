@@ -9,15 +9,12 @@
     "registry": "http://npm.dev.wixpress.com/"
   },
   "scripts": {
-    "type-check": "tsc --noEmit",
-    "type-check:watch": "npm run type-check -- --watch",
-    "build": "npm run build:types && npm run build:js",
-    "build:types": "tsc --emitDeclarationOnly",
-    "build:js": "webpack --mode=production",
-    "test": "jest",
+    "start": "yoshi start",
+    "build": "yoshi build",
+    "test": "yoshi test",
     "posttest": "npm run lint",
-    "lint": "tslint -c tslint.json -t verbose ./{src,test,testKit}/**/*.{ts,tsx}",
-    "release": "wnpm-release"
+    "lint": "yoshi lint --fix",
+    "release": "yoshi release"
   },
   "main": "dist/repluggable.js",
   "types": "dist/types/index.d.ts",
@@ -28,13 +25,6 @@
     "redux": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/plugin-proposal-class-properties": "^7.3.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.3.1",
-    "@babel/plugin-transform-runtime": "^7.4.0",
-    "@babel/preset-env": "^7.3.1",
-    "@babel/preset-react": "^7.0.0",
-    "@babel/preset-typescript": "^7.1.0",
     "@types/enzyme": "^3.1.16",
     "@types/jest": "^24.0.9",
     "@types/lodash": "^4.14.122",
@@ -42,27 +32,14 @@
     "@types/react-redux": "^7.0.0",
     "@types/requirejs": "^2.1.31",
     "@wix/tslint-config-responsive-editor": "^1.0.27",
-    "babel-jest": "^24.5.0",
-    "babel-loader": "^8.0.5",
     "enzyme": "^3.8.0",
     "enzyme-adapter-react-16": "^1.9.1",
-    "fork-ts-checker-webpack-plugin": "^1.2.0",
     "husky": "^2.1.0",
-    "jest": "^24.1.0",
-    "jest-enzyme": "^7.0.1",
-    "jest-transform-stub": "^2.0.0",
+    "jest-yoshi-preset": "^4.3.2",
     "lint-staged": "^8.1.5",
     "lodash": "^4.17.11",
-    "prettier": "^1.17.0",
-    "tslint": "^5.16.0",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-eslint-rules": "^5.4.0",
-    "tslint-plugin-prettier": "^2.0.1",
-    "tslint-react": "^4.0.0",
     "typescript": "^3.4.5",
-    "webpack": "^4.29.0",
-    "webpack-cli": "^3.2.1",
-    "wnpm-ci": "^7.0.0"
+    "yoshi": "^4.3.2"
   },
   "husky": {
     "hooks": {
@@ -72,12 +49,51 @@
   "lint-staged": {
     "linters": {
       "*.{ts,tsx}": [
-        "tslint -c tslint.json -t verbose ./{src,test,testKit}/**/*.{ts,tsx} --fix true",
+        "yoshi lint --fix true",
         "git add"
       ]
     },
     "ignore": [
       "**/*.d.ts"
     ]
+  },
+  "jest": {
+    "preset": "jest-yoshi-preset"
+  },
+  "yoshi": {
+    "entry": "index",
+    "externals": {
+      "react": {
+        "root": "React",
+        "commonjs": "react",
+        "commonjs2": "react",
+        "amd": "react"
+      },
+      "react-dom": {
+        "root": "ReactDOM",
+        "commonjs": "react-dom",
+        "commonjs2": "react-dom",
+        "amd": "react-dom"
+      },
+      "lodash": {
+        "root": "_",
+        "commonjs": "lodash",
+        "commonjs2": "lodash",
+        "amd": "lodash"
+      },
+      "react-redux": {
+        "root": "ReactRedux",
+        "commonjs": "react-redux",
+        "commonjs2": "react-redux",
+        "amd": "react-redux"
+      },
+      "redux": {
+        "root": "Redux",
+        "commonjs": "redux",
+        "commonjs2": "redux",
+        "amd": "redux"
+      }
+    },
+    "hmr": true
   }
 }
