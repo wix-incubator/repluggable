@@ -18,28 +18,4 @@
     <modelVersion>4.0.0</modelVersion>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
-    <developers>
-        <developer>
-            <name>Responsive FEDs</name>
-            <email>responsive-feds@wix.com</email>
-            <roles>
-                <role>owner</role>
-            </roles>
-        </developer>
-        <developer>
-            <name>Amir Yonatan</name>
-            <email>amiry@wix.com</email>
-            <roles>
-                <role>owner</role>
-            </roles>
-        </developer>
-    </developers>
-
-    <mailingLists>
-        <mailingList>
-            <name>slack</name>
-            <subscribe>responsive-editor</subscribe>
-        </mailingList>
-    </mailingLists>
 </project>
