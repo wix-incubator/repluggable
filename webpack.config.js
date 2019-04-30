@@ -1,6 +1,5 @@
 const path = require('path');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-// const externalsConfigObject = require('./webpack.config.externals');
 
 module.exports = {
   entry: path.resolve(__dirname, 'src', 'index.ts'),
