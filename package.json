@@ -19,7 +19,7 @@
     "lint": "yoshi lint --fix",
     "release": "yoshi release"
   },
-  "main": "dist/statics/app.bundle.js",
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "dependencies": {
     "react": "~16.6.0",
