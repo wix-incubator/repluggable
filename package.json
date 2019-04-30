@@ -2,7 +2,10 @@
   "name": "@wix/repluggable",
   "version": "0.5.20",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
-  "author": "",
+  "author": {
+    "name": "Responsive FEDs",
+    "email": "responsive-feds@wix.com"
+  },
   "license": "ISC",
   "unpkg": true,
   "publishConfig": {
@@ -16,8 +19,8 @@
     "lint": "yoshi lint --fix",
     "release": "yoshi release"
   },
-  "main": "dist/repluggable.js",
-  "types": "dist/types/index.d.ts",
+  "main": "dist/statics/app.bundle.js",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "react": "~16.6.0",
     "react-dom": "~16.6.0",
@@ -60,41 +63,5 @@
   },
   "jest": {
     "preset": "jest-yoshi-preset"
-  },
-  "yoshi": {
-    "entry": "index",
-    "externals": {
-      "react": {
-        "root": "React",
-        "commonjs": "react",
-        "commonjs2": "react",
-        "amd": "react"
-      },
-      "react-dom": {
-        "root": "ReactDOM",
-        "commonjs": "react-dom",
-        "commonjs2": "react-dom",
-        "amd": "react-dom"
-      },
-      "lodash": {
-        "root": "_",
-        "commonjs": "lodash",
-        "commonjs2": "lodash",
-        "amd": "lodash"
-      },
-      "react-redux": {
-        "root": "ReactRedux",
-        "commonjs": "react-redux",
-        "commonjs2": "react-redux",
-        "amd": "react-redux"
-      },
-      "redux": {
-        "root": "Redux",
-        "commonjs": "redux",
-        "commonjs2": "redux",
-        "amd": "redux"
-      }
-    },
-    "hmr": true
   }
 }
