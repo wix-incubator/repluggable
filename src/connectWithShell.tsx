@@ -4,6 +4,7 @@ import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ShellContext } from './shellContext'
+import { ErrorBoundary } from './errorBoundary';
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -23,7 +24,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
-    boundShell?: Shell
+    boundShell: Shell
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
         public connectedComponent: ConnectedComponentClass<ComponentType<any>, OP>
@@ -47,8 +48,8 @@ function wrapWithShellContext<S, OP, SP, DP>(
         }
     }
 
-    const wrapChildrenInNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
-        boundShell && props.children
+    const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
+        props.children
             ? {
                 // @ts-ignore
                   ...props,
@@ -59,8 +60,10 @@ function wrapWithShellContext<S, OP, SP, DP>(
     return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
             {shell => {
-             // @ts-ignore
-             return <ConnectedComponent {...wrapChildrenInNeeded(props, shell)} shell={boundShell || shell} />
+                return (<ErrorBoundary shell={boundShell}>{
+                        // @ts-ignore
+                        <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
+                    }</ErrorBoundary>)
             }}
         </ShellContext.Consumer>
     )
@@ -69,7 +72,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
-    boundShell?: Shell
+    boundShell: Shell
 ) {
     return (component: React.ComponentType<OP & SP & DP>) => {
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)

@@ -1,4 +1,4 @@
-import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, PrivateShell, SlotKey } from './API'
+import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, PrivateShell, SlotKey, Shell } from './API'
 
 export interface AnyExtensionSlot {
     readonly name: string
@@ -6,7 +6,7 @@ export interface AnyExtensionSlot {
 
 const alwaysTrue = () => true
 
-export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, getShell: () => PrivateShell): ExtensionSlot<T> & AnyExtensionSlot {
+export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost): ExtensionSlot<T> & AnyExtensionSlot {
     let items: Array<ExtensionItem<T>> = []
 
     return {
@@ -19,9 +19,9 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, getShell:
         discardBy
     }
 
-    function contribute(item: T, condition?: ContributionPredicate, shell?: PrivateShell): void {
+    function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
         items.push({
-            shell: shell || getShell(),
+            shell: fromShell,
             contribution: item,
             condition: condition || alwaysTrue
         })

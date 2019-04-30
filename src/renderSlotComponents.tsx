@@ -1,12 +1,12 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor } from './API'
+import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
 interface ShellRendererProps {
-    shell: PrivateShell,
+    shell: Shell,
     component: React.ReactNode,
     key: any,
     name?: string

@@ -37,7 +37,7 @@ export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolea
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
-    contribute(item: T, condition?: ContributionPredicate, shell?: PrivateShell): void
+    contribute(shell: Shell, item: T, condition?: ContributionPredicate): void
     getItems(forceAll?: boolean): Array<ExtensionItem<T>>
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>
@@ -46,7 +46,7 @@ export interface ExtensionSlot<T> {
 
 export interface ExtensionItem<T> {
     readonly name?: string
-    readonly shell: PrivateShell
+    readonly shell: Shell
     readonly contribution: T
     readonly condition: ContributionPredicate
 }
@@ -78,7 +78,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>>
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
-    contributeMainView(contributor: ReactComponentContributor): void
+    contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     // readonly log: ShellLogger; //TODO: define logging abstraction
 }
 

@@ -28,44 +28,33 @@ const createMocks = (entryPoint: EntryPoint) => {
 
     return {
         host,
+        shell: getShell(),
         renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
     }
 }
 
 describe('connectWithShell', () => {
-    it('should pass shell to mapStateToProps', () => {
-        const host = createAppHost([mockPackage])
-
-        const PureCompNeedsState = ({ valueFromState }: { valueFromState: string }) => <div>{valueFromState}</div>
-        const mapStateToProps = (shell: Shell) => ({ valueFromState: getValueFromAPI(shell) })
-
-        const ConnectedWithState = connectWithShell(mapStateToProps, undefined)(PureCompNeedsState)
-
-        const { parentWrapper: withConnectedState } = renderInHost(<ConnectedWithState />, host)
-
-        expect(withConnectedState && withConnectedState.text()).toBe(getValueFromAPI(host))
-    })
-
-    it('should pass shell to mapDispatchToProps', () => {
-        const host = createAppHost([mockPackage])
-
-        const PureCompNeedsDispatch = ({ valueFromDispatch }: { valueFromDispatch: string }) => <div>{valueFromDispatch}</div>
-        const mapDispatchToProps = (shell: Shell) => ({ valueFromDispatch: getValueFromAPI(shell) })
-
-        const ConnectedWithDispatch = connectWithShell(undefined, mapDispatchToProps)(PureCompNeedsDispatch)
-
-        const { parentWrapper: withConnectedDispatch } = renderInHost(<ConnectedWithDispatch />, host)
-
-        expect(withConnectedDispatch && withConnectedDispatch.text()).toBe(getValueFromAPI(host))
-    })
 
     it('should pass exact shell to mapStateToProps', () => {
-        const { host, renderInShellContext } = createMocks(mockPackage)
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapStateToProps = (shell: Shell) => ({ shellName: shell.name })
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+
+        const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
+
+        expect(comp && comp.text()).toBe(mockPackage.name)
+    })
+
+    it('should pass exact shell to mapDispatchToProps', () => {
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
+
+        const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
+        const mapDispatchToProps = (shell: Shell) => ({ shellName: shell.name })
+
+        const ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell)(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -73,12 +62,12 @@ describe('connectWithShell', () => {
     })
 
     it('should pass scoped state to mapStateToProps', () => {
-        const { host, renderInShellContext } = createMocks(mockPackage)
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
         const PureCompNeedsState = ({ valueFromState }: { valueFromState: string }) => <div>{valueFromState}</div>
         const mapStateToProps = (shell: Shell, state: MockPackageState) => ({ valueFromState: getValueFromState(state) })
 
-        const ConnectedWithState = connectWithShell(mapStateToProps, undefined)(PureCompNeedsState)
+        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell)(PureCompNeedsState)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -114,7 +103,7 @@ describe('connectWithShell', () => {
     })
 
     it('should re-provide shell context for children of bound component', () => {
-        const { host, renderInShellContext } = createMocks(mockPackage)
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
         let cachedBoundShell: Shell | null = null
         const boundShellState = { mockValue: 'bound-value' }
@@ -148,13 +137,13 @@ describe('connectWithShell', () => {
         )
         const mapStateToProps = (shell: Shell, state: MockPackageState) => ({ value: getValueFromState(state) })
 
-        const ConnectedUnboundComp = connectWithShell(mapStateToProps, undefined)(PureComp)
+        const ConnectedUnboundComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
         const ConnectedUnboundCompWithChildren = connectWithShell<
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(mapStateToProps, undefined)(PureCompWithChildren)
+        >(mapStateToProps, undefined, shell)(PureCompWithChildren)
 
         const ConnectedBoundCompWithChildren = connectWithShell<
             MockPackageState,
