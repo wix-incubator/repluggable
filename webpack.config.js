@@ -26,15 +26,40 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin(),
   ],
 
-  externals: {
-    'react': 'React',
-    'react-dom': 'ReactDOM',
-    'lodash': '_',
-    'react-redux': 'ReactRedux',
-    'redux': 'Redux'
-   },
-
   optimization: {
-     minimize: false
+    minimize: false
+  },
+
+  externals: {
+    'react': {
+      'root': 'React',
+      'commonjs': 'react',
+      'commonjs2': 'react',
+      'amd': 'react'
+    },
+    'react-dom': {
+      'root': 'ReactDOM',
+      'commonjs': 'react-dom',
+      'commonjs2': 'react-dom',
+      'amd': 'react-dom'
+    },
+    'lodash': {
+      'root': '_',
+      'commonjs': 'lodash',
+      'commonjs2': 'lodash',
+      'amd': 'lodash'
+    },
+    'react-redux': {
+      'root': 'ReactRedux',
+      'commonjs': 'react-redux',
+      'commonjs2': 'react-redux',
+      'amd': 'react-redux'
+    },
+    'redux': {
+      'root': 'Redux',
+      'commonjs': 'redux',
+      'commonjs2': 'redux',
+      'amd': 'redux'
+    }
   }
 };
