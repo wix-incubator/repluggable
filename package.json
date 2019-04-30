@@ -72,7 +72,7 @@
   "lint-staged": {
     "linters": {
       "*.{ts,tsx}": [
-        "npm run lint -- --fix true",
+        "tslint -c tslint.json -t verbose ./{src,test,testKit}/**/*.{ts,tsx} --fix true",
         "git add"
       ]
     },
