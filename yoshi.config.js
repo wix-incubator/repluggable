@@ -20,6 +20,7 @@ const externals = _.reduce(externalsMap, (result, val, key) => {
 
 module.exports = {
   entry: 'index',
+  exports: 'repluggable',
   hmr: true,
-  externals: externalsMap
+  externals
 };
