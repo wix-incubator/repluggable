@@ -21,5 +21,5 @@ const externals = _.reduce(externalsMap, (result, val, key) => {
 module.exports = {
   entry: 'index',
   hmr: true,
-  externals
+  externals: externalsMap
 };
