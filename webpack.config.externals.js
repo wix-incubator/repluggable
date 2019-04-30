@@ -1,9 +1,9 @@
 const externalLibNames = [
-    'lodash',
-    'react',
-    'react-dom',
-    'react-redux',
-    'redux'
+        'lodash',
+        'react',
+        'react-dom',
+        'react-redux',
+        'redux'
 ];
 
 function configExternal(libName) {
