@@ -15,15 +15,15 @@ import {
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
+    Shell,
     ShellsChangedCallback,
-    SlotKey,
-    Shell
+    SlotKey
 } from './API'
 
 import _ from 'lodash'
+import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
-import { AppHostServicesProvider, createAppHostServicesEntryPoint, AppHostAPI } from './appHostServices'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject

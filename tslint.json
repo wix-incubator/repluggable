@@ -1,0 +1,3 @@
+{
+  "extends": "@wix/tslint-config-responsive-editor"
+}

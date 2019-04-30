@@ -3,8 +3,8 @@ import React, { ComponentType } from 'react'
 import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
+import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
-import { ErrorBoundary } from './errorBoundary';
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -51,7 +51,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
         props.children
             ? {
-                // @ts-ignore
+                  // @ts-ignore
                   ...props,
                   children: <ShellContext.Provider value={originalShell}>{props.children}</ShellContext.Provider>
               }
@@ -60,10 +60,14 @@ function wrapWithShellContext<S, OP, SP, DP>(
     return (props: WithChildren<OP>) => (
         <ShellContext.Consumer>
             {shell => {
-                return (<ErrorBoundary shell={boundShell}>{
-                        // @ts-ignore
-                        <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
-                    }</ErrorBoundary>)
+                return (
+                    <ErrorBoundary shell={boundShell}>
+                        {
+                            // @ts-ignore
+                            <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
+                        }
+                    </ErrorBoundary>
+                )
             }}
         </ShellContext.Consumer>
     )

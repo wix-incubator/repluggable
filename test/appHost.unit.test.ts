@@ -12,7 +12,7 @@ import {
     mockShellStateKey
 } from '../testKit/mockPackage'
 
-import { AppHostAPI } from '../src/appHostServices';
+import { AppHostAPI } from '../src/appHostServices'
 
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
@@ -110,7 +110,13 @@ describe('App Host', () => {
         it('should install lazy shells', async () => {
             const lazyEntryPoint = makeLazyEntryPoint(mockPackage.name, async () => mockPackage)
             const host = createAppHost([lazyEntryPoint])
-            await new Promise(resolve => host.onShellsChanged((shellNames) => {if (_.includes(shellNames, mockPackage.name)) {resolve() }}))
+            await new Promise(resolve =>
+                host.onShellsChanged(shellNames => {
+                    if (_.includes(shellNames, mockPackage.name)) {
+                        resolve()
+                    }
+                })
+            )
 
             expect(host.hasShell(lazyEntryPoint.name)).toBe(true)
         })

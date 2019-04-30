@@ -1,17 +1,15 @@
-import { EntryPoint, Shell, SlotKey, AppHost } from './API'
+import { EntryPoint, Shell, SlotKey } from './API'
 
-export interface AppHostAPI {
-    // TODO: move here all utility functions from AppHost
-}
+export interface AppHostAPI {} /* tslint:disable-line:no-empty-interface */
 
-export const AppHostAPI: SlotKey<AppHostAPI> = { name: "AppHost API", public: true }
+export const AppHostAPI: SlotKey<AppHostAPI> = { name: 'AppHost API', public: true }
 
-export type AppHostServicesProvider = { 
+export interface AppHostServicesProvider {
     getAppHostServicesShell(): Shell
 }
 
 export function createAppHostServicesEntryPoint(apiFactory: () => AppHostAPI): EntryPoint & AppHostServicesProvider {
-    let cachedShell: Shell | null = null;
+    let cachedShell: Shell | null = null
 
     return {
         name: 'APP-HOST-SERVICES',
@@ -29,7 +27,7 @@ export function createAppHostServicesEntryPoint(apiFactory: () => AppHostAPI): E
             if (cachedShell) {
                 return cachedShell
             }
-            
+
             throw new Error('Shell for AppHostServices entry point was not yet created')
         }
     }

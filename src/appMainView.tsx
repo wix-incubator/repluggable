@@ -2,10 +2,10 @@ import React, { SFC } from 'react'
 import { connect, Provider } from 'react-redux'
 import { AppHost } from './API'
 import { mainViewSlotKey } from './appHost'
+import { AppHostServicesProvider } from './appHostServices'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { renderSlotComponents } from './renderSlotComponents'
 import { ShellContext } from './shellContext'
-import { AppHostServicesProvider } from './appHostServices'
 
 export interface AppMainViewProps {
     host: AppHost
@@ -17,14 +17,10 @@ interface SfcProps {
 }
 
 const sfc: SFC<SfcProps> = props => {
-    const appHostServicesShell = (props.host as unknown as AppHostServicesProvider).getAppHostServicesShell()
+    const appHostServicesShell = ((props.host as unknown) as AppHostServicesProvider).getAppHostServicesShell()
     const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
-    
-    return (
-        <ShellContext.Provider value={appHostServicesShell}>
-            {contextProviderChildren}
-        </ShellContext.Provider>
-    )
+
+    return <ShellContext.Provider value={appHostServicesShell}>{contextProviderChildren}</ShellContext.Provider>
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({

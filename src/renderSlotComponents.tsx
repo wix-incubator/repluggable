@@ -6,9 +6,9 @@ import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 
 interface ShellRendererProps {
-    shell: Shell,
-    component: React.ReactNode,
-    key: any,
+    shell: Shell
+    component: React.ReactNode
+    key: any
     name?: string
 }
 
@@ -19,30 +19,30 @@ export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ she
 )
 
 export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
-    return slot.getItems().map((item, index) => <ShellRenderer
-        shell={item.shell}
-        component={item.contribution()}
-        key={index}
-        name={item.name} />
-    )
+    return slot
+        .getItems()
+        .map((item, index) => <ShellRenderer shell={item.shell} component={item.contribution()} key={index} name={item.name} />)
 }
 
 interface SlotRendererPureProps<T> {
-    items: ExtensionItem<T>[]
+    items: Array<ExtensionItem<T>>
     mapFunc: (item: T) => ReactComponentContributor
     filterFunc?: (item: T) => boolean
 }
 const SlotRendererPure: React.FunctionComponent<SlotRendererPureProps<any>> = ({ items, mapFunc, filterFunc }) => (
     <>
-        {items.filter(item => (!filterFunc || filterFunc(item.contribution))).map((item, index) => {
-            return (
-                <ShellRenderer
-                    shell={item.shell}
-                    component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
-                    key={index}
-                    name={item.name} />
-            )
-        })}
+        {items
+            .filter(item => !filterFunc || filterFunc(item.contribution))
+            .map((item, index) => {
+                return (
+                    <ShellRenderer
+                        shell={item.shell}
+                        component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
+                        key={index}
+                        name={item.name}
+                    />
+                )
+            })}
     </>
 )
 

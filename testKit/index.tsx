@@ -2,8 +2,8 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { EntryPoint, PrivateShell } from '../src/API'
+import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 
 export { AppHost, createAppHost } from '../src/index'
@@ -86,13 +86,9 @@ export const renderInHost = (
 } => {
     const shell = customShell || createShell(host)
 
-
     const root = mount(
         <Provider store={host.getStore()}>
-            <ShellRenderer 
-                shell={shell as PrivateShell} 
-                component={<div data-shell-in-host="true">{reactElement}</div>} 
-                key="" />
+            <ShellRenderer shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
         </Provider>
     )
 

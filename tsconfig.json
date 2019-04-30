@@ -4,7 +4,6 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "lib": ["es6", "dom"],
-    "noImplicitAny": true,
     "declarationDir": "dist/types",
     "declaration": true,
     "target": "es2015",
@@ -15,9 +14,5 @@
   },
   "include": [
     "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }
