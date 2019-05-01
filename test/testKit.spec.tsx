@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { EntryPoint, EntryPointOrPackage } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
-import { getPackagesDependencies } from '../testKit'
+import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage } from '../testKit'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot
@@ -78,4 +78,17 @@ describe('App Host TestKit', () => {
         // TODO: Should 'E' be included ?
         expect(getDependencies([F])).toEqual(toResult([B, C, (D as EntryPoint[])[0], F]))
     })
+})
+
+it('should add mock shell', async () => {
+    const host = createAppHost([mockPackage])
+    const shell = addMockShell(host, {
+        name: 'MOCK',
+        getDependencyAPIs() {
+            return [MockAPI]
+        }
+    })
+    await new Promise(resolve => host.onShellsChanged(resolve))
+    expect(host.hasShell('MOCK')).toBe(true)
+    expect(() => shell.getAPI(MockAPI)).not.toThrow()
 })
