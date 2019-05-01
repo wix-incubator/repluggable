@@ -22,5 +22,10 @@ module.exports = {
   entry: 'index',
   exports: 'repluggable',
   hmr: true,
-  externals
+  externals,
+  servers: {
+    cdn: {
+      port: 3100
+    }
+  }
 };
