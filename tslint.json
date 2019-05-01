@@ -1,3 +1,7 @@
 {
-  "extends": "@wix/tslint-config-responsive-editor"
+  "extends": "tslint-config-yoshi",
+  "rules": {
+    "switch-default": false,
+    "no-floating-promises": false
+  }
 }

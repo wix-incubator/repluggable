@@ -1,67 +1,70 @@
-import _ from 'lodash'
+import _ from 'lodash';
 
-import { AnyAction } from 'redux'
-import { EntryPoint, Shell, SlotKey } from '../src/API'
+import { AnyAction } from 'redux';
+import { EntryPoint, Shell, SlotKey } from '../src/API';
 
 export interface MockAPI {
-    stubTrue(): boolean
+  stubTrue(): boolean;
 }
 
 export interface MockPublicAPI {
-    stubTrue(): boolean
+  stubTrue(): boolean;
 }
 
-export const MockAPI: SlotKey<MockAPI> = { name: 'mock API' }
+export const MockAPI: SlotKey<MockAPI> = { name: 'mock API' };
 export const MockPublicAPI: SlotKey<MockPublicAPI> = {
-    name: 'mock API public',
-    public: true
-}
+  name: 'mock API public',
+  public: true,
+};
 
 const createMockAPI = (shell: Shell): MockAPI => ({
-    stubTrue: _.stubTrue
-})
+  stubTrue: _.stubTrue,
+});
 
 export interface MockState {
-    mockValue: boolean
+  mockValue: boolean;
 }
 
 export const mockShellInitialState: MockState = {
-    mockValue: true
-}
+  mockValue: true,
+};
 
-const TOGGLE_MOCK_VALUE = 'mockEntryPoint/mockAction'
+const TOGGLE_MOCK_VALUE = 'mockEntryPoint/mockAction';
 
-const mockReducer = (state: MockState = mockShellInitialState, action: AnyAction): MockState => {
-    switch (action.type) {
-        case TOGGLE_MOCK_VALUE:
-            return { ...state, mockValue: !state.mockValue }
-    }
-    return state
-}
+const mockReducer = (
+  state: MockState = mockShellInitialState,
+  action: AnyAction,
+): MockState => {
+  switch (action.type) {
+    case TOGGLE_MOCK_VALUE:
+      return { ...state, mockValue: !state.mockValue };
+  }
+  return state;
+};
 
-export const mockShellStateKey = 'mockEntryPoint'
+export const mockShellStateKey = 'mockEntryPoint';
 
 export const mockPackage: EntryPoint = {
-    name: 'MOCK_ENTRY_POINT',
-    declareAPIs() {
-        return [MockAPI]
-    },
-    attach(shell: Shell) {
-        shell.contributeAPI(MockAPI, () => createMockAPI(shell))
-        shell.contributeState(() => ({
-            [mockShellStateKey]: mockReducer
-        }))
-    }
-}
+  name: 'MOCK_ENTRY_POINT',
+  declareAPIs() {
+    return [MockAPI];
+  },
+  attach(shell: Shell) {
+    shell.contributeAPI(MockAPI, () => createMockAPI(shell));
+    shell.contributeState(() => ({
+      [mockShellStateKey]: mockReducer,
+    }));
+  },
+};
 
 export const mockPackageWithPublicAPI: EntryPoint = {
-    name: 'MOCK_ENTRY_POINT_PUBLIC',
-    declareAPIs() {
-        return [MockPublicAPI]
-    },
-    attach(shell: Shell) {
-        shell.contributeAPI(MockPublicAPI, () => ({
-            stubTrue: () => true
-        }))
-    }
-}
+  name: 'MOCK_ENTRY_POINT_PUBLIC',
+  declareAPIs() {
+    return [MockPublicAPI];
+  },
+  attach(shell: Shell) {
+    shell.contributeAPI(MockPublicAPI, () => ({
+      stubTrue: () => true,
+    }));
+  },
+};
