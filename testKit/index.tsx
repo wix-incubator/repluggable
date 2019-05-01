@@ -103,6 +103,28 @@ export const renderInHost = (reactElement: ReactElement, host: AppHost = createA
     }
 }
 
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
+    name?: EntryPoint['name']
+}
+
+export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverrides = {}): Shell => {
+    let shell = null
+    host.addShells([
+        {
+            name: _.uniqueId('__MOCK_SHELL_'),
+            ...entryPointOverrides,
+            attach(_shell) {
+                shell = _shell
+                if (entryPointOverrides.attach) {
+                    entryPointOverrides.attach(_shell)
+                }
+            }
+        }
+    ])
+    return (shell as unknown) as Shell
+}
+
 function createShell(host: AppHost): PrivateShell {
     const entryPoint: EntryPoint = {
         name: 'test'
