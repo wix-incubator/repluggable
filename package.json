@@ -14,7 +14,7 @@
   "scripts": {
     "start": "yoshi start",
     "build": "yoshi build",
-    "test": "yoshi test",
+    "test": "yoshi test --coverage",
     "posttest": "npm run lint",
     "lint": "yoshi lint --fix",
     "release": "yoshi release"
