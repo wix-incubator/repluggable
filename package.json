@@ -15,8 +15,7 @@
     "start": "yoshi start",
     "build": "yoshi build",
     "test": "yoshi test --coverage",
-    "posttest": "npm run lint",
-    "lint": "yoshi lint --fix",
+    "posttest": "yoshi lint --fix",
     "release": "yoshi release"
   },
   "main": "dist/src/index.js",
