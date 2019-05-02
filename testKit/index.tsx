@@ -2,7 +2,7 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { EntryPoint, PrivateShell } from '../src/API'
+import { EntryPoint, PrivateShell, LocaleDictionary, TranslationFunc } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 
@@ -149,6 +149,11 @@ function createShell(host: AppHost): PrivateShell {
         contributeAPI<TAPI>(): TAPI {
             const API: any = {}
             return API
+        },
+        contributeTranslations(dictionary: LocaleDictionary): void {},
+        useTranslationFunction(func: TranslationFunc): void {},
+        translate(key: string, params?: { [name: string]: any }): string {
+            return key
         },
         contributeState: _.noop,
         contributeMainView: _.noop

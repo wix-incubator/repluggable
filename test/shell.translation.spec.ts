@@ -34,7 +34,7 @@ function createAppHostWithTwoShells(firstAttach?: (shell: Shell) => void, second
     }
 }
 
-describe('translations', () => {
+describe('Shell.contributeTranslations', () => {
     it('should implement translations use case', () => {
         const { firstShell, secondShell } = createAppHostWithTwoShells(
             // 1st entry point
@@ -108,5 +108,30 @@ describe('translations', () => {
 
         expect(firstShell.translate('a_b_c')).toBe('text-1')
         expect(secondShell.translate('a_b_c')).toBe('CUSTOM:a_b_c')
+    })
+})
+
+describe('Shell.translate', () => {
+    it('should handle placeholders', () => {
+        const { firstShell } = createAppHostWithTwoShells(shell => {
+            shell.contributeTranslations({
+                no_placeholder: 'literal text',
+                single_placeholder: 'this is a {color} car',
+                many_placeholders: 'this {color} {brand} costs $ {quote} K',
+                only_many_placeholders: '{first_name} {last_name}',
+                only_placeholder: '{user_name}',
+                empty_string: '',
+                positional_placeholders: 'this {0} {1} costs $ {2} K'
+            })
+        })
+
+        expect(firstShell.translate('no_placeholder', { a: 'b' })).toBe('literal text')
+        expect(firstShell.translate('single_placeholder', { color: 'green' })).toBe('this is a green car')
+        expect(firstShell.translate('many_placeholders', { color: 'white', brand: 'Honda', quote: 123 })).toBe(
+            'this white Honda costs $ 123 K'
+        )
+        expect(firstShell.translate('only_many_placeholders', { first_name: 'Jon', last_name: 'Snow' })).toBe('Jon Snow')
+        expect(firstShell.translate('empty_string', { a: 'b' })).toBe('')
+        expect(firstShell.translate('positional_placeholders', ['white', 'Honda', 123])).toBe('this white Honda costs $ 123 K')
     })
 })
