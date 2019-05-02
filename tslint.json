@@ -2,6 +2,7 @@
   "extends": "tslint-config-yoshi",
   "rules": {
     "switch-default": false,
+    "use-default-type-parameter": false,
     "no-floating-promises": false,
     "prettier": [true, {
       "printWidth": 140,
