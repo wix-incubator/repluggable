@@ -1,6 +1,6 @@
 {
   "name": "@wix/repluggable",
-  "version": "0.5.20",
+  "version": "1.70.0",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "author": {
     "name": "Responsive FEDs",
