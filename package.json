@@ -16,7 +16,8 @@
     "build": "yoshi build",
     "test": "yoshi test --coverage",
     "posttest": "yoshi lint --fix",
-    "release": "yoshi release"
+    "release": "yoshi release",
+    "test:performance": "perfer"
   },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -33,6 +34,8 @@
     "@types/react": "^16.7.18",
     "@types/react-redux": "^7.0.0",
     "@types/requirejs": "^2.1.31",
+    "@wix/perfer": "^0.3.11",
+    "@wix/perfer-preset-yoshi": "^0.3.13",
     "enzyme": "^3.8.0",
     "enzyme-adapter-react-16": "^1.9.1",
     "husky": "^2.1.0",
@@ -61,5 +64,8 @@
   },
   "jest": {
     "preset": "jest-yoshi-preset"
+  },
+  "perfer": {
+    "preset": "@wix/perfer-preset-yoshi"
   }
 }
