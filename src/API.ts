@@ -33,6 +33,9 @@ export interface EntryPoint {
 
 export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
 export type EntryPointOrPackage = AnyEntryPoint | AnyEntryPoint[]
+export interface EntryPointOrPackagesMap {
+    [name: string]: EntryPointOrPackage
+}
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
@@ -96,6 +99,15 @@ export interface EntryPointsInfo {
     readonly name: string
     readonly lazy: boolean
     readonly attached: boolean
+}
+
+export interface EntryPointInterceptor {
+    interceptName?(innerName: string): string
+    interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
+    interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
+    interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
+    interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']
+    interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }
 
 export interface LocaleDictionary {

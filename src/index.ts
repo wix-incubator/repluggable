@@ -10,7 +10,8 @@ export {
     ReactComponentContributor,
     ReducersMapObjectContributor,
     TranslationFunc,
-    LocaleDictionary
+    LocaleDictionary,
+    EntryPointInterceptor
 } from './API'
 
 export { AppMainView } from './appMainView'
@@ -21,4 +22,4 @@ export { renderSlotComponents, SlotRenderer, ShellRenderer } from './renderSlotC
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
-export { EntryPointInterceptor, interceptEntryPoints } from './interceptEntryPoints'
+export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'

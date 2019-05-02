@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { EntryPoint } from '../src/API'
-import { interceptEntryPoints, EntryPointInterceptor } from '../src/interceptEntryPoints'
+import { EntryPoint, EntryPointInterceptor } from '../src/API'
+import { interceptEntryPoints, interceptEntryPointsMap } from '../src/interceptEntryPoints'
 
 describe('interceptEntryPoints', () => {
     it('should intercept name', () => {
@@ -68,18 +68,39 @@ describe('interceptEntryPoints', () => {
 
         expect(log).toEqual(['INTERCEPTED:getDependencyAPIs', 'EP-0:getDependencyAPIs'])
     })
-    it('should intercept packages', () => {
+    it('should handle single entry point', () => {
         const log: string[] = []
 
         const entryPoints = createTestEntryPoints(3, log)
-        const packages = [[entryPoints[0]], [entryPoints[1], entryPoints[2]]]
         const interceptor = createTestInterceptor(log, { interceptAttach: true })
-        const intercepted = interceptEntryPoints(packages, interceptor)
+        const intercepted = interceptEntryPoints(entryPoints[0], interceptor)
+
+        intercepted[0].attach && intercepted[0].attach({} as any)
+
+        expect(log).toEqual(['INTERCEPTED:attach', 'EP-0:attach'])
+    })
+
+    it('should recognize maps of entry points', () => {
+        const log: string[] = []
+
+        const entryPoints = createTestEntryPoints(3, log)
+        const packagesMap = {
+            one: entryPoints[0],
+            two: [entryPoints[1], entryPoints[2]]
+        }
+        const interceptor = createTestInterceptor(log, { interceptAttach: true })
+        const interceptedMap = interceptEntryPointsMap(packagesMap, interceptor)
+        const intercepted = [
+            (interceptedMap.one as EntryPoint[])[0],
+            (interceptedMap.two as EntryPoint[])[0],
+            (interceptedMap.two as EntryPoint[])[1]
+        ]
 
         intercepted[0].attach && intercepted[0].attach({} as any)
         intercepted[1].attach && intercepted[1].attach({} as any)
         intercepted[2].attach && intercepted[2].attach({} as any)
 
+        expect(typeof interceptedMap).toBe('object')
         expect(log).toEqual(['INTERCEPTED:attach', 'EP-0:attach', 'INTERCEPTED:attach', 'EP-1:attach', 'INTERCEPTED:attach', 'EP-2:attach'])
     })
 })
