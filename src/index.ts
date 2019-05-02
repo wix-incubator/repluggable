@@ -19,3 +19,4 @@ export { renderSlotComponents, SlotRenderer, ShellRenderer } from './renderSlotC
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
+export { EntryPointInterceptor, interceptEntryPoints } from './interceptEntryPoints'
