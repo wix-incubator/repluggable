@@ -619,7 +619,17 @@ function createAppHostImpl(): AppHost {
             },
 
             translate(key: string, params?: { [name: string]: any }): string {
-                return customTranslationFunc ? customTranslationFunc(key, params) : translations[key]
+                const translation = customTranslationFunc ? customTranslationFunc(key, params) : translations[key]
+
+                if (typeof translation === 'string') {
+                    return !params
+                        ? translation
+                        : translation.replace(/\{([^}]+)}/g, function(match, name) {
+                              return params[name] || match
+                          })
+                }
+                //TODO: report missing translation
+                return `!${key}!`
             }
         }
 
