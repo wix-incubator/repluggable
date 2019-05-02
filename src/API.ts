@@ -5,7 +5,7 @@ export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'sub
 export type ReactComponentContributor = () => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
-export type LazyEntryPointFactory = () => Promise<EntryPoint>
+export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
 export type TranslationFunc = (key: string, params?: { [name: string]: any }) => string
 export interface LazyEntryPointDescriptor {

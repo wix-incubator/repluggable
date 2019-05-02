@@ -113,6 +113,7 @@ function createAppHostImpl(): AppHost {
 
     return host
 
+    //TODO: get rid of LazyEntryPointDescriptor
     function isLazyEntryPointDescriptor(value: AnyEntryPoint): value is LazyEntryPointDescriptor {
         return typeof (value as LazyEntryPointDescriptor).factory === 'function'
     }
