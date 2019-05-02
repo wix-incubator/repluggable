@@ -8,7 +8,9 @@ export {
     AnySlotKey,
     SlotKey,
     ReactComponentContributor,
-    ReducersMapObjectContributor
+    ReducersMapObjectContributor,
+    TranslationFunc,
+    LocaleDictionary
 } from './API'
 
 export { AppMainView } from './appMainView'
