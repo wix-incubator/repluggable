@@ -75,8 +75,13 @@ describe('App Host', () => {
     })
 
     describe('Packages Installation', () => {
-        it('should throw on circular API dependency', () => {
+        it('should throw on circular API dependency (private keys)', () => {
             const circularPackages = createCircularEntryPoints()
+            expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+
+        it('should throw on circular API dependency (public keys)', () => {
+            const circularPackages = createCircularEntryPoints(true)
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
 
