@@ -1,39 +1,30 @@
 import { combineReducers, createStore, ReducersMapObject, Store } from 'redux'
 
 import {
-  AnyEntryPoint,
-  AnySlotKey,
-  AppHost,
-  EntryPoint,
-  EntryPointOrPackage,
-  EntryPointsInfo,
-  ExtensionItem,
-  ExtensionSlot,
-  LazyEntryPointDescriptor,
-  LazyEntryPointFactory,
-  PrivateShell,
-  ReactComponentContributor,
-  ReducersMapObjectContributor,
-  ScopedStore,
-  Shell,
-  ShellsChangedCallback,
-  SlotKey,
-} from './API';
+    AnyEntryPoint,
+    AnySlotKey,
+    AppHost,
+    EntryPoint,
+    EntryPointOrPackage,
+    EntryPointsInfo,
+    ExtensionItem,
+    ExtensionSlot,
+    LazyEntryPointDescriptor,
+    LazyEntryPointFactory,
+    PrivateShell,
+    ReactComponentContributor,
+    ReducersMapObjectContributor,
+    ScopedStore,
+    Shell,
+    ShellsChangedCallback,
+    SlotKey
+} from './API'
 
-import _ from 'lodash';
-import {
-  AppHostAPI,
-  AppHostServicesProvider,
-  createAppHostServicesEntryPoint,
-} from './appHostServices';
-import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot';
-import {
-  contributeInstalledShellsState,
-  InstalledShellsActions,
-  InstalledShellsSelectors,
-  ShellToggleSet,
-} from './installedShellsState';
-import { dependentAPIs, declaredAPIs } from './appHostUtils';
+import _ from 'lodash'
+import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
+import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
+import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
+import { dependentAPIs, declaredAPIs } from './appHostUtils'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -298,40 +289,46 @@ function createAppHostImpl(): AppHost {
     }
 
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
-      const apiToEP = buildApiToEntryPoint(entryPoints);
+        const apiToEP = buildApiToEntryPoint(entryPoints)
 
-      const validateEntryPointAPIs = (
-        entryPoint: AnyEntryPoint,
-        visited: Set<AnyEntryPoint>,
-      ) => {
-        if (visited.has(entryPoint)) {
-          throw new Error(`Circular API dependency found`);
+        const validateEntryPointAPIs = (entryPoint: AnyEntryPoint, visited: Set<AnyEntryPoint>) => {
+            if (visited.has(entryPoint)) {
+                throw new Error(`Circular API dependency found`)
+            }
+
+            visited.add(entryPoint)
+            dependentAPIs(entryPoint).forEach(apiKey => {
+                const apiEntryPoint = apiToEP(apiKey)
+                validateEntryPointAPIs(apiEntryPoint, visited)
+            })
         }
 
-        visited.add(entryPoint);
-        dependentAPIs(entryPoint).forEach(apiKey => {
-          const apiEntryPoint = apiToEP.get(apiKey) as AnyEntryPoint;
-          validateEntryPointAPIs(apiEntryPoint, visited);
-        });
-      };
-
-      entryPoints.forEach(entryPoint => {
-        const visited = new Set<AnyEntryPoint>();
-        validateEntryPointAPIs(entryPoint, visited);
-      });
+        entryPoints.forEach(entryPoint => {
+            const visited = new Set<AnyEntryPoint>()
+            validateEntryPointAPIs(entryPoint, visited)
+        })
     }
 
-    function buildApiToEntryPoint(
-      entryPoints: AnyEntryPoint[],
-    ): Map<AnySlotKey, AnyEntryPoint> {
-      const apiToEP = new Map<AnySlotKey, AnyEntryPoint>();
-      entryPoints.forEach(entryPoint => {
-        declaredAPIs(entryPoint).forEach((apiKey: AnySlotKey) => {
-          apiToEP.set(apiKey, entryPoint);
-        });
-      });
+    function buildApiToEntryPoint(entryPoints: AnyEntryPoint[]): (apiKey: AnySlotKey) => AnyEntryPoint {
+        const privateKeyToEP = new Map<AnySlotKey, AnyEntryPoint>()
+        const publicKeyNameToEP = new Map<string, AnyEntryPoint>()
 
-      return apiToEP;
+        entryPoints.forEach(entryPoint => {
+            declaredAPIs(entryPoint).forEach((apiKey: AnySlotKey) => {
+                if (apiKey.public === true) {
+                    publicKeyNameToEP.set(apiKey.name, entryPoint)
+                } else {
+                    privateKeyToEP.set(apiKey, entryPoint)
+                }
+            })
+        })
+
+        return (apiKey: AnySlotKey): AnyEntryPoint => {
+            if (apiKey.public === true) {
+                return publicKeyNameToEP.get(apiKey.name) as AnyEntryPoint
+            }
+            return privateKeyToEP.get(apiKey) as AnyEntryPoint
+        }
     }
 
     function loadLazyShell(name: string): Promise<EntryPoint> {
