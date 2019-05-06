@@ -317,7 +317,6 @@ function createAppHostImpl(): AppHost {
 
         entryPoints.forEach(entryPoint => {
             declaredAPIs(entryPoint).forEach((apiKey: AnySlotKey) => {
-                console.log(`mapping ${apiKey.name} to ${entryPoint.name}`)
                 if (apiKey.public === true) {
                     publicKeyNameToEP.set(apiKey.name, entryPoint)
                 } else {
