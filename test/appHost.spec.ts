@@ -94,6 +94,15 @@ describe('App Host', () => {
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
 
+        it('should throw when dynamically adding a shell with circular dependency', () => {
+            const circularPackages = createCircularEntryPoints(true)
+            const nonCircular = circularPackages.slice(0, 3)
+            const circularEP = _.last(circularPackages) as EntryPoint
+            const host = createAppHost(nonCircular)
+
+            expect(() => host.addShells([circularEP])).toThrow()
+        })
+
         it('should install initial packages', async () => {
             const host = createAppHost([mockPackage])
             await new Promise(resolve => host.onShellsChanged(resolve))
