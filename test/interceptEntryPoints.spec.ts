@@ -183,7 +183,14 @@ describe('interceptEntryPoints', () => {
         createAppHost(intercepted)
 
         // getDependencyAPIs appears to be called multiple times
-        expect(_.uniq(takeLog(spy))).toEqual(['EP-0:getDependencyAPIs', 'I1:attach', 'EP-0:attach', 'I1:extend', 'EP-0:extend'])
+        expect(_.uniq(takeLog(spy))).toEqual([
+            'EP-0:declareAPIs', // called because of circular validation
+            'EP-0:getDependencyAPIs',
+            'I1:attach',
+            'EP-0:attach',
+            'I1:extend',
+            'EP-0:extend'
+        ])
     })
 })
 
@@ -197,6 +204,7 @@ function createTestEntryPoints(count: number, spy: LogSpy): EntryPoint[] {
             return []
         },
         declareAPIs() {
+            console.log('calling')
             spy(`EP-${index}:declareAPIs`)
             return []
         },
