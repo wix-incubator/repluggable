@@ -22,3 +22,20 @@ export const createCircularEntryPoints = (usePublicAPIKeys: boolean = false): En
         }
     ]
 }
+
+export const createDirectCircularEntryPoints = (usePublicAPIKeys: boolean = false): EntryPoint[] => {
+    const MockAPI1: SlotKey<{}> = { name: 'Mock-API-1', public: usePublicAPIKeys }
+    const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2', public: usePublicAPIKeys }
+    return [
+        {
+            name: 'MOCK_ENTRY_POINT_1',
+            getDependencyAPIs: () => [usePublicAPIKeys ? { name: 'Mock-API-2', public: true } : MockAPI2],
+            declareAPIs: () => [MockAPI1]
+        },
+        {
+            name: 'MOCK_ENTRY_POINT_2',
+            getDependencyAPIs: () => [usePublicAPIKeys ? { name: 'Mock-API-1', public: true } : MockAPI1],
+            declareAPIs: () => [MockAPI2]
+        }
+    ]
+}
