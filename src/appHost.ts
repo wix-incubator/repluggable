@@ -11,15 +11,13 @@ import {
     ExtensionSlot,
     LazyEntryPointDescriptor,
     LazyEntryPointFactory,
-    LocaleDictionary,
     PrivateShell,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
     Shell,
     ShellsChangedCallback,
-    SlotKey,
-    TranslationFunc
+    SlotKey
 } from './API'
 
 import _ from 'lodash'
@@ -499,8 +497,6 @@ function createAppHostImpl(): AppHost {
         let storeEnabled = false
         let APIsEnabled = false
         let dependencyAPIs: AnySlotKey[] = []
-        const translations: LocaleDictionary = {}
-        let customTranslationFunc: TranslationFunc | null = null
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
 
@@ -607,28 +603,6 @@ function createAppHostImpl(): AppHost {
 
             contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void {
                 getSlot(mainViewSlotKey).contribute(fromShell, contributor)
-            },
-
-            contributeTranslations(dictionary: LocaleDictionary): void {
-                Object.assign(translations, dictionary)
-            },
-
-            useTranslationFunction(func: TranslationFunc): void {
-                customTranslationFunc = func
-            },
-
-            translate(key: string, params?: { [name: string]: any }): string {
-                const translation = customTranslationFunc ? customTranslationFunc(key, params) : translations[key]
-
-                if (typeof translation === 'string') {
-                    return !params
-                        ? translation
-                        : translation.replace(/\{([^}]+)}/g, function(match, name) {
-                              return params[name] || match
-                          })
-                }
-                //TODO: report missing translation
-                return `!${key}!`
             }
         }
 

@@ -9,8 +9,6 @@ export {
     SlotKey,
     ReactComponentContributor,
     ReducersMapObjectContributor,
-    TranslationFunc,
-    LocaleDictionary,
     EntryPointInterceptor
 } from './API'
 

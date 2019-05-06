@@ -7,7 +7,6 @@ export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapO
 export type ContributionPredicate = () => boolean
 export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
-export type TranslationFunc = (key: string, params?: { [name: string]: any }) => string
 export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
@@ -83,9 +82,6 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>>
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
-    contributeTranslations(dictionary: LocaleDictionary): void
-    useTranslationFunction(func: TranslationFunc): void
-    translate(key: string, params?: { [name: string]: any }): string
     // readonly log: ShellLogger; //TODO: define logging abstraction
 }
 
@@ -108,10 +104,6 @@ export interface EntryPointInterceptor {
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
     interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
-}
-
-export interface LocaleDictionary {
-    [key: string]: string
 }
 
 // TODO: define logging abstraction
