@@ -121,7 +121,7 @@ function createAppHostImpl(): AppHost {
         const entryPoints = _.flatten(entryPointsOrPackages)
 
         validateUniqueShellNames(entryPoints)
-        // validateCircularDependency(entryPoints)
+        validateCircularDependency(entryPoints)
 
         const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
             LazyEntryPointDescriptor[],
