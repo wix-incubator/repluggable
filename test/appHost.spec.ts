@@ -13,6 +13,7 @@ import {
 } from '../testKit/mockPackage'
 
 import { AppHostAPI } from '../src/appHostServices'
+import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
@@ -74,6 +75,25 @@ describe('App Host', () => {
     })
 
     describe('Packages Installation', () => {
+        it('should throw on direct circular API dependency (private keys)', () => {
+            const circularPackages = createDirectCircularEntryPoints()
+            expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+
+        it('should throw on direct circular API dependency (public keys)', () => {
+            const circularPackages = createDirectCircularEntryPoints(true)
+            expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+        it('should throw on circular API dependency (private keys)', () => {
+            const circularPackages = createCircularEntryPoints()
+            expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+
+        it('should throw on circular API dependency (public keys)', () => {
+            const circularPackages = createCircularEntryPoints(true)
+            expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+
         it('should install initial packages', async () => {
             const host = createAppHost([mockPackage])
             await new Promise(resolve => host.onShellsChanged(resolve))
