@@ -75,23 +75,32 @@ describe('App Host', () => {
     })
 
     describe('Packages Installation', () => {
-        xit('should throw on direct circular API dependency (private keys)', () => {
+        it('should throw on direct circular API dependency (private keys)', () => {
             const circularPackages = createDirectCircularEntryPoints()
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
 
-        xit('should throw on direct circular API dependency (public keys)', () => {
+        it('should throw on direct circular API dependency (public keys)', () => {
             const circularPackages = createDirectCircularEntryPoints(true)
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
-        xit('should throw on circular API dependency (private keys)', () => {
+        it('should throw on circular API dependency (private keys)', () => {
             const circularPackages = createCircularEntryPoints()
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
 
-        xit('should throw on circular API dependency (public keys)', () => {
+        it('should throw on circular API dependency (public keys)', () => {
             const circularPackages = createCircularEntryPoints(true)
             expect(() => createAppHost(circularPackages)).toThrowError()
+        })
+
+        it('should throw when dynamically adding a shell with circular dependency', () => {
+            const circularPackages = createCircularEntryPoints(true)
+            const nonCircular = circularPackages.slice(0, 3)
+            const circularEP = _.last(circularPackages) as EntryPoint
+            const host = createAppHost(nonCircular)
+
+            expect(() => host.addShells([circularEP])).toThrow()
         })
 
         it('should install initial packages', async () => {

@@ -119,9 +119,11 @@ function createAppHostImpl(): AppHost {
         console.log(`Adding ${entryPointsOrPackages.length} packages.`)
 
         const entryPoints = _.flatten(entryPointsOrPackages)
+        const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
+        const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
 
         validateUniqueShellNames(entryPoints)
-        // validateCircularDependency(entryPoints)
+        validateCircularDependency(allEntryPoints)
 
         const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
             LazyEntryPointDescriptor[],
@@ -299,7 +301,7 @@ function createAppHostImpl(): AppHost {
             visited.add(entryPoint)
             dependentAPIs(entryPoint).forEach(apiKey => {
                 const apiEntryPoint = apiToEP(apiKey)
-                validateEntryPointAPIs(apiEntryPoint, visited)
+                apiEntryPoint && validateEntryPointAPIs(apiEntryPoint, visited)
             })
         }
 
