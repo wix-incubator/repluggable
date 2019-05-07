@@ -13,7 +13,7 @@
   },
   "scripts": {
     "start": "yoshi start",
-    "build": "yoshi build",
+    "pretest": "yoshi build",
     "test": "yoshi test --coverage",
     "posttest": "yoshi lint --fix",
     "release": "yoshi release",
@@ -36,7 +36,6 @@
     "@types/react-redux": "^7.0.0",
     "@types/requirejs": "^2.1.31",
     "@wix/perfer": "^0.3.11",
-    "@wix/perfer-preset-yoshi": "^0.3.13",
     "babel-preset-yoshi": "^4.1.0",
     "enzyme": "^3.8.0",
     "enzyme-adapter-react-16": "^1.9.1",
@@ -67,6 +66,8 @@
     "preset": "jest-yoshi-preset"
   },
   "perfer": {
-    "preset": "@wix/perfer-preset-yoshi"
+    "bundleSize": {
+      "files": ["./dist/statics/*.js"]
+    }
   }
 }
