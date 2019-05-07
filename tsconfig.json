@@ -5,11 +5,11 @@
     "jsx": "react",
     "lib": ["es6", "dom"],
     "declaration": true,
-    "target": "es5",
+    "target": "es6",
+    "module": "es6",
     "strict": true,
     "moduleResolution": "node",
-    "skipLibCheck": true,
-    "downlevelIteration": true
+    "skipLibCheck": true
   },
   "include": [
     "src",
