@@ -8,6 +8,7 @@
   },
   "license": "ISC",
   "unpkg": true,
+  "main": "dist/src/index.js",
   "publishConfig": {
     "registry": "http://npm.dev.wixpress.com/"
   },
@@ -20,8 +21,6 @@
     "pretest:performance": "yoshi build",
     "test:performance": "perfer"
   },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
   "dependencies": {
     "lodash": "^4.17.11",
     "react": "~16.6.0",
