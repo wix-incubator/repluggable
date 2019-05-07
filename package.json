@@ -13,10 +13,11 @@
   },
   "scripts": {
     "start": "yoshi start",
-    "pretest": "yoshi build",
+    "build": "yoshi build",
     "test": "yoshi test --coverage",
     "posttest": "yoshi lint --fix",
     "release": "yoshi release",
+    "pretest:performance": "yoshi build",
     "test:performance": "perfer"
   },
   "main": "dist/src/index.js",
