@@ -1,22 +1,26 @@
 const _ = require('lodash');
 
 const externalsMap = {
-  'react': 'React',
+  react: 'React',
   'react-dom': 'ReactDOM',
-  'lodash': '_',
+  lodash: '_',
   'react-redux': 'ReactRedux',
-  'redux': 'Redux'
+  redux: 'Redux',
 };
 
-const externals = _.reduce(externalsMap, (result, val, key) => {
-  result[key] = {
-    root: val,
-    commonjs: key,
-    commonjs2: key,
-    amd: key
-  };
-  return result;
-}, {});
+const externals = _.reduce(
+  externalsMap,
+  (result, val, key) => {
+    result[key] = {
+      root: val,
+      commonjs: key,
+      commonjs2: key,
+      amd: key,
+    };
+    return result;
+  },
+  {},
+);
 
 module.exports = {
   entry: 'index',
@@ -25,7 +29,7 @@ module.exports = {
   externals,
   servers: {
     cdn: {
-      port: 3100
-    }
-  }
+      port: 3100,
+    },
+  },
 };

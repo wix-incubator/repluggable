@@ -1,4 +1,4 @@
-module.exports = (wallaby) => {
+module.exports = wallaby => {
   const config = require('yoshi/config/wallaby-jest')(wallaby);
   config.files.push('__tests__/**/*.js');
   config.files.push('testKit/**/*.[j|t]s');
