@@ -5,6 +5,7 @@
     "jsx": "react",
     "lib": ["es6", "dom"],
     "declaration": true,
+    "declarationMap": true,
     "target": "es5",
     "module": "commonjs",
     "strict": true,
