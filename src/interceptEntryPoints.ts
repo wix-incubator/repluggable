@@ -1,24 +1,12 @@
 import _ from 'lodash'
 import { EntryPoint, EntryPointOrPackage, EntryPointInterceptor, EntryPointOrPackagesMap } from './API'
 
-// function isArray(entryPoints: EntryPointOrPackage[] | Object): entryPoints is EntryPointOrPackage[] {
-//     return (typeof (entryPoints as EntryPointOrPackage[]).length === 'number')
-// }
-
 export function interceptEntryPoints(entryPoints: EntryPointOrPackage, interceptor: EntryPointInterceptor): EntryPoint[] {
     return (_.flatten([entryPoints]) as EntryPoint[]).map(ep => applyInterceptor(ep, interceptor))
 }
 
 export function interceptEntryPointsMap(entryPointsMap: EntryPointOrPackagesMap, interceptor: EntryPointInterceptor) {
-    const result: EntryPointOrPackagesMap = {}
-
-    for (const key in entryPointsMap) {
-        if (entryPointsMap.hasOwnProperty(key)) {
-            result[key] = interceptEntryPoints(entryPointsMap[key], interceptor)
-        }
-    }
-
-    return result
+    return _.mapValues(entryPointsMap, ep => interceptEntryPoints(ep, interceptor))
 }
 
 function applyInterceptor(inner: EntryPoint, interceptor: EntryPointInterceptor): EntryPoint {

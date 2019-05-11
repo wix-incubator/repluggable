@@ -184,7 +184,7 @@ describe('interceptEntryPoints', () => {
 type TestInterceptorFlags = { [P in keyof EntryPointInterceptor]?: boolean }
 
 function createTestEntryPoints(count: number, log: string[]): EntryPoint[] {
-    return _.range(count).map<EntryPoint>(index => ({
+    return _.times(count).map<EntryPoint>(index => ({
         name: `EP-${index}`,
         getDependencyAPIs() {
             log.push(`EP-${index}:getDependencyAPIs`)
