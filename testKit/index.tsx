@@ -2,7 +2,7 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { EntryPoint, PrivateShell } from '../src/API'
+import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 
@@ -136,6 +136,7 @@ function createShell(host: AppHost): PrivateShell {
         ...host,
         declareSlot() {
             const slot: any = {}
+
             return slot
         },
         setLifecycleState: _.noop,
@@ -149,6 +150,10 @@ function createShell(host: AppHost): PrivateShell {
         contributeAPI<TAPI>(): TAPI {
             const API: any = {}
             return API
+        },
+        contributeBoundaryAspect(aspect: ShellBoundaryAspect): void {},
+        getBoundaryAspects(): ShellBoundaryAspect[] {
+            return []
         },
         contributeState: _.noop,
         contributeMainView: _.noop

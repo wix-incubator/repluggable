@@ -7,6 +7,7 @@ export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapO
 export type ContributionPredicate = () => boolean
 export type LazyEntryPointFactory = () => Promise<EntryPoint>
 export type ShellsChangedCallback = (shellNames: string[]) => void
+export type ShellBoundaryAspect = React.FunctionComponent
 export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
@@ -79,6 +80,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>>
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
+    contributeBoundaryAspect(component: ShellBoundaryAspect): void
     // readonly log: ShellLogger; //TODO: define logging abstraction
 }
 
@@ -86,6 +88,7 @@ export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean): void
+    getBoundaryAspects(): ShellBoundaryAspect[]
 }
 
 export interface EntryPointsInfo {

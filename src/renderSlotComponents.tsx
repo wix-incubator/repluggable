@@ -1,9 +1,10 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
 import { connect } from 'react-redux'
-import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
+import { AppHost, ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell, ShellBoundaryAspect } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
+import { contributeInstalledShellsState } from './installedShellsState'
 
 interface ShellRendererProps {
     shell: Shell
@@ -12,9 +13,20 @@ interface ShellRendererProps {
     name?: string
 }
 
+function renderWithAspects(shell: PrivateShell, component: ReactNode, aspectIndex: number): ReactNode {
+    const aspects = shell.getBoundaryAspects()
+
+    if (aspects && aspects.length > aspectIndex) {
+        const Aspect = aspects[aspectIndex]
+        return <Aspect>{renderWithAspects(shell, component, aspectIndex + 1)}</Aspect>
+    }
+
+    return component
+}
+
 export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ shell, component, key, name }) => (
     <ErrorBoundary key={key} shell={shell} componentName={name}>
-        <ShellContext.Provider value={shell}>{component}</ShellContext.Provider>
+        <ShellContext.Provider value={shell}>{renderWithAspects(shell as PrivateShell, component, 0)}</ShellContext.Provider>
     </ErrorBoundary>
 )
 

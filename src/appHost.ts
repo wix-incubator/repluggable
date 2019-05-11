@@ -17,7 +17,8 @@ import {
     ScopedStore,
     Shell,
     ShellsChangedCallback,
-    SlotKey
+    SlotKey,
+    ShellBoundaryAspect
 } from './API'
 
 import _ from 'lodash'
@@ -498,6 +499,7 @@ function createAppHostImpl(): AppHost {
         let storeEnabled = false
         let APIsEnabled = false
         let dependencyAPIs: AnySlotKey[] = []
+        const boundaryAspects: ShellBoundaryAspect[] = []
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
 
@@ -604,6 +606,14 @@ function createAppHostImpl(): AppHost {
 
             contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void {
                 getSlot(mainViewSlotKey).contribute(fromShell, contributor)
+            },
+
+            contributeBoundaryAspect(component: ShellBoundaryAspect): void {
+                boundaryAspects.push(component)
+            },
+
+            getBoundaryAspects(): ShellBoundaryAspect[] {
+                return boundaryAspects
             }
         }
 
