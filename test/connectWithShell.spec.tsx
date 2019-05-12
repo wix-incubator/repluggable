@@ -4,6 +4,11 @@ import React, { FunctionComponent, ReactElement } from 'react'
 import { AppHost, EntryPoint, Shell } from '../src/API'
 import { connectWithShell } from '../src/connectWithShell'
 import { createAppHost, MockAPI, mockPackage, mockShellStateKey, MockState, renderInHost } from '../testKit'
+import { mount, shallow, ReactWrapper } from 'enzyme'
+import { ShellRenderer } from '../src/renderSlotComponents'
+import { Provider } from 'react-redux'
+import { ErrorBoundary } from '../src'
+import { FragmentsOnCompositeTypesRule } from 'graphql'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -167,5 +172,88 @@ describe('connectWithShell', () => {
         expect(withConnectedState && withConnectedState.find('div#A').prop('data-value')).toBe(getValueFromState(getMockShellState(host)))
         expect(withConnectedState && withConnectedState.find('div#B').prop('data-value')).toBe(boundShellState.mockValue)
         expect(withConnectedState && withConnectedState.text()).toBe(getValueFromState(getMockShellState(host)))
+    })
+
+    it('should render contributed boundary aspect', () => {
+        // arrange
+
+        const { host, shell } = createMocks({
+            name: 'ASPECT-TEST-EP',
+            attach: myShell => {
+                myShell.contributeBoundaryAspect(props => <div className="TEST-ASPECT">{props.children}</div>)
+            }
+        })
+        const PureComp: FunctionComponent<{}> = props => <div className="TEST-PURE-COMP">TEST</div>
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+
+        // act
+
+        const result = renderInHost(<ConnectedComp />, host, shell)
+
+        // assert
+
+        const rootWrapper = result.root as ReactWrapper
+        expect(rootWrapper.find('div.TEST-ASPECT').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
+        expect(rootWrapper.exists('div.TEST-ASPECT div.TEST-PURE-COMP')).toBe(true)
+    })
+
+    it('should render multiple contributed boundary aspects', () => {
+        // arrange
+
+        const { host, shell } = createMocks({
+            name: 'ASPECT-TEST-EP',
+            attach: myShell => {
+                myShell.contributeBoundaryAspect(props => <div className="TEST-ASPECT-A">{props.children}</div>)
+                myShell.contributeBoundaryAspect(props => <div className="TEST-ASPECT-B">{props.children}</div>)
+            }
+        })
+        const PureComp: FunctionComponent<{}> = props => <div className="TEST-PURE-COMP">TEST</div>
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+
+        // act
+
+        const result = renderInHost(<ConnectedComp />, host, shell)
+
+        // assert
+
+        const rootWrapper = result.root as ReactWrapper
+        expect(rootWrapper.find('div.TEST-ASPECT-A').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-ASPECT-B').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
+        expect(rootWrapper.exists('div.TEST-ASPECT-A div.TEST-ASPECT-B div.TEST-PURE-COMP')).toBe(true)
+    })
+
+    it('should handle boundary aspect contexts', () => {
+        // arrange
+
+        const TestAspectContext = React.createContext({ theNumber: 0 })
+
+        const { host, shell } = createMocks({
+            name: 'ASPECT-TEST-EP',
+            attach: myShell => {
+                myShell.contributeBoundaryAspect(props => (
+                    <div className="TEST-ASPECT">
+                        <TestAspectContext.Provider value={{ theNumber: 123 }}>{props.children}</TestAspectContext.Provider>
+                    </div>
+                ))
+            }
+        })
+        const PureComp: FunctionComponent<{}> = props => (
+            <TestAspectContext.Consumer>{aspect => <div className="TEST-PURE-COMP">{aspect.theNumber}</div>}</TestAspectContext.Consumer>
+        )
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+
+        // act
+
+        const result = renderInHost(<ConnectedComp />, host, shell)
+
+        // assert
+
+        const rootWrapper = result.root as ReactWrapper
+        const pureCompQuery = rootWrapper.find('div.TEST-ASPECT div.TEST-PURE-COMP')
+
+        expect(pureCompQuery.length).toBe(1)
+        expect(pureCompQuery.first().text()).toBe('123')
     })
 })
