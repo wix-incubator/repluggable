@@ -26,6 +26,7 @@ import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } 
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
+import { createThrottledStore } from './throttledStore'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -358,7 +359,7 @@ function createAppHostImpl(): AppHost {
         if (store) {
             store.replaceReducer(reducer)
         } else {
-            store = createStore(reducer)
+            store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
         }
 
         return store
