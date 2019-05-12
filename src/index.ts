@@ -8,7 +8,8 @@ export {
     AnySlotKey,
     SlotKey,
     ReactComponentContributor,
-    ReducersMapObjectContributor
+    ReducersMapObjectContributor,
+    EntryPointInterceptor
 } from './API'
 
 export { AppMainView } from './appMainView'
@@ -19,3 +20,4 @@ export { renderSlotComponents, SlotRenderer, ShellRenderer } from './renderSlotC
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
+export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
