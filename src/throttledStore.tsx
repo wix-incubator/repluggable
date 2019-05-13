@@ -23,11 +23,15 @@ const animationFrameRenderer = curry(
 
 type Subscriber = () => void
 
+export interface ThrottledStore<T = any> extends Store<T> {
+    flush(): void
+}
+
 export const createThrottledStore = (
     reducer: Reducer<any, Action<any>>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
-): Store => {
+): ThrottledStore => {
     const store = createStore(reducer)
 
     const invoke = (f: Subscriber) => f()
