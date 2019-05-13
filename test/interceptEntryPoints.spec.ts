@@ -204,7 +204,6 @@ function createTestEntryPoints(count: number, spy: LogSpy): EntryPoint[] {
             return []
         },
         declareAPIs() {
-            console.log('calling')
             spy(`EP-${index}:declareAPIs`)
             return []
         },
