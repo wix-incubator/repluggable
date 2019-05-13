@@ -97,15 +97,7 @@ function createAppHostImpl(): AppHost {
     }
 
     // TODO: Conditionally with parameter
-    window.repluggableAppDebug = {
-        host,
-        uniqueShellNames,
-        extensionSlots,
-        addedShells,
-        lazyShells,
-        readyAPIs,
-        shellInstallers
-    }
+    setupDebugInfo()
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
@@ -610,5 +602,29 @@ function createAppHostImpl(): AppHost {
         }
 
         return shell
+    }
+
+    function setupDebugInfo() {
+        const utils = {
+            apis: () => {
+                return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
+                    return {
+                        key: apiKey,
+                        impl: () => getAPI(apiKey)
+                    }
+                })
+            }
+        }
+
+        window.repluggableAppDebug = {
+            host,
+            uniqueShellNames,
+            extensionSlots,
+            addedShells,
+            lazyShells,
+            readyAPIs,
+            shellInstallers,
+            utils
+        }
     }
 }

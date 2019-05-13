@@ -16,4 +16,14 @@ export interface RepluggableAppDebugInfo {
     lazyShells: Map<string, LazyEntryPointFactory>
     readyAPIs: Set<AnySlotKey>
     shellInstallers: WeakMap<PrivateShell, string[]>
+    utils: RepluggableDebugUtils
+}
+
+export interface APIDebugInfo {
+    key: AnySlotKey
+    impl: () => any
+}
+
+export interface RepluggableDebugUtils {
+    apis: () => Array[APIDebugInfo]
 }
