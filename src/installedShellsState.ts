@@ -39,10 +39,7 @@ export const InstalledShellsActions = {
 }
 
 const toggleInstalledShells = (currentlyInstalled: ShellToggleSet, updates: ShellToggleSet): ShellToggleSet =>
-    _({})
-        .assign(currentlyInstalled, updates)
-        .pickBy(_.identity)
-        .value()
+    _.pickBy(_.assign({}, currentlyInstalled, updates), _.identity)
 
 export const installedShellsReducer = (state: InstalledShellsState = { installedShells: {} }, action: AnyAction): InstalledShellsState => {
     switch (action.type) {

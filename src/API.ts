@@ -71,7 +71,7 @@ export interface AppHost {
     removeShells(names: string[]): void
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
-    // readonly log: HostLogger;   //TODO: define logging abstraction
+    // readonly log: HostLogger; //TODO: define logging abstraction
 }
 
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {

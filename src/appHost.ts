@@ -142,20 +142,12 @@ function createAppHostImpl(): AppHost {
     function executeInstallShell(entryPoints: EntryPoint[]): void {
         lastInstallLazyEntryPointNames = []
 
-        const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint =>
-            _.chain(entryPoint)
-                .invoke('getDependencyAPIs')
-                .defaultTo([])
-                .find(key => !readyAPIs.has(getOwnSlotKey(key)))
-                .isEmpty()
-                .value()
-        )
+        const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
+            const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
+            return _.isEmpty(_.find(dependencies, key => !readyAPIs.has(getOwnSlotKey(key))))
+        })
 
-        unReadyEntryPoints = _(unReadyEntryPoints)
-            .difference(readyEntryPoints)
-            .union(currentUnReadyEntryPoints)
-            .value()
-
+        unReadyEntryPoints = _.union(_.difference(unReadyEntryPoints, readyEntryPoints), currentUnReadyEntryPoints)
         if (store && _.isEmpty(readyEntryPoints)) {
             return
         }
@@ -537,10 +529,7 @@ function createAppHostImpl(): AppHost {
             },
 
             addShells(entryPointsOrPackages: EntryPointOrPackage[]): void {
-                const shellNamesToBeinstalled = _.chain(entryPointsOrPackages)
-                    .flatten()
-                    .map('name')
-                    .value()
+                const shellNamesToBeinstalled = _.flatten(entryPointsOrPackages).map(x => x.name)
                 const shellNamesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 shellInstallers.set(shell, [...shellNamesInstalledByCurrentEntryPoint, ...shellNamesToBeinstalled])
                 host.addShells(entryPointsOrPackages)
