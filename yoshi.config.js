@@ -29,7 +29,7 @@ module.exports = {
   externals,
   servers: {
     cdn: {
-      port: 3100,
+      port: 3201,
     },
   },
 };
