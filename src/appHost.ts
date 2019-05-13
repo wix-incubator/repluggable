@@ -26,7 +26,7 @@ import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } 
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
-import { createThrottledStore } from './throttledStore'
+import { createThrottledStore, ThrottledStore } from './throttledStore'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -63,7 +63,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
 }
 
 function createAppHostImpl(): AppHost {
-    let store: Store | null = null
+    let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
@@ -235,7 +235,7 @@ function createAppHostImpl(): AppHost {
         return APISlot.getSingleItem().contribution
     }
 
-    function getStore(): Store {
+    function getStore(): ThrottledStore {
         if (store) {
             return store
         }
@@ -591,7 +591,8 @@ function createAppHostImpl(): AppHost {
                 return {
                     dispatch: host.getStore().dispatch,
                     subscribe: host.getStore().subscribe,
-                    getState: () => host.getStore().getState()[shell.name]
+                    getState: () => host.getStore().getState()[shell.name],
+                    flush: host.getStore().flush
                 }
             },
 

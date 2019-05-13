@@ -1,7 +1,8 @@
 import * as React from 'react'
 import * as Redux from 'redux'
+import { ThrottledStore } from './throttledStore'
 
-export type ScopedStore<S> = Pick<Redux.Store<S>, 'dispatch' | 'getState' | 'subscribe'>
+export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush'>
 export type ReactComponentContributor = () => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
@@ -60,7 +61,7 @@ export interface ExtensionItem<T> {
 //
 
 export interface AppHost {
-    getStore(): Redux.Store
+    getStore(): ThrottledStore
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     getAllSlotKeys(): AnySlotKey[]
