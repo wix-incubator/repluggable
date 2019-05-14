@@ -94,7 +94,7 @@ describe('App Host', () => {
             expect(() => createAppHost(circularPackages)).toThrowError()
         })
 
-        xit('should throw when dynamically adding a shell with circular dependency', () => {
+        it('should throw when dynamically adding a shell with circular dependency', () => {
             const circularPackages = createCircularEntryPoints(true)
             const nonCircular = circularPackages.slice(0, 3)
             const circularEP = _.last(circularPackages) as EntryPoint
