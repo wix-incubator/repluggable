@@ -16,7 +16,7 @@ export { AppMainView } from './appMainView'
 
 export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './appHost'
 
-export { renderSlotComponents, SlotRenderer, ShellRenderer } from './renderSlotComponents'
+export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
