@@ -6,7 +6,7 @@
     "name": "Responsive FEDs",
     "email": "responsive-feds@wix.com"
   },
-  "license": "ISC",
+  "license": "MIT",
   "unpkg": true,
   "main": "dist/src/index.js",
   "publishConfig": {
