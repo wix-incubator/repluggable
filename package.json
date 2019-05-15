@@ -16,7 +16,7 @@
     "start": "yoshi start",
     "build": "yoshi build",
     "test": "yoshi test --coverage",
-    "posttest": "yoshi lint --fix",
+    "posttest": "yoshi lint",
     "release": "yoshi release",
     "pretest:performance": "yoshi build",
     "test:performance": "perfer"
