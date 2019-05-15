@@ -30,12 +30,6 @@ export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ she
     </ErrorBoundary>
 )
 
-export function renderSlotComponents(slot: ExtensionSlot<ReactComponentContributor>): React.ReactNode[] {
-    return slot
-        .getItems()
-        .map((item, index) => <ShellRenderer shell={item.shell} component={item.contribution()} key={index} name={item.name} />)
-}
-
 interface SlotRendererPureProps<T> {
     items: ExtensionItem<T>[]
     mapFunc(item: T): ReactComponentContributor

@@ -1,10 +1,11 @@
+import _ from 'lodash'
 import React, { FunctionComponent } from 'react'
 import { connect, Provider } from 'react-redux'
 import { AppHost } from './API'
 import { mainViewSlotKey } from './appHost'
 import { AppHostServicesProvider } from './appHostServices'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
-import { renderSlotComponents } from './renderSlotComponents'
+import { SlotRenderer } from './renderSlotComponents'
 import { ShellContext } from './shellContext'
 
 export interface AppMainViewProps {
@@ -18,9 +19,12 @@ interface SfcProps {
 
 const sfc: FunctionComponent<SfcProps> = props => {
     const appHostServicesShell = ((props.host as unknown) as AppHostServicesProvider).getAppHostServicesShell()
-    const contextProviderChildren = renderSlotComponents(props.host.getSlot(mainViewSlotKey))
 
-    return <ShellContext.Provider value={appHostServicesShell}>{contextProviderChildren}</ShellContext.Provider>
+    return (
+        <ShellContext.Provider value={appHostServicesShell}>
+            <SlotRenderer slot={props.host.getSlot(mainViewSlotKey)} mapFunc={_.identity} />
+        </ShellContext.Provider>
+    )
 }
 
 const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
