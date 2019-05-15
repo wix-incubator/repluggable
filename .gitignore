@@ -64,5 +64,5 @@ typings/
 # IDE specific settings
 .idea/
 
-# Yarn Integrity file
-.yarn-integrity
+# Yarn Lock file
+yarn.lock
