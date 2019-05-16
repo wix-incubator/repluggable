@@ -22,27 +22,27 @@
     "test:performance": "perfer"
   },
   "dependencies": {
-    "lodash": "4.17.11",
-    "react": "16.6.3",
-    "react-dom": "16.6.3",
-    "react-redux": "5.1.1",
-    "redux": "4.0.1"
+    "lodash": "^4.17.11",
+    "react": "~16.6.0",
+    "react-dom": "~16.6.0",
+    "react-redux": "^5.0.0",
+    "redux": "^4.0.1"
   },
   "devDependencies": {
-    "@types/enzyme": "^3.0.0",
-    "@types/jest": "^24.0.0",
-    "@types/lodash": "^4.0.0",
-    "@types/react": "~16.7.0",
-    "@types/react-redux": "^5.0.0",
-    "@wix/perfer": "latest",
-    "babel-preset-yoshi": "^4.0.0",
-    "enzyme": "^3.0.0",
-    "enzyme-adapter-react-16": "^1.0.0",
-    "husky": "^2.0.0",
-    "jest-yoshi-preset": "^4.0.0",
-    "lint-staged": "^8.0.0",
-    "typescript": "^3.0.0",
-    "yoshi": "^4.0.0"
+    "@types/enzyme": "^3.1.16",
+    "@types/jest": "^24.0.9",
+    "@types/lodash": "^4.14.122",
+    "@types/react": "^16.7.18",
+    "@types/react-redux": "^7.0.0",
+    "@wix/perfer": "^0.3.11",
+    "babel-preset-yoshi": "^4.1.0",
+    "enzyme": "^3.8.0",
+    "enzyme-adapter-react-16": "^1.9.1",
+    "husky": "^2.1.0",
+    "jest-yoshi-preset": "^4.3.2",
+    "lint-staged": "^8.1.5",
+    "typescript": "^3.4.5",
+    "yoshi": "^4.3.2"
   },
   "husky": {
     "hooks": {
@@ -65,9 +65,7 @@
   },
   "perfer": {
     "bundleSize": {
-      "files": [
-        "./dist/statics/*.js"
-      ]
+      "files": ["./dist/statics/*.js"]
     }
   }
 }
