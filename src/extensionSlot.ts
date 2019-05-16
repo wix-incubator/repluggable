@@ -1,4 +1,4 @@
-import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, PrivateShell, Shell, SlotKey } from './API'
+import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, Shell, SlotKey } from './API'
 
 export interface AnyExtensionSlot {
     readonly name: string

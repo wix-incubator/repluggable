@@ -1,4 +1,4 @@
-import { combineReducers, createStore, ReducersMapObject, Store } from 'redux'
+import { combineReducers, ReducersMapObject, Store } from 'redux'
 
 import {
     AnyEntryPoint,
