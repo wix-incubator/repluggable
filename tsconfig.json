@@ -3,7 +3,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "react",
-    "lib": ["es6", "dom"],
+    "lib": ["esnext", "dom"],
     "declaration": true,
     "declarationMap": true,
     "target": "es5",
