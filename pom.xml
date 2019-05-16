@@ -4,7 +4,6 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <description>Develop React app as a shell for pluggable features</description>
     <modelVersion>4.0.0</modelVersion>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -12,6 +11,7 @@
     <groupId>com.wixpress.infra</groupId>
     <artifactId>repluggable</artifactId>
     <name>repluggable</name>
+    <description>Develop React app as a shell for pluggable features</description>
 
     <parent>
         <groupId>com.wixpress.common</groupId>
@@ -31,7 +31,6 @@
                     </descriptors>
                     <appendAssemblyId>false</appendAssemblyId>
                     <finalName>${project.artifactId}-${project.version}</finalName>
-                    <skipAssembly>${shouldSkipAssembly}</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -44,5 +43,4 @@
             </plugin>
         </plugins>
     </build>
-
-</project>
+`</project>
