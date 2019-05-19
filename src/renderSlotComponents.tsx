@@ -33,7 +33,9 @@ interface SlotRendererPureProps<T> {
     mapFunc(item: T): ReactComponentContributor
     filterFunc?(item: T): boolean
 }
-const SlotRendererPure: React.FunctionComponent<SlotRendererPureProps<any>> = ({ items, mapFunc, filterFunc }) => (
+
+type SlotRendererPure<T = any> = React.FunctionComponent<SlotRendererPureProps<T>>
+const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc }) => (
     <>
         {items
             .filter(item => !filterFunc || filterFunc(item.contribution))
@@ -55,9 +57,13 @@ interface SlotRendererConnectedProps<T> {
     mapFunc(item: T): ReactComponentContributor
     filterFunc?(item: T): boolean
 }
-export const SlotRenderer = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({
-    items: slot.getItems()
-}))(SlotRendererPure)
+
+export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
+    const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<T>) => ({
+        items: slot.getItems()
+    }))(SlotRendererPure)
+    return <ConnectedSlot {...props} />
+}
 
 interface PredicateHocProps {
     index: number
