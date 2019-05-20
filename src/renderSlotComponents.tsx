@@ -58,10 +58,11 @@ interface SlotRendererConnectedProps<T> {
     filterFunc?(item: T): boolean
 }
 
+const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({
+    items: slot.getItems()
+}))(SlotRendererPure)
+
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
-    const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<T>) => ({
-        items: slot.getItems()
-    }))(SlotRendererPure)
     return <ConnectedSlot {...props} />
 }
 
