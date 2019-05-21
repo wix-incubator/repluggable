@@ -27,6 +27,7 @@ import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
+import { RepluggableAppDebugInfo } from './debug'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -613,10 +614,11 @@ function createAppHostImpl(): AppHost {
                         impl: () => getAPI(apiKey)
                     }
                 })
-            }
+            },
+            unReadyEntryPoints: () => unReadyEntryPoints
         }
 
-        window.repluggableAppDebug = {
+        const debugInfo: RepluggableAppDebugInfo = {
             host,
             uniqueShellNames,
             extensionSlots,
@@ -626,5 +628,7 @@ function createAppHostImpl(): AppHost {
             shellInstallers,
             utils
         }
+
+        window.repluggableAppDebug = debugInfo
     }
 }
