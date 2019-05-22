@@ -1,5 +1,4 @@
-import { HostLogger, LogSeverity, LogSpanFlag, ShellLogger, EntryPoint, AppHost, ShellLoggerSpan } from './API'
-import { EntryPointTags } from '../dist/src/API'
+import { HostLogger, LogSeverity, LogSpanFlag, ShellLogger, EntryPoint, AppHost, ShellLoggerSpan, EntryPointTags } from './API'
 
 export const ConsoleHostLogger: HostLogger = {
     event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void {

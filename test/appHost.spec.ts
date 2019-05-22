@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions } from '../src/API'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger } from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -15,7 +15,6 @@ import {
 import { AppHostAPI } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
-import { HostLogger } from '../dist/src/API'
 
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
