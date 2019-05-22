@@ -26,6 +26,16 @@ describe('interceptEntryPoints', () => {
         expect(intercepted[0].name).toBe('INTR1!EP-0')
         expect(intercepted[1].name).toBe('INTR1!EP-1')
     })
+    it('should intercept tags', () => {
+        const spy: LogSpy = jest.fn()
+
+        const entryPoints = createTestEntryPoints(2, spy)
+        const interceptor = createTestInterceptor(spy, 'INTR1', { interceptTags: true })
+        const intercepted = interceptEntryPoints(entryPoints, interceptor)
+
+        expect(intercepted[0].tags).toMatchObject({ test_ep_index: '0', intercepted_by: 'INTR1' })
+        expect(intercepted[1].tags).toMatchObject({ test_ep_index: '1', intercepted_by: 'INTR1' })
+    })
     it('should intercept attach', () => {
         const spy: LogSpy = jest.fn()
 
@@ -199,6 +209,7 @@ type TestInterceptorFlags = { [P in keyof EntryPointInterceptor]?: boolean }
 function createTestEntryPoints(count: number, spy: LogSpy): EntryPoint[] {
     return _.times(count).map<EntryPoint>(index => ({
         name: `EP-${index}`,
+        tags: { test_ep_index: `${index}` },
         getDependencyAPIs() {
             spy(`EP-${index}:getDependencyAPIs`)
             return []
@@ -227,6 +238,11 @@ function createTestInterceptor(spy: LogSpy, interceptorName: string, flags: Test
         interceptName: flags.interceptName
             ? name => {
                   return `${interceptorName}!${name}`
+              }
+            : undefined,
+        interceptTags: flags.interceptTags
+            ? tags => {
+                  return { intercepted_by: interceptorName, ...tags }
               }
             : undefined,
         interceptDeclareAPIs: flags.interceptDeclareAPIs
