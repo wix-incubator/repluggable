@@ -18,7 +18,8 @@ import {
     Shell,
     ShellsChangedCallback,
     SlotKey,
-    ShellBoundaryAspect
+    ShellBoundaryAspect,
+    AppHostOptions
 } from './API'
 
 import _ from 'lodash'
@@ -27,6 +28,8 @@ import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
+import { ConsoleHostLogger, createShellLogger } from './loggers'
+import { interceptAnyObject } from './interceptAnyObject'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -39,11 +42,8 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(
-    entryPointsOrPackages: EntryPointOrPackage[]
-    /*, log?: HostLogger */ // TODO: define logging abstraction
-): AppHost {
-    const host = createAppHostImpl()
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options?: AppHostOptions): AppHost {
+    const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
 }
@@ -62,7 +62,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
-function createAppHostImpl(): AppHost {
+function createAppHostImpl(options?: AppHostOptions): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
@@ -93,7 +93,8 @@ function createAppHostImpl(): AppHost {
         removeShells,
         onShellsChanged,
         removeShellsChangedCallback,
-        getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell
+        getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
+        log: options && options.logger ? options.logger : ConsoleHostLogger
     }
 
     // TODO: Conditionally with parameter
@@ -560,9 +561,10 @@ function createAppHostImpl(): AppHost {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                const API = factory()
-                const APISlot = declareSlot<TAPI>(key)
-                APISlot.contribute(shell, API)
+                const api = factory()
+                const monitoredAPI = monitorAPI(shell, key.name, api)
+                const apiSlot = declareSlot<TAPI>(key)
+                apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
 
@@ -572,7 +574,7 @@ function createAppHostImpl(): AppHost {
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
                 }
 
-                return API
+                return monitoredAPI
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
@@ -598,10 +600,22 @@ function createAppHostImpl(): AppHost {
 
             getBoundaryAspects(): ShellBoundaryAspect[] {
                 return boundaryAspects
-            }
+            },
+
+            log: createShellLogger(host, entryPoint)
         }
 
         return shell
+    }
+
+    function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
+        return interceptAnyObject(api, (funcName, originalFunc) => {
+            return (...args: any[]) => {
+                return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
+                    originalFunc.apply(api, args)
+                )
+            }
+        })
     }
 
     function setupDebugInfo() {

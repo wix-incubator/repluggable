@@ -2,9 +2,10 @@ import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { Component, ReactElement } from 'react'
 import { Provider } from 'react-redux'
-import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { EntryPoint, PrivateShell, ShellBoundaryAspect, ShellLogger } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
+import { createShellLogger } from '../src/loggers'
 
 export { AppHost, createAppHost } from '../src/index'
 export * from './mockPackage'
@@ -156,6 +157,7 @@ function createShell(host: AppHost): PrivateShell {
             return []
         },
         contributeState: _.noop,
-        contributeMainView: _.noop
+        contributeMainView: _.noop,
+        log: createShellLogger(host, entryPoint)
     }
 }
