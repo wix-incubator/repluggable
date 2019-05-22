@@ -29,6 +29,7 @@ import { contributeInstalledShellsState, InstalledShellsActions, InstalledShells
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
+import { interceptAnyObject } from './interceptAnyObject'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -560,9 +561,10 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                const API = factory()
-                const APISlot = declareSlot<TAPI>(key)
-                APISlot.contribute(shell, API)
+                const api = factory()
+                const monitoredAPI = monitorAPI(shell, key.name, api)
+                const apiSlot = declareSlot<TAPI>(key)
+                apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
 
@@ -572,7 +574,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
                 }
 
-                return API
+                return monitoredAPI
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
@@ -604,6 +606,16 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         }
 
         return shell
+    }
+
+    function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
+        return interceptAnyObject(api, (funcName, originalFunc) => {
+            return (...args: any[]) => {
+                return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
+                    originalFunc.apply(api, args)
+                )
+            }
+        })
     }
 
     function setupDebugInfo() {

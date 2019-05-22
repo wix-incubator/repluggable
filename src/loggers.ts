@@ -9,7 +9,7 @@ export const ConsoleHostLogger: HostLogger = {
                 console.time(id)
                 break
             case 'end':
-                console.timeLog(id)
+                console.timeLog && console.timeLog(id)
                 console.groupEnd()
                 break
             default:
