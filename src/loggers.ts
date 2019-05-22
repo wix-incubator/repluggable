@@ -2,14 +2,20 @@ import { HostLogger, LogSeverity, LogSpanFlag, ShellLogger, EntryPoint, AppHost,
 
 export const ConsoleHostLogger: HostLogger = {
     event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void {
+        const tags = keyValuePairs as { [key: string]: any }
+
         switch (spanFlag) {
             case 'begin':
-                console.group(id, keyValuePairs)
-                console.time(id)
+                //TODO: enable conditionally
+                //console.debug(`${id}`, keyValuePairs)
                 break
             case 'end':
-                console.timeLog && console.timeLog(id)
-                console.groupEnd()
+                //TODO: enable conditionally
+                // if (tags && tags['returnValue']) {
+                //     console.debug(tags.returnValue, `<< ${id}`)
+                // }
+                //console.timeLog && console.timeLog(id)
+                //console.groupEnd()
                 break
             default:
                 getConsoleOutputFunc(severity)(id, keyValuePairs)
@@ -99,7 +105,7 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
     }
 
     function isPromise(obj: any | Promise<any>): obj is Promise<any> {
-        return typeof obj === 'object' && typeof obj.then === 'function'
+        return !!obj && typeof obj === 'object' && typeof obj.then === 'function'
     }
 }
 

@@ -257,6 +257,34 @@ describe('ShellLogger', () => {
         )
     })
 
+    it('should monitor synchronous function that returns null', () => {
+        const { shellLogger, hostLogger } = setup({ t1: 'T1' })
+
+        const returnValue = shellLogger.monitor('M1', { k1: 'v1' }, () => {
+            shellLogger.debug('this-is-monitored-code')
+            return null
+        })
+
+        expect(returnValue).toBeNull()
+        expect(hostLogger.event).toHaveBeenCalledTimes(3)
+        expect(hostLogger.event).toHaveBeenNthCalledWith(1, 'span', 'M1', { $ep: 'ep-1', k1: 'v1', t1: 'T1' }, 'begin')
+        expect(hostLogger.event).toHaveBeenNthCalledWith(2, 'debug', 'this-is-monitored-code', { $ep: 'ep-1', t1: 'T1' })
+        expect(hostLogger.event).toHaveBeenNthCalledWith(
+            3,
+            'span',
+            'M1',
+            {
+                $ep: 'ep-1',
+                k1: 'v1',
+                t1: 'T1',
+                success: true,
+                returnValue: null,
+                error: undefined
+            },
+            'end'
+        )
+    })
+
     it('should monitor synchronous function failure', () => {
         const { shellLogger, hostLogger } = setup({ t1: 'T1' })
 

@@ -12,7 +12,6 @@ export function interceptAnyObject<T extends AnyObject>(inner: T, onFunction?: F
             return onFunction(key, original)
         }
         if (_.isFunction(onProperty)) {
-            //EDIT: added else
             return onProperty(key, original)
         }
         return original
