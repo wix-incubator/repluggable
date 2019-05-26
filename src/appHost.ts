@@ -627,6 +627,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                         impl: () => getAPI(apiKey)
                     }
                 })
+            },
+            findAPI: (name: string) => {
+                return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
             }
         }
 
