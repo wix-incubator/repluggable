@@ -627,8 +627,11 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                         impl: () => getAPI(apiKey)
                     }
                 })
-            }
-        }
+            },
+          searchForApi:(key: string) => {
+            return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(key.toLowerCase()) !== -1)
+          }
+        };
 
         window.repluggableAppDebug = {
             host,
