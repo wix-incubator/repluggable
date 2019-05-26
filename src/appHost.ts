@@ -628,10 +628,10 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     }
                 })
             },
-          findAPI:(name: string) => {
-            return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
-          }
-        };
+            findAPI: (name: string) => {
+                return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
+            }
+        }
 
         window.repluggableAppDebug = {
             host,
