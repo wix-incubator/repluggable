@@ -628,8 +628,8 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     }
                 })
             },
-          searchForApi:(key: string) => {
-            return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(key.toLowerCase()) !== -1)
+          findAPI:(name: string) => {
+            return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
           }
         };
 
