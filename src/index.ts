@@ -9,7 +9,11 @@ export {
     SlotKey,
     ReactComponentContributor,
     ReducersMapObjectContributor,
-    EntryPointInterceptor
+    EntryPointInterceptor,
+    ShellLogger,
+    HostLogger,
+    LogSeverity,
+    LogSpanFlag
 } from './API'
 
 export { AppMainView } from './appMainView'
