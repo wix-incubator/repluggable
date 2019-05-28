@@ -4,15 +4,19 @@ import { createShellLogger } from '../src/loggers'
 
 describe('ShellLogger', () => {
     function setup(tags?: EntryPointTags) {
+        const logSpy = jest.fn()
+
         const entryPoint: EntryPoint = {
             name: 'ep-1',
             tags
         }
         const hostLogger: HostLogger = {
-            event: jest.fn()
+            event: logSpy
         }
         const host = createAppHost([], { logger: hostLogger })
         const shellLogger = createShellLogger(host, entryPoint)
+
+        logSpy.mockClear()
 
         return {
             entryPoint,
