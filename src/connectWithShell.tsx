@@ -39,7 +39,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => mapDispatchToProps(this.props.shell, dispatch, ownProps)
                 : (_.stubObject as Returns<DP>)
-            this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component)
+            this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component) as any
         }
 
         public render() {
