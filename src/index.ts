@@ -2,6 +2,7 @@ export {
     EntryPointOrPackage,
     EntryPoint,
     AppHost,
+    AppHostOptions,
     Shell,
     ExtensionSlot,
     ExtensionItem,
