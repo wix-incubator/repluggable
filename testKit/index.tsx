@@ -3,12 +3,17 @@ import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { Provider } from 'react-redux'
 import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
-import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
+import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
+import { emptyLoggerOptions } from './emptyLoggerOptions'
 
-export { AppHost, createAppHost } from '../src/index'
+export { AppHost } from '../src/index'
 export * from './mockPackage'
+
+export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
+    return _createAppHost(packages, options)
+}
 
 interface PactAPIBase {
     getAPIKey(): AnySlotKey
