@@ -28,7 +28,6 @@ import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
-import { RepluggableAppDebugInfo } from './debug'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { interceptAnyObject } from './interceptAnyObject'
 
@@ -640,7 +639,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             }
         }
 
-        const debugInfo: RepluggableAppDebugInfo = {
+        window.repluggableAppDebug = {
             host,
             uniqueShellNames,
             extensionSlots,
@@ -650,7 +649,5 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             shellInstallers,
             utils
         }
-
-        window.repluggableAppDebug = debugInfo
     }
 }
