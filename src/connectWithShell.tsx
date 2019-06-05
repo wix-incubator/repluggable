@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React, { ComponentType } from 'react'
-import { connect as reduxConnect, ConnectedComponentClass } from 'react-redux'
+import { connect as reduxConnect } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
@@ -27,7 +27,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     boundShell: Shell
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
-        public connectedComponent: ConnectedComponentClass<ComponentType<any>, OP>
+        public connectedComponent: React.ComponentClass<OP>
         public mapStateToProps: (state: S, ownProps?: OP) => SP
         public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OP) => DP
 
@@ -39,7 +39,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => mapDispatchToProps(this.props.shell, dispatch, ownProps)
                 : (_.stubObject as Returns<DP>)
-            this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component as any) as any
+            this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component) as any
         }
 
         public render() {

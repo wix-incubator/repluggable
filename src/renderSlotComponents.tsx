@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, FunctionComponent } from 'react'
 import { connect } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
@@ -28,34 +28,42 @@ export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ she
     </ErrorBoundary>
 )
 
-interface SlotRendererPureProps<T> {
-    items: ExtensionItem<T>[]
-    mapFunc(item: T): ReactComponentContributor
+interface SlotRendererIterators<T> {
+    mapFunc?(item: T): ReactComponentContributor
     filterFunc?(item: T): boolean
+    sortFunc?(itemA: ExtensionItem<T>, itemB: ExtensionItem<T>): number
+}
+
+interface SlotRendererPureProps<T> extends SlotRendererIterators<T> {
+    items: ExtensionItem<T>[]
+}
+
+function createSlotItemToShellRendererMap<T = any>(mapFunc?: SlotRendererIterators<T>['mapFunc']) {
+    return (item: ExtensionItem<T>, index: number) => (
+        <ShellRenderer
+            shell={item.shell}
+            component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
+            key={index}
+            name={item.name}
+        />
+    )
 }
 
 type SlotRendererPure<T = any> = React.FunctionComponent<SlotRendererPureProps<T>>
-const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc }) => (
+const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc, sortFunc }) => (
     <>
-        {items
-            .filter(item => !filterFunc || filterFunc(item.contribution))
-            .map((item, index) => {
-                return (
-                    <ShellRenderer
-                        shell={item.shell}
-                        component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
-                        key={index}
-                        name={item.name}
-                    />
-                )
-            })}
+        {_.flow(
+            _.compact([
+                filterFunc && ((slotItems: typeof items) => slotItems.filter(item => filterFunc(item.contribution))),
+                sortFunc && ((slotItems: typeof items) => slotItems.sort(sortFunc)),
+                (slotItems: typeof items) => slotItems.map(createSlotItemToShellRendererMap(mapFunc))
+            ])
+        )(items)}
     </>
 )
 
-interface SlotRendererConnectedProps<T> {
+interface SlotRendererConnectedProps<T> extends SlotRendererIterators<T> {
     slot: ExtensionSlot<T>
-    mapFunc(item: T): ReactComponentContributor
-    filterFunc?(item: T): boolean
 }
 
 const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({
@@ -81,12 +89,12 @@ interface ConnectedPredicateHocProps<T> {
     index: number
     item: ExtensionItem<T>
     children?: ReactNode
-    mapFunc(item: T): ReactComponentContributor
+    mapFunc?(item: T): ReactComponentContributor
 }
 
 const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps<any>): PredicateHocProps => ({
     index: ownProps.index,
-    render: ownProps.mapFunc(ownProps.item.contribution),
+    render: ownProps.mapFunc ? ownProps.mapFunc(ownProps.item.contribution) : ownProps.item.contribution,
     children: ownProps.children,
     predicateResult: ownProps.item.condition()
 })

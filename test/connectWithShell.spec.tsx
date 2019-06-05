@@ -34,7 +34,7 @@ const createMocks = (entryPoint: EntryPoint) => {
     return {
         host,
         shell: getShell(),
-        renderInShellContext: (reactElement: ReactElement) => renderInHost(reactElement, host, getShell())
+        renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
     }
 }
 

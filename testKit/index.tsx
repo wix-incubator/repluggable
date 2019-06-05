@@ -1,13 +1,19 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
-import React, { Component, ReactElement } from 'react'
+import React, { ReactElement } from 'react'
 import { Provider } from 'react-redux'
 import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
-import { AnySlotKey, AppHost, AppMainView, createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
+import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
+import { createShellLogger } from '../src/loggers'
+import { emptyLoggerOptions } from './emptyLoggerOptions'
 
-export { AppHost, createAppHost } from '../src/index'
+export { AppHost } from '../src/index'
 export * from './mockPackage'
+
+export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
+    return _createAppHost(packages, options)
+}
 
 interface PactAPIBase {
     getAPIKey(): AnySlotKey
@@ -65,7 +71,8 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
     return createAppHost([...packages, pactsEntryPoint])
 }
 
-export const renderHost = (host: AppHost): { root: ReactWrapper | null; DOMNode: HTMLElement | null } => {
+export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
+export const renderHost: RenderHostType = (host: AppHost) => {
     const root = mount(
         <Provider store={host.getStore()}>
             <AppMainView host={host} />
@@ -81,7 +88,7 @@ export interface WrappedComponent {
     host: AppHost
 }
 
-export const renderInHost = (reactElement: ReactElement, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
+export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
     const shell = customShell || createShell(host)
 
     const root = mount(
@@ -156,6 +163,7 @@ function createShell(host: AppHost): PrivateShell {
             return []
         },
         contributeState: _.noop,
-        contributeMainView: _.noop
+        contributeMainView: _.noop,
+        log: createShellLogger(host, entryPoint)
     }
 }

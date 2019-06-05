@@ -18,7 +18,8 @@ import {
     Shell,
     ShellsChangedCallback,
     SlotKey,
-    ShellBoundaryAspect
+    ShellBoundaryAspect,
+    AppHostOptions
 } from './API'
 
 import _ from 'lodash'
@@ -28,6 +29,8 @@ import { contributeInstalledShellsState, InstalledShellsActions, InstalledShells
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { RepluggableAppDebugInfo } from './debug'
+import { ConsoleHostLogger, createShellLogger } from './loggers'
+import { interceptAnyObject } from './interceptAnyObject'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -40,11 +43,8 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(
-    entryPointsOrPackages: EntryPointOrPackage[]
-    /*, log?: HostLogger */ // TODO: define logging abstraction
-): AppHost {
-    const host = createAppHostImpl()
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options?: AppHostOptions): AppHost {
+    const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
 }
@@ -63,7 +63,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
-function createAppHostImpl(): AppHost {
+function createAppHostImpl(options?: AppHostOptions): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
@@ -94,7 +94,8 @@ function createAppHostImpl(): AppHost {
         removeShells,
         onShellsChanged,
         removeShellsChangedCallback,
-        getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell
+        getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
+        log: options && options.logger ? options.logger : ConsoleHostLogger
     }
 
     // TODO: Conditionally with parameter
@@ -112,7 +113,7 @@ function createAppHostImpl(): AppHost {
     }
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
-        console.log(`Adding ${entryPointsOrPackages.length} packages.`)
+        host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
 
         const entryPoints = _.flatten(entryPointsOrPackages)
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
@@ -385,7 +386,7 @@ function createAppHostImpl(): AppHost {
         action: (shell: PrivateShell) => void,
         predicate?: (shell: PrivateShell) => boolean
     ): void {
-        console.log(`--- ${phase} phase ---`)
+        host.log.event('debug', `--- ${phase} phase ---`)
 
         try {
             shell.filter(f => !predicate || predicate(f)).forEach(f => invokeShell(f, action, phase))
@@ -394,17 +395,22 @@ function createAppHostImpl(): AppHost {
             throw err
         }
 
-        console.log(`--- End of ${phase} phase ---`)
+        host.log.event('debug', `--- End of ${phase} phase ---`)
     }
 
     function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
-        console.log(`${phase} : ${shell.entryPoint.name}`)
+        host.log.event('debug', `${phase} : ${shell.entryPoint.name}`)
 
         try {
             currentShell = shell
             action(shell)
         } catch (err) {
-            console.error(`Shell '${shell.name}' FAILED ${phase} phase`, err)
+            host.log.event('error', 'AppHost.shellFailed', {
+                shell: shell.name,
+                phase,
+                message: `Shell '${shell.name}' FAILED ${phase} phase`,
+                error: err
+            })
             throw err
         } finally {
             currentShell = null
@@ -446,11 +452,11 @@ function createAppHostImpl(): AppHost {
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(ownKey.name)
 
-        console.log(`-- Removed API: ${ownKey.name} --`)
+        host.log.event('debug', `-- Removed API: ${ownKey.name} --`)
     }
 
     function executeUninstallShells(names: string[]): void {
-        console.log(`-- Uninstalling ${names} --`)
+        host.log.event('debug', `-- Uninstalling ${names} --`)
 
         invokeEntryPointPhase('detach', names.map(name => addedShells.get(name)) as PrivateShell[], f =>
             _.invoke(f.entryPoint, 'detach', f)
@@ -467,7 +473,7 @@ function createAppHostImpl(): AppHost {
         })
         APIsToDiscard.forEach(discardAPI)
 
-        console.log(`Done uninstalling ${names}`)
+        host.log.event('debug', `Done uninstalling ${names}`)
 
         addedShells.forEach(uninstallIfDependencyAPIsRemoved)
     }
@@ -555,15 +561,16 @@ function createAppHostImpl(): AppHost {
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI {
-                console.log(`Contributing API ${key.name}.`)
+                host.log.event('debug', `Contributing API ${key.name}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                const API = factory()
-                const APISlot = declareSlot<TAPI>(key)
-                APISlot.contribute(shell, API)
+                const api = factory()
+                const monitoredAPI = monitorAPI(shell, key.name, api)
+                const apiSlot = declareSlot<TAPI>(key)
+                apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
 
@@ -573,7 +580,7 @@ function createAppHostImpl(): AppHost {
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
                 }
 
-                return API
+                return monitoredAPI
             },
 
             contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
@@ -599,10 +606,22 @@ function createAppHostImpl(): AppHost {
 
             getBoundaryAspects(): ShellBoundaryAspect[] {
                 return boundaryAspects
-            }
+            },
+
+            log: createShellLogger(host, entryPoint)
         }
 
         return shell
+    }
+
+    function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
+        return interceptAnyObject(api, (funcName, originalFunc) => {
+            return (...args: any[]) => {
+                return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
+                    originalFunc.apply(api, args)
+                )
+            }
+        })
     }
 
     function setupDebugInfo() {
@@ -615,7 +634,10 @@ function createAppHostImpl(): AppHost {
                     }
                 })
             },
-            unReadyEntryPoints: () => unReadyEntryPoints
+            unReadyEntryPoints: () => unReadyEntryPoints,
+            findAPI: (name: string) => {
+                return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
+            }
         }
 
         const debugInfo: RepluggableAppDebugInfo = {

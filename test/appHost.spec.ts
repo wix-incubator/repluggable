@@ -1,8 +1,8 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
+import { createAppHost as _createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey } from '../src/API'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger } from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -14,6 +14,12 @@ import {
 
 import { AppHostAPI } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
+import { ConsoleHostLogger } from '../src/loggers'
+import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
+
+const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
+    return _createAppHost(packages, options)
+}
 
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
@@ -72,6 +78,26 @@ describe('App Host', () => {
     it('should create an app host', () => {
         const host = createAppHost([])
         expect(host).toBeInstanceOf(Object)
+    })
+
+    describe('AppHost Options', () => {
+        it('should use ConsoleHostLogger by default', () => {
+            spyOn(ConsoleHostLogger, 'event')
+            const host = _createAppHost([])
+            expect(host.log).toBe(ConsoleHostLogger)
+        })
+        it('should use custom host logger if specified', () => {
+            const logger: HostLogger = {
+                event() {}
+            }
+            const options: AppHostOptions = {
+                logger
+            }
+
+            const host = _createAppHost([], options)
+
+            expect(host.log).toBe(logger)
+        })
     })
 
     describe('Packages Installation', () => {

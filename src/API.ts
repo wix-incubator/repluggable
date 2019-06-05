@@ -6,9 +6,13 @@ export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | '
 export type ReactComponentContributor = () => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
+export interface EntryPointTags {
+    [name: string]: string
+}
 export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
 export type ShellBoundaryAspect = React.FunctionComponent
+
 export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
@@ -25,6 +29,7 @@ export interface SlotKey<T> extends AnySlotKey {
 
 export interface EntryPoint {
     readonly name: string
+    readonly tags?: EntryPointTags
     getDependencyAPIs?(): AnySlotKey[]
     declareAPIs?(): AnySlotKey[]
     attach?(shell: Shell): void
@@ -72,11 +77,16 @@ export interface AppHost {
     removeShells(names: string[]): void
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
-    // readonly log: HostLogger; //TODO: define logging abstraction
+    readonly log: HostLogger
 }
 
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>> {
+export interface AppHostOptions {
+    logger?: HostLogger
+}
+
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
     readonly name: string
+    readonly log: ShellLogger
     getStore<TState>(): ScopedStore<TState>
     canUseAPIs(): boolean
     canUseStore(): boolean
@@ -85,7 +95,6 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore'>>
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void
-    // readonly log: ShellLogger; //TODO: define logging abstraction
 }
 
 export interface PrivateShell extends Shell {
@@ -103,6 +112,7 @@ export interface EntryPointsInfo {
 
 export interface EntryPointInterceptor {
     interceptName?(innerName: string): string
+    interceptTags?(innerTags?: EntryPointTags): EntryPointTags
     interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
     interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
@@ -110,26 +120,25 @@ export interface EntryPointInterceptor {
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }
 
-// TODO: define logging abstraction
-/*
-export type LogSeverity = 'debug' | 'info' | 'warning' | 'error';
-export type LogSpanFlag = 'open' | 'close';
+export type LogSeverity = 'debug' | 'info' | 'warning' | 'error' | 'span'
+export type LogSpanFlag = 'begin' | 'end'
 
 export interface HostLogger {
-    event(
-        severity: LogSeverity,
-        source: string,
-        id: string,
-        keyValuePairs?: Object,
-        spanFlag?: LogSpanFlag): void;
+    event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void
 }
 
-export interface ShellLogger {
-    debug(messageId: string, keyValuePairs?: Object): void;
-    info(messageId: string, keyValuePairs?: Object): void;
-    warning(messageId: string, keyValuePairs?: Object): void;
-    error(messageId: string, keyValuePairs?: Object): void;
-    span(messageId: string, keyValuePairs: Object, action: () => void): void;
-    asyncSpan(messageId: string, keyValuePairs: Object, action: () => Promise<any>): void;
+export interface ShellLogger extends HostLogger {
+    debug(messageId: string, keyValuePairs?: Object): void
+    info(messageId: string, keyValuePairs?: Object): void
+    warning(messageId: string, keyValuePairs?: Object): void
+    error(messageId: string, keyValuePairs?: Object): void
+    begin(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    end(messageId: string, success: boolean, error?: Error, keyValuePairs?: Object): void
+    monitor<T>(messageId: string, keyValuePairs: Object, monitoredCode: () => T): T
 }
-*/
+
+export interface ShellLoggerSpan {
+    end(success: boolean, error?: Error, keyValuePairs?: Object): void
+    success(): void
+    failure(error: Error): void
+}

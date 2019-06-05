@@ -2,6 +2,7 @@ export {
     EntryPointOrPackage,
     EntryPoint,
     AppHost,
+    AppHostOptions,
     Shell,
     ExtensionSlot,
     ExtensionItem,
@@ -9,7 +10,11 @@ export {
     SlotKey,
     ReactComponentContributor,
     ReducersMapObjectContributor,
-    EntryPointInterceptor
+    EntryPointInterceptor,
+    ShellLogger,
+    HostLogger,
+    LogSeverity,
+    LogSpanFlag
 } from './API'
 
 export { AppMainView } from './appMainView'
