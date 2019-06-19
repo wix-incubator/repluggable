@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React, { ComponentType } from 'react'
-import { connect as reduxConnect } from 'react-redux'
+import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
@@ -19,6 +19,31 @@ type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 // @ts-ignore
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
+
+const propsDeepEqual = (propsA: any, propsB: any) => {
+    const customizer: _.IsEqualCustomizer = (a, b, key, objectA) => {
+        if (key === 'children' && objectA === propsA) {
+            if (_.isFunction(a) && _.isFunction(b)) {
+                return false
+            }
+            return
+        }
+
+        if (_.isFunction(a) && _.isFunction(b)) {
+            return true
+        }
+
+        return
+    }
+
+    return _.isEqualWith(propsA, propsB, customizer)
+}
+
+const reduxConnectOptions: ReduxConnectOptions = {
+    pure: true,
+    areStatePropsEqual: propsDeepEqual,
+    areOwnPropsEqual: propsDeepEqual
+}
 
 function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
@@ -39,12 +64,19 @@ function wrapWithShellContext<S, OP, SP, DP>(
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => mapDispatchToProps(this.props.shell, dispatch, ownProps)
                 : (_.stubObject as Returns<DP>)
-            this.connectedComponent = reduxConnect<SP, DP, OP, S>(this.mapStateToProps, this.mapDispatchToProps)(component) as any
+
+            this.connectedComponent = reduxConnect<SP, DP, OP, S>(
+                this.mapStateToProps,
+                this.mapDispatchToProps,
+                undefined,
+                reduxConnectOptions
+            )(component) as any
         }
 
         public render() {
             const Component = this.connectedComponent
-            return <Component {...(_.omit(this.props, 'shell') as any)} />
+            const props = _.omit(this.props, 'shell') as OP
+            return <Component {...props} />
         }
     }
 

@@ -65,6 +65,64 @@ describe('connectWithShell', () => {
         expect(comp && comp.text()).toBe(mockPackage.name)
     })
 
+    it('should optimize props comparison', () => {
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
+
+        type FuncProps = (event: any) => void
+        interface CompProps {
+            obj: any
+            func: FuncProps
+        }
+        const func1: FuncProps = jest.fn()
+        const func2: FuncProps = jest.fn()
+        const renderSpy = jest.fn()
+        let props = { obj: { a: 1 }, func: func1 }
+        const mapStateToProps = (s: Shell) => props
+
+        let counter = 0
+        host.getStore().replaceReducer(() => ({
+            counter: ++counter
+        }))
+
+        const update = (ref: ReactWrapper, newProps?: CompProps) => {
+            if (newProps) {
+                props = newProps
+            }
+            host.getStore().dispatch({ type: '' })
+            host.getStore().flush()
+            ref.update()
+        }
+
+        const PureComp: FunctionComponent<CompProps> = ({ obj, func }) => {
+            renderSpy()
+            return <div onClick={func}>{JSON.stringify(obj)}</div>
+        }
+
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+
+        const { root } = renderInShellContext(<ConnectedComp />)
+
+        if (!root) {
+            throw new Error('Connected component fail to render')
+        }
+
+        expect(root.find(ConnectedComp).text()).toBe('{"a":1}')
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+
+        update(root, _.cloneDeep(props))
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+
+        update(root, { ...props, obj: { a: 2 } })
+        expect(root.find(ConnectedComp).text()).toBe('{"a":2}')
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+
+        update(root, { ...props, func: func2 })
+        root.find(PureComp).simulate('click')
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+        expect(func1).toHaveBeenCalled()
+        expect(func2).not.toHaveBeenCalled()
+    })
+
     it('should pass scoped state to mapStateToProps', () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
