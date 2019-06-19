@@ -539,7 +539,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                 // TODO: Allow entry point to uninstall its own shell?
                 if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
-                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${entryPoint.name} - This is not allowed`
+                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${
+                            entryPoint.name
+                        } - This is not allowed`
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
@@ -551,7 +553,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
+                    `API '${key.name}' is not declared as dependency by entry point '${
+                        entryPoint.name
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
