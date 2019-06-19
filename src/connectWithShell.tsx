@@ -75,7 +75,8 @@ function wrapWithShellContext<S, OP, SP, DP>(
 
         public render() {
             const Component = this.connectedComponent
-            return <Component {..._.omit(this.props, 'shell') as any} />
+            const props = _.omit(this.props, 'shell') as OP
+            return <Component {...props} />
         }
     }
 
