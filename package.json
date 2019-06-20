@@ -65,7 +65,9 @@
   },
   "perfer": {
     "bundleSize": {
-      "files": ["./dist/statics/*.js"]
+      "files": [
+        "./dist/statics/*.js"
+      ]
     }
   }
 }
