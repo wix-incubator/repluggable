@@ -68,6 +68,9 @@
       "files": [
         "./dist/statics/*.js"
       ]
+    },
+    "features": {
+      "slackChannel": "responsive-ci"
     }
   }
 }
