@@ -12,6 +12,7 @@
   "publishConfig": {
     "registry": "http://npm.dev.wixpress.com/"
   },
+  "publishScoped": false,
   "scripts": {
     "start": "yoshi start",
     "build": "yoshi build",
