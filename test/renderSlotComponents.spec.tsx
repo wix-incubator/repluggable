@@ -6,6 +6,14 @@ import { ReactWrapper, mount } from 'enzyme'
 
 const CompA: FunctionComponent = () => <div id="A" className="mock-comp" />
 const CompB: FunctionComponent = () => <div id="B" className="mock-comp" />
+class CompC extends React.Component<{ onDidMount(): void }> {
+    componentDidMount() {
+        this.props.onDidMount()
+    }
+    render() {
+        return <div id="C" className="mock-comp" />
+    }
+}
 
 const getCompId = (wrapper: ReactWrapper | null, index: number) =>
     wrapper
@@ -165,5 +173,59 @@ describe('SlotRenderer', () => {
 
         expect(getCompId(root, 0)).toBe('A')
         expect(getCompId(root, 1)).toBe('B')
+    })
+
+    it('should not remount component when slot items changed', () => {
+        const slotKey: SlotKey<{ comp: ReactComponentContributor; order: number }> = {
+            name: 'mock_key'
+        }
+        const host = createAppHost([])
+        const shell = addMockShell(host)
+
+        const slot = shell.declareSlot(slotKey)
+
+        const onWillUnmount = jest.fn()
+        const onDidMount = jest.fn()
+
+        let isCompAEnabled = true
+
+        slot.contribute(shell, { comp: () => <CompA />, order: 1 }, () => isCompAEnabled)
+        slot.contribute(shell, { comp: () => <CompB />, order: 2 })
+        slot.contribute(shell, { comp: () => <CompC onDidMount={onDidMount} />, order: 3 })
+
+        class Container extends React.Component<{ children(): React.ReactNode }> {
+            constructor(props: any) {
+                super(props)
+                this.state = { counter: 1 }
+            }
+            render() {
+                return this.props.children()
+            }
+        }
+
+        const { root } = renderInHost(
+            <Container>
+                {() => (
+                    <SlotRenderer
+                        slot={slot}
+                        mapFunc={item => item.comp}
+                        sortFunc={(itemA, itemB) => itemA.contribution.order - itemB.contribution.order}
+                    />
+                )}
+            </Container>,
+            host,
+            shell
+        )
+
+        if (!root) {
+            fail('could not render extension slot')
+            return
+        }
+
+        isCompAEnabled = false
+        root.find(Container).setState({ counter: 2 })
+        root.find(Container).update()
+
+        expect(onDidMount).toHaveBeenCalledTimes(1)
     })
 })

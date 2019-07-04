@@ -43,7 +43,7 @@ function createSlotItemToShellRendererMap<T = any>(mapFunc?: SlotRendererIterato
         <ShellRenderer
             shell={item.shell}
             component={<ConnectedPredicateHoc index={index} item={item} mapFunc={mapFunc} />}
-            key={index}
+            key={item.uniqueId}
             name={item.name}
         />
     )

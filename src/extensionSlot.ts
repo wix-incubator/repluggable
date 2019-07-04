@@ -1,4 +1,5 @@
 import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, Shell, SlotKey } from './API'
+import _ from 'lodash'
 
 export interface AnyExtensionSlot {
     readonly name: string
@@ -23,7 +24,8 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost): Extensio
         items.push({
             shell: fromShell,
             contribution: item,
-            condition: condition || alwaysTrue
+            condition: condition || alwaysTrue,
+            uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
         })
     }
 
