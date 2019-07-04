@@ -59,6 +59,7 @@ export interface ExtensionItem<T> {
     readonly shell: Shell
     readonly contribution: T
     readonly condition: ContributionPredicate
+    readonly uniqueId: string
 }
 
 // addEntryPoints(entryPoints: EntryPoint[])
