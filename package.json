@@ -13,6 +13,7 @@
     "registry": "http://npm.dev.wixpress.com/"
   },
   "files": [
+    "__tests__",
     "src",
     "dist",
     "testKit"
