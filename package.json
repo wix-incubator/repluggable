@@ -75,7 +75,7 @@
         "./dist/statics/app.bundle.js",
         {
           "glob": "./dist/statics/app.bundle.js",
-          "maxSize": "5kb"
+          "maxSize": "15kb"
         }
       ]
     },
