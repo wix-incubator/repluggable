@@ -72,7 +72,11 @@
   "perfer": {
     "bundleSize": {
       "files": [
-        "./dist/statics/*.js"
+        "./dist/statics/app.bundle.js",
+        {
+          "glob": "./dist/statics/app.bundle.js",
+          "maxSize": "5kb"
+        }
       ]
     },
     "features": {
