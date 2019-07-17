@@ -56,14 +56,9 @@
     }
   },
   "lint-staged": {
-    "linters": {
-      "*.{ts,tsx}": [
-        "yoshi lint --fix true",
-        "git add"
-      ]
-    },
-    "ignore": [
-      "**/*.d.ts"
+    "*.{ts,tsx}": [
+      "yoshi lint --fix true",
+      "git add"
     ]
   },
   "jest": {
