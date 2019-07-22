@@ -64,6 +64,7 @@ const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc, sortFu
 
 interface SlotRendererConnectedProps<T> extends SlotRendererIterators<T> {
     slot: ExtensionSlot<T>
+    children?: React.ReactNode
 }
 
 const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({
