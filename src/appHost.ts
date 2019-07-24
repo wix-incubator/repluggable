@@ -283,6 +283,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
 
         const validateEntryPointAPIs = (entryPoint: AnyEntryPoint, visited: Set<AnyEntryPoint>) => {
             if (visited.has(entryPoint)) {
+                console.debug('Circular API dependency found', [...visited, entryPoint].map(x => x.name))
                 throw new Error(`Circular API dependency found`)
             }
 
