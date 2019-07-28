@@ -79,6 +79,8 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
 
+    const memoizedFuntions: { f: _.MemoizedFunction; shouldClear?(): boolean }[] = []
+
     const hostAPI: AppHostAPI = {}
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
     const host: AppHost & AppHostServicesProvider = {
@@ -347,6 +349,13 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             store.replaceReducer(reducer)
         } else {
             store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store.subscribe(() => {
+                memoizedFuntions.forEach(({ f, shouldClear }) => {
+                    if (f.cache.clear && (shouldClear || _.stubTrue)()) {
+                        f.cache.clear()
+                    }
+                })
+            })
         }
 
         return store
@@ -598,6 +607,12 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
 
             contributeBoundaryAspect(component: ShellBoundaryAspect): void {
                 boundaryAspects.push(component)
+            },
+
+            memoizeForState(func, resolver, shouldClear?) {
+                const memoized = _.memoize(func, resolver)
+                memoizedFuntions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
+                return memoized
             },
 
             getBoundaryAspects(): ShellBoundaryAspect[] {

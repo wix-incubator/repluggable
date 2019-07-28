@@ -85,6 +85,8 @@ export interface AppHostOptions {
     logger?: HostLogger
 }
 
+type AnyFunction = (...args: any[]) => any
+type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
     readonly name: string
     readonly log: ShellLogger
@@ -96,6 +98,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void
+    memoizeForState<T extends AnyFunction>(func: T, resolver: FunctionWithSameArgs<T>, shouldClear?: () => boolean): T & _.MemoizedFunction
 }
 
 export interface PrivateShell extends Shell {
