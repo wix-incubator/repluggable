@@ -5,6 +5,7 @@ import { EntryPoint, Shell, SlotKey } from '../src/API'
 
 export interface MockAPI {
     stubTrue(): boolean
+    getNewObject(): object
 }
 
 export interface MockPublicAPI {
@@ -18,7 +19,8 @@ export const MockPublicAPI: SlotKey<MockPublicAPI> = {
 }
 
 const createMockAPI = (shell: Shell): MockAPI => ({
-    stubTrue: _.stubTrue
+    stubTrue: _.stubTrue,
+    getNewObject: () => ({})
 })
 
 export interface MockState {

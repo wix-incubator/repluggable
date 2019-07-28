@@ -16,6 +16,7 @@ import { AppHostAPI } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
 import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
+import { addMockShell } from '../testKit'
 
 const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)
@@ -233,7 +234,8 @@ describe('App Host', () => {
                     expect(host.hasShell(deeplyDependentPackage[0].name)).toBe(false)
 
                     helperShell.contributeAPI(dependencyAPI, () => ({
-                        stubTrue: () => true
+                        stubTrue: () => true,
+                        getNewObject: () => ({})
                     }))
                     await new Promise(resolve => host.onShellsChanged(resolve))
 
@@ -396,6 +398,55 @@ describe('App Host', () => {
 
             appHost.addShells([mockPackage])
             expect(getMockShellState(appHost)).toEqual(mockShellInitialState)
+        })
+
+        it('should memoize functions upon demand', () => {
+            const host = createAppHost([mockPackage])
+            const getObj = () => host.getAPI(MockAPI).getNewObject()
+            expect(getObj()).not.toBe(getObj())
+
+            interface NewAPI {
+                getNewObject(): object
+            }
+            const newAPI: SlotKey<NewAPI> = { name: 'newAPI' }
+            const createAPI = (shell: Shell): NewAPI => ({ getNewObject: shell.memoizeForState(() => ({}), _.stubTrue) })
+            addMockShell(host, {
+                declareAPIs: () => [newAPI],
+                attach(shell) {
+                    shell.contributeAPI(newAPI, () => createAPI(shell))
+                }
+            })
+
+            const objForStateA = host.getAPI(newAPI).getNewObject()
+            expect(objForStateA).toBe(host.getAPI(newAPI).getNewObject())
+
+            host.getStore().dispatch({ type: 'MOCK_ACTION' })
+            host.getStore().flush()
+
+            expect(objForStateA).not.toBe(host.getAPI(newAPI).getNewObject())
+        })
+
+        it('should not clear memoized functions if not needed', () => {
+            const host = createAppHost([])
+
+            interface NewAPI {
+                getNewObject(): object
+            }
+            const newAPI: SlotKey<NewAPI> = { name: 'newAPI' }
+            const createAPI = (shell: Shell): NewAPI => ({ getNewObject: shell.memoizeForState(() => ({}), _.stubTrue, _.stubFalse) })
+            addMockShell(host, {
+                declareAPIs: () => [newAPI],
+                attach(shell) {
+                    shell.contributeAPI(newAPI, () => createAPI(shell))
+                }
+            })
+
+            const objForStateA = host.getAPI(newAPI).getNewObject()
+
+            host.getStore().dispatch({ type: 'MOCK_ACTION' })
+            host.getStore().flush()
+
+            expect(objForStateA).toBe(host.getAPI(newAPI).getNewObject())
         })
     })
 
