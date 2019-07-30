@@ -83,6 +83,7 @@ export interface AppHost {
 
 export interface AppHostOptions {
     logger?: HostLogger
+    disableMonitoring?: boolean
 }
 
 type AnyFunction = (...args: any[]) => any
