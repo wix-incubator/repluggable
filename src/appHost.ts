@@ -626,6 +626,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
     }
 
     function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
+        if (options && options.disableMonitoring) {
+            return api
+        }
         return interceptAnyObject(api, (funcName, originalFunc) => {
             return (...args: any[]) => {
                 return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
