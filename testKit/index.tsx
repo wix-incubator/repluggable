@@ -10,6 +10,7 @@ import { emptyLoggerOptions } from './emptyLoggerOptions'
 
 export { AppHost } from '../src/index'
 export * from './mockPackage'
+export * from './createMockShellWithPacts'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)
