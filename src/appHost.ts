@@ -549,7 +549,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                 // TODO: Allow entry point to uninstall its own shell?
                 if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
-                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${entryPoint.name} - This is not allowed`
+                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${
+                            entryPoint.name
+                        } - This is not allowed`
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
@@ -561,7 +563,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
+                    `API '${key.name}' is not declared as dependency by entry point '${
+                        entryPoint.name
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
@@ -642,14 +646,14 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             const res = func.apply(api, args)
             if (res && res.then) {
                 return res.then((apiResult: any) => {
-                    markAndMeasure(measureName, startMarkName, endMarkName);
-                    return apiResult;
+                    markAndMeasure(measureName, startMarkName, endMarkName)
+                    return apiResult
                 })
             }
-            markAndMeasure(measureName, startMarkName, endMarkName);
+            markAndMeasure(measureName, startMarkName, endMarkName)
             return res
         }
-        return func.apply(api, args);
+        return func.apply(api, args)
     }
 
     function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
@@ -658,9 +662,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         }
         return interceptAnyObject(api, (funcName, originalFunc) => {
             return (...args: any[]) => {
-                const funcId = `${apiName}::${funcName}`;
-                return shell.log.monitor(funcId, {$api: apiName, $apiFunc: funcName, $args: args},
-                    () => wrapWithMeasure(originalFunc, api, args, funcId)
+                const funcId = `${apiName}::${funcName}`
+                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
+                    wrapWithMeasure(originalFunc, api, args, funcId)
                 )
             }
         })
@@ -682,29 +686,38 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             },
             performance: {
                 getGroupedMeasurements: () => {
-                    return _.groupBy(performance.getEntriesByType("measure"), 'name')
+                    return _.groupBy(performance.getEntriesByType('measure'), 'name')
                 },
                 getSortedMeasurments: () => {
-                    return _(performance.getEntriesByType("measure")).map((measurement) => _.pick(measurement, ['name', 'duration'])).sortBy('duration').reverse().value()
+                    return _(performance.getEntriesByType('measure'))
+                        .map(measurement => _.pick(measurement, ['name', 'duration']))
+                        .sortBy('duration')
+                        .reverse()
+                        .value()
                 },
                 start: () => {
-                    options = options || {};
+                    options = options || {}
                     options.monitoring = options.monitoring || {}
-                    options.monitoring.chromePerformance = true;
+                    options.monitoring.chromePerformance = true
                 },
                 stop: () => {
-                    options = options || {};
+                    options = options || {}
                     options.monitoring = options.monitoring || {}
-                    options.monitoring.chromePerformance = false;
+                    options.monitoring.chromePerformance = false
                 },
                 clean: () => {
-                    performance.clearMeasures();
+                    performance.clearMeasures()
                 },
                 getAverage: () => {
-                    return _(performance.getEntriesByType("measure")).groupBy('name').map((arr, name) => {
-                        const times = arr.length
-                        return {name, times, avgDuration: `${_.sumBy(arr, 'duration') / times})`}
-                    }).sortBy('avgDuration').reverse().value()
+                    return _(performance.getEntriesByType('measure'))
+                        .groupBy('name')
+                        .map((arr, name) => {
+                            const times = arr.length
+                            return { name, times, avgDuration: `${_.sumBy(arr, 'duration') / times})` }
+                        })
+                        .sortBy('avgDuration')
+                        .reverse()
+                        .value()
                 }
             }
         }
