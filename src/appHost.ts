@@ -701,10 +701,10 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     performance.clearMeasures();
                 },
                 getAverage: () => {
-                  return _.mapValues(_.groupBy(performance.getEntriesByType("measure"), 'name'), (arr)=>{
-                    const times = arr.length
-                    return {times, duration: `${_.sumBy(arr, 'duration')/times})`}
-                  })
+                  return _(performance.getEntriesByType("measure")).groupBy('name').map((arr, name)=>{
+                      const times = arr.length
+                      return {name, times, avgDuration: `${_.sumBy(arr, 'duration')/times})`}
+                  }).sortBy('avgDuration').reverse().value()
                 }
             }
         }
