@@ -6,6 +6,7 @@ const externalsMap = {
   lodash: '_',
   'react-redux': 'ReactRedux',
   redux: 'Redux',
+  tslib: 'tslib',
 };
 
 const externals = _.reduce(
