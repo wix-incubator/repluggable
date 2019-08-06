@@ -626,20 +626,31 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
     }
 
     function mark(name: string) {
-        if (options && options.monitoring && options.monitoring.chromePerformance){
-            performance && performance.mark(name)
-        }
+        performance && performance.mark(name)
     }
 
     function markAndMeasure(name: string, markStart: string, markEnd: string) {
-        if (options && options.monitoring && options.monitoring.chromePerformance) {
-            mark(markEnd)
-            performance && performance.measure(name, markStart, markEnd)
-        }
-
+        mark(markEnd)
+        performance && performance.measure(name, markStart, markEnd)
     }
 
-    // function wrapWithMeasure<TAPI>(func: Function, api: TAPI, measureName: string,): TAPI
+    function wrapWithMeasure<TAPI>(func: Function, api: TAPI, args: any[], measureName: string): TAPI {
+         if (options && options.monitoring && options.monitoring.chromePerformance) {
+             const startMarkName = `${measureName} - start`
+             const endMarkName = `${measureName} - end`
+             mark(startMarkName)
+             const res = func.apply(api, args)
+             if (res && res.then) {
+                    return res.then((apiResult: any) => {
+                     markAndMeasure(measureName, startMarkName, endMarkName);
+                     return apiResult;
+                 })
+             }
+             markAndMeasure(measureName, startMarkName, endMarkName);
+             return res
+         }
+      return func.apply(api, args);
+    }
 
     function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
         if (options && options.monitoring && options.monitoring.disableMonitoring) {
@@ -648,20 +659,8 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         return interceptAnyObject(api, (funcName, originalFunc) => {
             return (...args: any[]) => {
                 const funcId = `${apiName}::${funcName}`;
-                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () => {
-                    const startMarkName = `${funcId} - start`
-                    const endMarkName = `${funcId} - end`
-                    mark(startMarkName)
-                    const res = originalFunc.apply(api, args)
-                    if (res && res.then) {
-                        return res.then((...args: any[])=>{
-                          markAndMeasure(funcId, startMarkName, endMarkName);
-                            return args;
-                        })
-                    }
-                    markAndMeasure(funcId, startMarkName, endMarkName);
-                    return res
-                }
+                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args },
+                    () => wrapWithMeasure(originalFunc, api, args, funcId)
                 )
             }
         })

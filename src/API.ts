@@ -84,8 +84,8 @@ export interface AppHost {
 export interface AppHostOptions {
     logger?: HostLogger
     monitoring?: {
-        disableMonitoring?: boolean
-        chromePerformance?: boolean
+        disableMonitoring?: boolean;
+        chromePerformance?: boolean;
     }
 }
 
