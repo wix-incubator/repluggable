@@ -625,14 +625,43 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         return shell
     }
 
+    function mark(name: string) {
+        if (options && options.monitoring && options.monitoring.chromePerformance){
+            performance && performance.mark(name)
+        }
+    }
+
+    function markAndMeasure(name: string, markStart: string, markEnd: string) {
+        if (options && options.monitoring && options.monitoring.chromePerformance) {
+            mark(markEnd)
+            performance && performance.measure(name, markStart, markEnd)
+        }
+
+    }
+
+    // function wrapWithMeasure<TAPI>(func: Function, api: TAPI, measureName: string,): TAPI
+
     function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
-        if (options && options.disableMonitoring) {
+        if (options && options.monitoring && options.monitoring.disableMonitoring) {
             return api
         }
         return interceptAnyObject(api, (funcName, originalFunc) => {
             return (...args: any[]) => {
-                return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
-                    originalFunc.apply(api, args)
+                const funcId = `${apiName}::${funcName}`;
+                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () => {
+                    const startMarkName = `${funcId} - start`
+                    const endMarkName = `${funcId} - end`
+                    mark(startMarkName)
+                    const res = originalFunc.apply(api, args)
+                    if (res && res.then) {
+                        return res.then((...args: any[])=>{
+                          markAndMeasure(funcId, startMarkName, endMarkName);
+                            return args;
+                        })
+                    }
+                    markAndMeasure(funcId, startMarkName, endMarkName);
+                    return res
+                }
                 )
             }
         })
@@ -651,6 +680,33 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             unReadyEntryPoints: () => unReadyEntryPoints,
             findAPI: (name: string) => {
                 return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
+            },
+            performance: {
+                getGroupedMeasurements: () => {
+                    return _.groupBy(performance.getEntriesByType("measure"), 'name')
+                },
+                getSortedMeasurments: () => {
+                    return _(performance.getEntriesByType("measure")).map((measurement)=>_.pick(measurement, ['name', 'duration'])).sortBy('duration').reverse().value()
+                },
+                start: () => {
+                    options = options || {};
+                    options.monitoring = options.monitoring || {}
+                    options.monitoring.chromePerformance = true;
+                },
+                stop: () => {
+                    options = options || {};
+                    options.monitoring = options.monitoring || {}
+                    options.monitoring.chromePerformance = false;
+                },
+                clean: () => {
+                    performance.clearMeasures();
+                },
+                getAverage: () => {
+                  return _.mapValues(_.groupBy(performance.getEntriesByType("measure"), 'name'), (arr)=>{
+                    const times = arr.length
+                    return {times, duration: `${_.sumBy(arr, 'duration')/times})`}
+                  })
+                }
             }
         }
 
