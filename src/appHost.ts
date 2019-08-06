@@ -635,21 +635,21 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
     }
 
     function wrapWithMeasure<TAPI>(func: Function, api: TAPI, args: any[], measureName: string): TAPI {
-         if (options && options.monitoring && options.monitoring.chromePerformance) {
-             const startMarkName = `${measureName} - start`
-             const endMarkName = `${measureName} - end`
-             mark(startMarkName)
-             const res = func.apply(api, args)
-             if (res && res.then) {
-                    return res.then((apiResult: any) => {
-                     markAndMeasure(measureName, startMarkName, endMarkName);
-                     return apiResult;
-                 })
-             }
-             markAndMeasure(measureName, startMarkName, endMarkName);
-             return res
-         }
-      return func.apply(api, args);
+        if (options && options.monitoring && options.monitoring.chromePerformance) {
+            const startMarkName = `${measureName} - start`
+            const endMarkName = `${measureName} - end`
+            mark(startMarkName)
+            const res = func.apply(api, args)
+            if (res && res.then) {
+                return res.then((apiResult: any) => {
+                    markAndMeasure(measureName, startMarkName, endMarkName);
+                    return apiResult;
+                })
+            }
+            markAndMeasure(measureName, startMarkName, endMarkName);
+            return res
+        }
+        return func.apply(api, args);
     }
 
     function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
@@ -659,7 +659,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         return interceptAnyObject(api, (funcName, originalFunc) => {
             return (...args: any[]) => {
                 const funcId = `${apiName}::${funcName}`;
-                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args },
+                return shell.log.monitor(funcId, {$api: apiName, $apiFunc: funcName, $args: args},
                     () => wrapWithMeasure(originalFunc, api, args, funcId)
                 )
             }
@@ -685,7 +685,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     return _.groupBy(performance.getEntriesByType("measure"), 'name')
                 },
                 getSortedMeasurments: () => {
-                    return _(performance.getEntriesByType("measure")).map((measurement)=>_.pick(measurement, ['name', 'duration'])).sortBy('duration').reverse().value()
+                    return _(performance.getEntriesByType("measure")).map((measurement) => _.pick(measurement, ['name', 'duration'])).sortBy('duration').reverse().value()
                 },
                 start: () => {
                     options = options || {};
@@ -701,10 +701,10 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     performance.clearMeasures();
                 },
                 getAverage: () => {
-                  return _(performance.getEntriesByType("measure")).groupBy('name').map((arr, name)=>{
-                      const times = arr.length
-                      return {name, times, avgDuration: `${_.sumBy(arr, 'duration')/times})`}
-                  }).sortBy('avgDuration').reverse().value()
+                    return _(performance.getEntriesByType("measure")).groupBy('name').map((arr, name) => {
+                        const times = arr.length
+                        return {name, times, avgDuration: `${_.sumBy(arr, 'duration') / times})`}
+                    }).sortBy('avgDuration').reverse().value()
                 }
             }
         }
