@@ -561,9 +561,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${
-                        entryPoint.name
-                    }' (forgot to return it from getDependencyAPIs?)`
+                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
