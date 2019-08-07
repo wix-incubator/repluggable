@@ -29,7 +29,7 @@ import { contributeInstalledShellsState, InstalledShellsActions, InstalledShells
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
-import { interceptAnyObject } from './interceptAnyObject'
+import { monitorAPI } from './monitorAPI'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -42,7 +42,7 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options?: AppHostOptions): AppHost {
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = {}): AppHost {
     const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
@@ -62,7 +62,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
-function createAppHostImpl(options?: AppHostOptions): AppHost {
+function createAppHostImpl(options: AppHostOptions): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
@@ -96,7 +96,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         onShellsChanged,
         removeShellsChangedCallback,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
-        log: options && options.logger ? options.logger : ConsoleHostLogger
+        log: options.logger ? options.logger : ConsoleHostLogger
     }
 
     // TODO: Conditionally with parameter
@@ -549,7 +549,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                 // TODO: Allow entry point to uninstall its own shell?
                 if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
-                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${entryPoint.name} - This is not allowed`
+                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${
+                            entryPoint.name
+                        } - This is not allowed`
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
@@ -561,7 +563,9 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
+                    `API '${key.name}' is not declared as dependency by entry point '${
+                        entryPoint.name
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
@@ -573,7 +577,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, key.name, api)
+                const monitoredAPI = monitorAPI(shell, options, key.name, api)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
@@ -625,47 +629,6 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         return shell
     }
 
-    function mark(name: string) {
-        performance && performance.mark(name)
-    }
-
-    function markAndMeasure(name: string, markStart: string, markEnd: string) {
-        mark(markEnd)
-        performance && performance.measure(name, markStart, markEnd)
-    }
-
-    function wrapWithMeasure<TAPI>(func: Function, api: TAPI, args: any[], measureName: string): TAPI {
-        if (options && options.monitoring && options.monitoring.chromePerformance) {
-            const startMarkName = `${measureName} - start`
-            const endMarkName = `${measureName} - end`
-            mark(startMarkName)
-            const res = func.apply(api, args)
-            if (res && res.then) {
-                return res.then((apiResult: any) => {
-                    markAndMeasure(measureName, startMarkName, endMarkName)
-                    return apiResult
-                })
-            }
-            markAndMeasure(measureName, startMarkName, endMarkName)
-            return res
-        }
-        return func.apply(api, args)
-    }
-
-    function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
-        if (options && options.monitoring && options.monitoring.disableMonitoring) {
-            return api
-        }
-        return interceptAnyObject(api, (funcName, originalFunc) => {
-            return (...args: any[]) => {
-                const funcId = `${apiName}::${funcName}`
-                return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
-                    wrapWithMeasure(originalFunc, api, args, funcId)
-                )
-            }
-        })
-    }
-
     function setupDebugInfo() {
         const utils = {
             apis: () => {
@@ -692,14 +655,13 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                         .value()
                 },
                 start: () => {
-                    options = options || {}
                     options.monitoring = options.monitoring || {}
-                    options.monitoring.chromePerformance = true
+                    options.monitoring.disableMonitoring = false
+                    options.monitoring.enablePerformance = true
                 },
                 stop: () => {
-                    options = options || {}
                     options.monitoring = options.monitoring || {}
-                    options.monitoring.chromePerformance = false
+                    options.monitoring.enablePerformance = false
                 },
                 clean: () => {
                     performance.clearMeasures()
