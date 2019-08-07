@@ -29,7 +29,7 @@ import { contributeInstalledShellsState, InstalledShellsActions, InstalledShells
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
-import { interceptAnyObject } from './interceptAnyObject'
+import { monitorAPI } from './monitorAPI'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -42,7 +42,7 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options?: AppHostOptions): AppHost {
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = {}): AppHost {
     const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
@@ -62,7 +62,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
-function createAppHostImpl(options?: AppHostOptions): AppHost {
+function createAppHostImpl(options: AppHostOptions): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
@@ -96,7 +96,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         onShellsChanged,
         removeShellsChangedCallback,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
-        log: options && options.logger ? options.logger : ConsoleHostLogger
+        log: options.logger ? options.logger : ConsoleHostLogger
     }
 
     // TODO: Conditionally with parameter
@@ -573,7 +573,7 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, key.name, api)
+                const monitoredAPI = monitorAPI(shell, options, key.name, api)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
@@ -625,19 +625,6 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
         return shell
     }
 
-    function monitorAPI<TAPI>(shell: Shell, apiName: string, api: TAPI): TAPI {
-        if (options && options.disableMonitoring) {
-            return api
-        }
-        return interceptAnyObject(api, (funcName, originalFunc) => {
-            return (...args: any[]) => {
-                return shell.log.monitor(`${apiName}::${funcName}`, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
-                    originalFunc.apply(api, args)
-                )
-            }
-        })
-    }
-
     function setupDebugInfo() {
         const utils = {
             apis: () => {
@@ -651,6 +638,41 @@ function createAppHostImpl(options?: AppHostOptions): AppHost {
             unReadyEntryPoints: () => unReadyEntryPoints,
             findAPI: (name: string) => {
                 return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
+            },
+            performance: {
+                getGroupedMeasurements: () => {
+                    return _.groupBy(performance.getEntriesByType('measure'), 'name')
+                },
+                getSortedMeasurments: () => {
+                    return _(performance.getEntriesByType('measure'))
+                        .map(measurement => _.pick(measurement, ['name', 'duration']))
+                        .sortBy('duration')
+                        .reverse()
+                        .value()
+                },
+                start: () => {
+                    options.monitoring = options.monitoring || {}
+                    options.monitoring.disableMonitoring = false
+                    options.monitoring.enablePerformance = true
+                },
+                stop: () => {
+                    options.monitoring = options.monitoring || {}
+                    options.monitoring.enablePerformance = false
+                },
+                clean: () => {
+                    performance.clearMeasures()
+                },
+                getAverage: () => {
+                    return _(performance.getEntriesByType('measure'))
+                        .groupBy('name')
+                        .map((arr, name) => {
+                            const times = arr.length
+                            return { name, times, avgDuration: `${_.sumBy(arr, 'duration') / times})` }
+                        })
+                        .sortBy('avgDuration')
+                        .reverse()
+                        .value()
+                }
             }
         }
 
