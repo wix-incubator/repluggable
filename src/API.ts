@@ -81,12 +81,14 @@ export interface AppHost {
     readonly log: HostLogger
 }
 
+interface Monitoring {
+    disableMonitoring?: boolean
+    chromePerformance?: boolean
+}
+
 export interface AppHostOptions {
     logger?: HostLogger
-    monitoring?: {
-        disableMonitoring?: boolean;
-        chromePerformance?: boolean;
-    }
+    monitoring?: Monitoring
 }
 
 type AnyFunction = (...args: any[]) => any
