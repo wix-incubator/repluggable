@@ -33,8 +33,9 @@ export function monitorAPI<TAPI>(shell: Shell, options: AppHostOptions, apiName:
         return api
     }
     return interceptAnyObject(api, (funcName, originalFunc) => {
+        // @ts-ignore
+        const funcId = `${apiName}::${funcName}${originalFunc.hasOwnProperty('cache') ? '(Memoized)' : ''}`
         return (...args: any[]) => {
-            const funcId = `${apiName}::${funcName}`
             return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
                 wrapWithMeasure(options, originalFunc, api, args, funcId)
             )
