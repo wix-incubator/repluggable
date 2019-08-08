@@ -65,9 +65,9 @@
   "perfer": {
     "bundleSize": {
       "files": [
-        "./dist/statics/app.bundle.js",
+        "./dist/statics/repluggable.bundle.js",
         {
-          "glob": "./dist/statics/app.bundle.js",
+          "glob": "./dist/statics/repluggable.bundle.js",
           "maxSize": "15kb"
         }
       ]
