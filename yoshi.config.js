@@ -23,7 +23,9 @@ const externals = _.reduce(
 );
 
 module.exports = {
-  entry: 'index',
+  entry: {
+    repluggable: 'index',
+  },
   exports: 'repluggable',
   hmr: true,
   externals,
