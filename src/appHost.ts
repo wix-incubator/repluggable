@@ -68,6 +68,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
+    const trace: any[] = []
 
     const readyAPIs = new Set<AnySlotKey>()
 
@@ -79,7 +80,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
 
-    const memoizedFuntions: { f: _.MemoizedFunction; shouldClear?(): boolean }[] = []
+    const memoizedFunctions: { f: _.MemoizedFunction; shouldClear?(): boolean }[] = []
 
     const hostAPI: AppHostAPI = {}
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
@@ -350,7 +351,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
         } else {
             store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
             store.subscribe(() => {
-                memoizedFuntions.forEach(({ f, shouldClear }) => {
+                memoizedFunctions.forEach(({ f, shouldClear }) => {
                     if (f.cache.clear && (shouldClear || _.stubTrue)()) {
                         f.cache.clear()
                     }
@@ -549,7 +550,9 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                 // TODO: Allow entry point to uninstall its own shell?
                 if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
-                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${entryPoint.name} - This is not allowed`
+                        `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${
+                            entryPoint.name
+                        } - This is not allowed`
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
@@ -561,7 +564,9 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
+                    `API '${key.name}' is not declared as dependency by entry point '${
+                        entryPoint.name
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
@@ -573,7 +578,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, options, key.name, api)
+                const monitoredAPI = monitorAPI(shell, options, key.name, api, trace)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
@@ -611,7 +616,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
 
             memoizeForState(func, resolver, shouldClear?) {
                 const memoized = _.memoize(func, resolver)
-                memoizedFuntions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
+                memoizedFunctions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
                 return memoized
             },
 
@@ -640,11 +645,8 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                 return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
             },
             performance: {
-                getGroupedMeasurements: () => {
-                    return _.groupBy(performance.getEntriesByType('measure'), 'name')
-                },
                 getSortedMeasurments: () => {
-                    return _(performance.getEntriesByType('measure'))
+                    return _(trace)
                         .map(measurement => _.pick(measurement, ['name', 'duration']))
                         .sortBy('duration')
                         .reverse()
@@ -652,26 +654,47 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                 },
                 start: () => {
                     options.monitoring = options.monitoring || {}
-                    options.monitoring.disableMonitoring = false
-                    options.monitoring.enablePerformance = true
+                    if (!options.monitoring.disableMonitoring) {
+                        options.monitoring.enablePerformance = true
+                    } else {
+                        console.log('Remove "disableMonitoring" in order to use trace')
+                    }
                 },
                 stop: () => {
                     options.monitoring = options.monitoring || {}
                     options.monitoring.enablePerformance = false
                 },
                 clean: () => {
-                    performance.clearMeasures()
+                    trace.length = 0
                 },
-                getAverage: () => {
-                    return _(performance.getEntriesByType('measure'))
+                getTrace: () => {
+                    return trace
+                },
+                getGroupedTrace: () => {
+                    return _.groupBy(trace, 'name')
+                },
+                getGroupedSumTrace: () => {
+                    return _(trace)
                         .groupBy('name')
-                        .map((arr, name) => {
+                        .mapValues((arr, key) => {
+                            const totalDuration = _.sumBy(arr, 'duration')
                             const times = arr.length
-                            return { name, times, avgDuration: `${_.sumBy(arr, 'duration') / times})` }
+                            return { key, times, totalDuration, avgDuration: totalDuration / times }
                         })
-                        .sortBy('avgDuration')
-                        .reverse()
+                            // @ts-ignore
+                        .orderBy('totalDuration', 'desc')
                         .value()
+                },
+                analyseAPI: (apiName: string) => {
+                    const api = _.groupBy(trace, 'name')[apiName]
+                    if (api) {
+                        const groupedArgs = _.groupBy(api, a => JSON.stringify(a.args))
+                        const groupedRes = _.groupBy(api, a => JSON.stringify(a.res))
+                        const groupedArgsAndRes = _.groupBy(api, a => JSON.stringify(a.args) + JSON.stringify(a.res))
+                        console.log(`groupedArgs: ${Object.keys(groupedArgs).length}`, groupedArgs)
+                        console.log(`groupedRes: ${Object.keys(groupedRes).length}`, groupedRes)
+                        console.log(`groupedArgsAndRes: ${Object.keys(groupedArgsAndRes).length}`, groupedArgsAndRes)
+                    }
                 }
             }
         }
