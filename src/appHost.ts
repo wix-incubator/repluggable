@@ -670,16 +670,18 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                     return _.groupBy(trace, 'name')
                 },
                 getGroupedSumTrace: () => {
-                    return _(trace)
-                        .groupBy('name')
-                        .mapValues((arr, key) => {
-                            const totalDuration = _.sumBy(arr, 'duration')
-                            const times = arr.length
-                            return { key, times, totalDuration, avgDuration: totalDuration / times }
-                        })
-                        // @ts-ignore
-                        .orderBy('totalDuration', 'desc')
-                        .value()
+                    return (
+                        _(trace)
+                            .groupBy('name')
+                            .mapValues((arr, key) => {
+                                const totalDuration = _.sumBy(arr, 'duration')
+                                const times = arr.length
+                                return { key, times, totalDuration, avgDuration: totalDuration / times }
+                            })
+                            // @ts-ignore
+                            .orderBy('totalDuration', 'desc')
+                            .value()
+                    )
                 },
                 analyseAPI: (apiName: string) => {
                     const api = _.groupBy(trace, 'name')[apiName]
