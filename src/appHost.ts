@@ -42,7 +42,7 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = {monitoring: {}}): AppHost {
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
@@ -124,7 +124,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
         return typeof (value as LazyEntryPointDescriptor).factory === 'function'
     }
 
-    function enrichMemoization <T extends _.MemoizedFunction & Partial<MemoizeMissHit>>(memoized: T): T & MemoizeMissHit {
+    function enrichMemoization<T extends _.MemoizedFunction & Partial<MemoizeMissHit>>(memoized: T): T & MemoizeMissHit {
         const memoizedWithMissHit = _.assign(memoized, {
             miss: 0,
             calls: 0,
@@ -155,7 +155,6 @@ miss: ${memoizedWithMissHit.miss}
         }
         return memoizedWithMissHit
     }
-
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
         host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
@@ -714,7 +713,7 @@ miss: ${memoizedWithMissHit.miss}
                     return _.groupBy(trace, 'name')
                 },
                 getGroupedSumTrace: () => {
-                    console.table (
+                    console.table(
                         _(trace)
                             .groupBy('name')
                             .mapValues((arr, key) => {

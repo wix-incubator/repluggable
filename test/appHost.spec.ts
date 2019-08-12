@@ -92,7 +92,8 @@ describe('App Host', () => {
                 event() {}
             }
             const options: AppHostOptions = {
-                logger
+                logger,
+                monitoring: {}
             }
 
             const host = _createAppHost([], options)
