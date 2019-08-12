@@ -20,6 +20,7 @@ import {
     ShellBoundaryAspect,
     MemoizeMissHit,
     AppHostOptions,
+    StatisticsMemoization,
     Trace
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
@@ -70,7 +71,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
     const trace: Trace[] = []
-    const memoizedArr: any[] = []
+    const memoizedArr: StatisticsMemoization[] = []
 
     const readyAPIs = new Set<AnySlotKey>()
 

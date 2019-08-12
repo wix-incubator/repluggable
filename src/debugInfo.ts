@@ -1,10 +1,10 @@
 import _ from "lodash"
-import {AppHostOptions, Trace} from './API'
+import {AppHostOptions, Trace, StatisticsMemoization} from './API'
 
-export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], memoized: any[]) {
+export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], memoized: StatisticsMemoization[]) {
     const getMemoizedTable = () => {
         return _.map(memoized, (memoize)=>{
-            const {calls, hit, miss} = memoize.originalFunc;
+            const {calls, hit, miss} = memoize.func;
             const hitRate = `${(hit/calls*100).toFixed(2)}%`
             const {name} = memoize
             return{name, hitRate, calls , hit, miss}

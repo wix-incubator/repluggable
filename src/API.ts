@@ -106,6 +106,13 @@ export interface MemoizeMissHit {
     printHitMiss(): void
 }
 
+export type enrichedMemoizationFunction = MemoizeMissHit & AnyFunction & _.MemoizedFunction
+
+export interface StatisticsMemoization {
+    func: enrichedMemoizationFunction
+    name: string
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
