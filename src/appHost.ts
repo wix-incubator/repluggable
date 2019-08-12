@@ -42,7 +42,7 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = {}): AppHost {
+export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = {monitoring: {}}): AppHost {
     const host = createAppHostImpl(options)
     host.addShells(entryPointsOrPackages)
     return host
@@ -110,7 +110,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const memoize: Shell['memoize'] = (func, resolver) => {
         const memoized = _.memoize(func, resolver)
 
-        if (options.monitoring && options.monitoring.disableMonitoring) {
+        if (options.monitoring.disableMonitoring) {
             return memoized
         }
 
@@ -694,7 +694,6 @@ miss: ${memoizedWithMissHit.miss}
                         .value()
                 },
                 start: () => {
-                    options.monitoring = options.monitoring || {}
                     if (!options.monitoring.disableMonitoring) {
                         options.monitoring.enablePerformance = true
                     } else {

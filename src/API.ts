@@ -88,7 +88,7 @@ export interface MonitoringOptions {
 
 export interface AppHostOptions {
     logger?: HostLogger
-    monitoring?: MonitoringOptions
+    monitoring: MonitoringOptions
 }
 
 export interface MemoizeMissHit {
