@@ -91,8 +91,15 @@ export interface AppHostOptions {
     monitoring?: MonitoringOptions
 }
 
-type AnyFunction = (...args: any[]) => any
-type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
+export interface MemoizeMissHit {
+    miss: number
+    calls: number
+    hit: number
+    printHitMiss(): void
+}
+
+export type AnyFunction = (...args: any[]) => any
+export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
     readonly name: string
     readonly log: ShellLogger
@@ -104,7 +111,12 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void
-    memoizeForState<T extends AnyFunction>(func: T, resolver: FunctionWithSameArgs<T>, shouldClear?: () => boolean): T & _.MemoizedFunction
+    memoizeForState<T extends AnyFunction>(
+        func: T,
+        resolver: FunctionWithSameArgs<T>,
+        shouldClear?: () => boolean
+    ): T & _.MemoizedFunction & Partial<MemoizeMissHit>
+    memoize<T extends AnyFunction>(func: T, resolver: FunctionWithSameArgs<T>): T & _.MemoizedFunction & Partial<MemoizeMissHit>
 }
 
 export interface PrivateShell extends Shell {

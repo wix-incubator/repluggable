@@ -1,5 +1,4 @@
 import { combineReducers, ReducersMapObject, Store } from 'redux'
-
 import {
     AnyEntryPoint,
     AnySlotKey,
@@ -19,6 +18,7 @@ import {
     ShellsChangedCallback,
     SlotKey,
     ShellBoundaryAspect,
+    MemoizeMissHit,
     AppHostOptions
 } from './API'
 
@@ -107,12 +107,55 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
     addShells([appHostServicesEntryPoint])
 
+    const memoize: Shell['memoize'] = (func, resolver) => {
+        const memoized = _.memoize(func, resolver)
+
+        if (options.monitoring && options.monitoring.disableMonitoring) {
+            return memoized
+        }
+
+        return enrichMemoization(memoized)
+    }
+
     return host
 
     //TODO: get rid of LazyEntryPointDescriptor
     function isLazyEntryPointDescriptor(value: AnyEntryPoint): value is LazyEntryPointDescriptor {
         return typeof (value as LazyEntryPointDescriptor).factory === 'function'
     }
+
+    function enrichMemoization <T extends _.MemoizedFunction & Partial<MemoizeMissHit>>(memoized: T): T & MemoizeMissHit {
+        const memoizedWithMissHit = _.assign(memoized, {
+            miss: 0,
+            calls: 0,
+            hit: 0,
+            printHitMiss: () =>
+                console.log(
+                    `calls: ${memoizedWithMissHit.calls}
+hit: ${memoizedWithMissHit.hit}
+miss: ${memoizedWithMissHit.miss}
+`
+                )
+        })
+
+        const getter = memoizedWithMissHit.cache.get.bind(memoized.cache)
+
+        memoizedWithMissHit.cache.get = (key: any) => {
+            memoizedWithMissHit.calls++
+            memoizedWithMissHit.hit++
+            return getter(key)
+        }
+
+        const setter = memoizedWithMissHit.cache.set.bind(memoizedWithMissHit.cache)
+
+        memoizedWithMissHit.cache.set = (key: any, value: any) => {
+            memoizedWithMissHit.calls++
+            memoizedWithMissHit.miss++
+            return setter(key, value)
+        }
+        return memoizedWithMissHit
+    }
+
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
         host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
@@ -611,11 +654,13 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
             },
 
             memoizeForState(func, resolver, shouldClear?) {
-                const memoized = _.memoize(func, resolver)
+                const memoized = memoize(func, resolver)
                 memoizedFunctions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
                 return memoized
             },
-
+            memoize(func, resolver) {
+                return memoize(func, resolver)
+            },
             getBoundaryAspects(): ShellBoundaryAspect[] {
                 return boundaryAspects
             },
@@ -670,13 +715,14 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
                     return _.groupBy(trace, 'name')
                 },
                 getGroupedSumTrace: () => {
-                    return (
+                    console.table (
                         _(trace)
                             .groupBy('name')
                             .mapValues((arr, key) => {
-                                const totalDuration = _.sumBy(arr, 'duration')
+                                const totalDuration = Number(_.sumBy(arr, 'duration').toFixed(2))
                                 const times = arr.length
-                                return { key, times, totalDuration, avgDuration: totalDuration / times }
+                                const avgDuration = Number((totalDuration / times).toFixed(2))
+                                return { key, times, totalDuration, avgDuration }
                             })
                             // @ts-ignore
                             .orderBy('totalDuration', 'desc')
