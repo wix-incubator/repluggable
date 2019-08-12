@@ -86,6 +86,14 @@ export interface MonitoringOptions {
     enablePerformance?: boolean
 }
 
+export interface Trace {
+    name: string
+    duration: number
+    startTime: number
+    res: any
+    args: any[]
+}
+
 export interface AppHostOptions {
     logger?: HostLogger
     monitoring: MonitoringOptions
@@ -96,6 +104,13 @@ export interface MemoizeMissHit {
     calls: number
     hit: number
     printHitMiss(): void
+}
+
+export type enrichedMemoizationFunction = MemoizeMissHit & AnyFunction & _.MemoizedFunction
+
+export interface StatisticsMemoization {
+    func: enrichedMemoizationFunction
+    name: string
 }
 
 export type AnyFunction = (...args: any[]) => any
