@@ -154,7 +154,7 @@ describe('interceptAnyObject', () => {
     it('should intercept nested objects', () => {
         const spy: LogSpy = jest.fn()
         const real = createTestTarget(spy)
-        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), true)
 
         const nestedPropValue = intercepted.objectProp.nestedProp
         const nestedFuncRetVal = intercepted.objectProp.nestedFunc()
