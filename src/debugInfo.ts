@@ -1,13 +1,13 @@
-import _ from "lodash"
-import {AppHostOptions, Trace, StatisticsMemoization} from './API'
+import _ from 'lodash'
+import { AppHostOptions, Trace, StatisticsMemoization } from './API'
 
 export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], memoized: StatisticsMemoization[]) {
     const getMemoizedTable = () => {
-        return _.map(memoized, (memoize)=>{
-            const {calls, hit, miss} = memoize.func;
-            const hitRate = `${(hit/calls*100).toFixed(2)}%`
-            const {name} = memoize
-            return{name, hitRate, calls , hit, miss}
+        return _.map(memoized, memoize => {
+            const { calls, hit, miss } = memoize.func
+            const hitRate = `${((hit / calls) * 100).toFixed(2)}%`
+            const { name } = memoize
+            return { name, hitRate, calls, hit, miss }
         })
     }
     const printMemoizeTable = () => {
@@ -54,8 +54,8 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
                 .orderBy('totalDuration', 'desc')
                 .value()
 
-            _.forEach(getMemoizedTable(), (memoizeData) => {
-                _.assign(_.find(traceData, {name: memoizeData.name}), memoizeData)
+            _.forEach(getMemoizedTable(), memoizeData => {
+                _.assign(_.find(traceData, { name: memoizeData.name }), memoizeData)
             })
             console.table(traceData)
         },
@@ -70,7 +70,7 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
                 console.log(`groupedArgsAndRes: ${Object.keys(groupedArgsAndRes).length}`, groupedArgsAndRes)
             }
         },
-        getMemoized: ()=> memoized,
+        getMemoized: () => memoized,
         printMemoizeTable
     }
 }

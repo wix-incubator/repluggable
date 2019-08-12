@@ -1,4 +1,4 @@
-import { AppHostOptions, Shell, Trace, StatisticsMemoization, enrichedMemoizationFunction} from './API'
+import { AppHostOptions, Shell, Trace, StatisticsMemoization, enrichedMemoizationFunction } from './API'
 import { interceptAnyObject } from './interceptAnyObject'
 import _ from 'lodash'
 
@@ -36,11 +36,18 @@ function wrapWithMeasure<TAPI>(options: AppHostOptions, func: Function, api: TAP
     return func.apply(api, args)
 }
 
-    function isEnrichedMemoizationFunction(func: any): func is enrichedMemoizationFunction {
+function isEnrichedMemoizationFunction(func: any): func is enrichedMemoizationFunction {
     return func.hasOwnProperty('cache') && func.hasOwnProperty('hit')
 }
 
-export function monitorAPI<TAPI>(shell: Shell, options: AppHostOptions, apiName: string, api: TAPI, trace: Trace[], memoized: StatisticsMemoization[]): TAPI {
+export function monitorAPI<TAPI>(
+    shell: Shell,
+    options: AppHostOptions,
+    apiName: string,
+    api: TAPI,
+    trace: Trace[],
+    memoized: StatisticsMemoization[]
+): TAPI {
     if (options.monitoring && options.monitoring.disableMonitoring) {
         return api
     }
@@ -49,7 +56,7 @@ export function monitorAPI<TAPI>(shell: Shell, options: AppHostOptions, apiName:
         let funcId = `${apiName}::${funcName}`
         if (isEnrichedMemoizationFunction(originalFunc)) {
             funcId += '(Memoized)'
-            memoized.push({name: funcId, func: originalFunc})
+            memoized.push({ name: funcId, func: originalFunc })
         }
         return (...args: any[]) => {
             return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
