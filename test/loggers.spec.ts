@@ -13,7 +13,7 @@ describe('ShellLogger', () => {
         const hostLogger: HostLogger = {
             event: logSpy
         }
-        const host = createAppHost([], { logger: hostLogger })
+        const host = createAppHost([], { logger: hostLogger, monitoring: {} })
         const shellLogger = createShellLogger(host, entryPoint)
 
         logSpy.mockClear()
