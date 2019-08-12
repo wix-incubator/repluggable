@@ -1,4 +1,4 @@
-import { AppHostOptions, Shell } from './API'
+import { AppHostOptions, Shell, Trace} from './API'
 import { interceptAnyObject } from './interceptAnyObject'
 import _ from 'lodash'
 
@@ -6,7 +6,7 @@ function mark(name: string) {
     performance && performance.mark(name)
 }
 
-function markAndMeasure(trace: any[], args: any, res: any, name: string, markStart: string, markEnd: string) {
+function markAndMeasure(trace: Trace[], args: any, res: any, name: string, markStart: string, markEnd: string) {
     if (performance) {
         mark(markEnd)
         performance.measure(name, markStart, markEnd)
@@ -18,7 +18,7 @@ function markAndMeasure(trace: any[], args: any, res: any, name: string, markSta
     }
 }
 
-function wrapWithMeasure<TAPI>(options: AppHostOptions, func: Function, api: TAPI, args: any[], measureName: string, trace: any[]): TAPI {
+function wrapWithMeasure<TAPI>(options: AppHostOptions, func: Function, api: TAPI, args: any[], measureName: string, trace: Trace[]): TAPI {
     if (options.monitoring && options.monitoring.enablePerformance) {
         const startMarkName = `${measureName} - start`
         const endMarkName = `${measureName} - end`
@@ -36,13 +36,17 @@ function wrapWithMeasure<TAPI>(options: AppHostOptions, func: Function, api: TAP
     return func.apply(api, args)
 }
 
-export function monitorAPI<TAPI>(shell: Shell, options: AppHostOptions, apiName: string, api: TAPI, trace: any[]): TAPI {
+export function monitorAPI<TAPI>(shell: Shell, options: AppHostOptions, apiName: string, api: TAPI, trace: Trace[], memoized: any[]): TAPI {
     if (options.monitoring && options.monitoring.disableMonitoring) {
         return api
     }
     return interceptAnyObject(api, (funcName, originalFunc) => {
+        const isMemoized = originalFunc.hasOwnProperty('cache')
         // @ts-ignore
-        const funcId = `${apiName}::${funcName}${originalFunc.hasOwnProperty('cache') ? '(Memoized)' : ''}`
+        const funcId = `${apiName}::${funcName}${isMemoized ? '(Memoized)' : ''}`
+        if (isMemoized) {
+            memoized.push({name: funcId, originalFunc})
+        }
         return (...args: any[]) => {
             return shell.log.monitor(funcId, { $api: apiName, $apiFunc: funcName, $args: args }, () =>
                 wrapWithMeasure(options, originalFunc, api, args, funcId, trace)

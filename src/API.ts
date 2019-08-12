@@ -86,6 +86,14 @@ export interface MonitoringOptions {
     enablePerformance?: boolean
 }
 
+export interface Trace {
+    name: string
+    duration: number
+    startTime: number
+    res: any
+    args: any[]
+}
+
 export interface AppHostOptions {
     logger?: HostLogger
     monitoring: MonitoringOptions

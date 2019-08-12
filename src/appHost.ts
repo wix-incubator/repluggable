@@ -19,9 +19,10 @@ import {
     SlotKey,
     ShellBoundaryAspect,
     MemoizeMissHit,
-    AppHostOptions
+    AppHostOptions,
+    Trace
 } from './API'
-
+import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
@@ -68,7 +69,8 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
-    const trace: any[] = []
+    const trace: Trace[] = []
+    const memoizedArr: any[] = []
 
     const readyAPIs = new Set<AnySlotKey>()
 
@@ -100,7 +102,6 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
         log: options.logger ? options.logger : ConsoleHostLogger
     }
 
-    // TODO: Conditionally with parameter
     setupDebugInfo()
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
@@ -616,7 +617,7 @@ miss: ${memoizedWithMissHit.miss}
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, options, key.name, api, trace)
+                const monitoredAPI = monitorAPI(shell, options, key.name, api, trace, memoizedArr)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
@@ -684,61 +685,7 @@ miss: ${memoizedWithMissHit.miss}
             findAPI: (name: string) => {
                 return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
             },
-            performance: {
-                getSortedMeasurments: () => {
-                    return _(trace)
-                        .map(measurement => _.pick(measurement, ['name', 'duration']))
-                        .sortBy('duration')
-                        .reverse()
-                        .value()
-                },
-                start: () => {
-                    if (!options.monitoring.disableMonitoring) {
-                        options.monitoring.enablePerformance = true
-                    } else {
-                        console.log('Remove "disableMonitoring" in order to use trace')
-                    }
-                },
-                stop: () => {
-                    options.monitoring = options.monitoring || {}
-                    options.monitoring.enablePerformance = false
-                },
-                clean: () => {
-                    trace.length = 0
-                },
-                getTrace: () => {
-                    return trace
-                },
-                getGroupedTrace: () => {
-                    return _.groupBy(trace, 'name')
-                },
-                getGroupedSumTrace: () => {
-                    console.table(
-                        _(trace)
-                            .groupBy('name')
-                            .mapValues((arr, key) => {
-                                const totalDuration = Number(_.sumBy(arr, 'duration').toFixed(2))
-                                const times = arr.length
-                                const avgDuration = Number((totalDuration / times).toFixed(2))
-                                return { key, times, totalDuration, avgDuration }
-                            })
-                            // @ts-ignore
-                            .orderBy('totalDuration', 'desc')
-                            .value()
-                    )
-                },
-                analyseAPI: (apiName: string) => {
-                    const api = _.groupBy(trace, 'name')[apiName]
-                    if (api) {
-                        const groupedArgs = _.groupBy(api, a => JSON.stringify(a.args))
-                        const groupedRes = _.groupBy(api, a => JSON.stringify(a.res))
-                        const groupedArgsAndRes = _.groupBy(api, a => JSON.stringify(a.args) + JSON.stringify(a.res))
-                        console.log(`groupedArgs: ${Object.keys(groupedArgs).length}`, groupedArgs)
-                        console.log(`groupedRes: ${Object.keys(groupedRes).length}`, groupedRes)
-                        console.log(`groupedArgsAndRes: ${Object.keys(groupedArgsAndRes).length}`, groupedArgsAndRes)
-                    }
-                }
-            }
+            performance: getPerformanceDebug(options, trace, memoizedArr)
         }
 
         window.repluggableAppDebug = {
