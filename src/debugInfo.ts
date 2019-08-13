@@ -10,6 +10,19 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
             return { name, hitRate, calls, hit, miss }
         })
     }
+
+    const getGroups = (apiName: string) => {
+        const api = _.groupBy(trace, 'name')[apiName]
+        try {
+            const groupedArgs = _.groupBy(api, a => JSON.stringify(a.args))
+            const groupedRes = _.groupBy(api, a => JSON.stringify(a.res))
+            const groupedArgsAndRes = _.groupBy(api, a => JSON.stringify(a.args) + JSON.stringify(a.res))
+            return {groupedArgs, groupedRes, groupedArgsAndRes}
+        }
+        catch(err) {
+            return {groupedArgs: [], groupedRes: [], groupedArgsAndRes: []}
+        }
+    }
     const printMemoizeTable = () => {
         console.table(getMemoizedTable())
     }
@@ -47,7 +60,18 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
                     const totalDuration = Number(_.sumBy(arr, 'duration').toFixed(2))
                     const times = arr.length
                     const avgDuration = Number((totalDuration / times).toFixed(2))
-                    return { name, times, totalDuration, avgDuration }
+                    const groups = _(getGroups(name)).mapValues((obj, group) => {
+                        const keys = Object.keys(obj)
+                        length = keys.length;
+                        if (group !== 'groupedRes' || length === 0) {
+                            return length
+                        }
+                        const joined = keys.join(' ')
+                        return joined.length < 15 ? `${length}: ${joined}` : length
+
+                    }).value()
+
+                    return { name, times, totalDuration, avgDuration, ...groups}
                 })
                 // @ts-ignore
                 .orderBy('totalDuration', 'desc')
@@ -59,11 +83,9 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
             console.table(traceData)
         },
         analyseAPI: (apiName: string) => {
-            const api = _.groupBy(trace, 'name')[apiName]
-            if (api) {
-                const groupedArgs = _.groupBy(api, a => JSON.stringify(a.args))
-                const groupedRes = _.groupBy(api, a => JSON.stringify(a.res))
-                const groupedArgsAndRes = _.groupBy(api, a => JSON.stringify(a.args) + JSON.stringify(a.res))
+            const groups = getGroups(apiName)
+            if (groups) {
+                const {groupedArgs, groupedRes, groupedArgsAndRes} = groups
                 console.log(`groupedArgs: ${Object.keys(groupedArgs).length}`, groupedArgs)
                 console.log(`groupedRes: ${Object.keys(groupedRes).length}`, groupedRes)
                 console.log(`groupedArgsAndRes: ${Object.keys(groupedArgsAndRes).length}`, groupedArgsAndRes)
