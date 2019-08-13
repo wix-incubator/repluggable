@@ -19,7 +19,7 @@ function markAndMeasure(trace: Trace[], args: any, res: any, name: string, markS
 }
 
 function wrapWithMeasure<TAPI>(options: AppHostOptions, func: Function, api: TAPI, args: any[], measureName: string, trace: Trace[]): TAPI {
-    if (options.monitoring && options.monitoring.enablePerformance) {
+    if (options.monitoring.enablePerformance) {
         const startMarkName = `${measureName} - start`
         const endMarkName = `${measureName} - end`
         mark(startMarkName)
@@ -48,7 +48,7 @@ export function monitorAPI<TAPI>(
     trace: Trace[],
     memoized: StatisticsMemoization[]
 ): TAPI {
-    if (options.monitoring && options.monitoring.disableMonitoring) {
+    if (options.monitoring.disableMonitoring) {
         return api
     }
     return interceptAnyObject(api, (funcName, originalFunc) => {

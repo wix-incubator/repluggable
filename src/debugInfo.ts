@@ -29,7 +29,6 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
             }
         },
         stop: () => {
-            options.monitoring = options.monitoring || {}
             options.monitoring.enablePerformance = false
         },
         clean: () => {
