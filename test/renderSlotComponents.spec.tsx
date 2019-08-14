@@ -1,10 +1,11 @@
+import _ from 'lodash'
 import React, { FunctionComponent } from 'react'
-import { SlotKey, ReactComponentContributor } from '../src/API'
+import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
 import { SlotRenderer } from '../src/renderSlotComponents'
 import { createAppHost, addMockShell, renderInHost } from '../testKit'
 import { ReactWrapper, mount } from 'enzyme'
 import { Provider } from 'react-redux'
-import { createStore } from 'redux'
+import { AnyAction, createStore } from 'redux'
 import { connectWithShell } from '../src'
 
 const CompA: FunctionComponent = () => <div id="A" className="mock-comp" />
@@ -178,41 +179,6 @@ describe('SlotRenderer', () => {
         expect(getCompId(root, 1)).toBe('B')
     })
 
-    it('should ', () => {
-        const host = createAppHost([])
-        const mockShell = addMockShell(host, {
-            attach: shell => {
-                shell.contributeState(() => ({ test: () => ({ num: 123 }) }))
-            }
-        })
-
-        const ForeignComponent: FunctionComponent = props => (
-            <Provider store={createStore(() => ({ test: { num: 456 } }))}>{props.children}</Provider>
-        )
-
-        const nativeComponentPure: FunctionComponent<{ num: number }> = props => <div className="native-component">{props.num}</div>
-
-        const NativeComponent = connectWithShell<{ test: { num: number } }, {}, { num: number }>(
-            (shell, state) => ({
-                num: state.test.num
-            }),
-            undefined,
-            mockShell
-        )(nativeComponentPure)
-
-        const { root } = renderInHost(
-            <ForeignComponent>
-                <NativeComponent />
-            </ForeignComponent>,
-            host
-        )
-
-        const rootWrapper = root as ReactWrapper
-        const hostComponent = rootWrapper.find('div.native-component')
-
-        expect(hostComponent.text()).toBe('123')
-    })
-
     it('should not remount component when slot items changed', () => {
         const slotKey: SlotKey<{ comp: ReactComponentContributor; order: number }> = {
             name: 'mock_key'
@@ -265,5 +231,129 @@ describe('SlotRenderer', () => {
         root.find(Container).update()
 
         expect(onDidMount).toHaveBeenCalledTimes(1)
+    })
+
+    describe('Bound Props', function() {
+        const NATIVE_STORE_INITIAL_NUM = 1
+        const FOREIGN_STORE_INITIAL_NUM = 2
+        const NATIVE_STORE_NEW_NUM = 3
+        const FOREIGN_STORE_NEW_NUM = 4
+        interface MyStateValue {
+            num: number
+        }
+        interface MyStoreState {
+            test: MyStateValue
+        }
+
+        it('should keep bound mapStateToProps', () => {
+            const host = createAppHost([])
+            const mockShell = addMockShell(host, {
+                attach: shell => {
+                    shell.contributeState(() => ({ test: () => ({ num: NATIVE_STORE_INITIAL_NUM }) }))
+                }
+            })
+
+            const ForeignComponent: FunctionComponent = props => (
+                <Provider store={createStore(() => ({ test: { num: FOREIGN_STORE_INITIAL_NUM } }))}>{props.children}</Provider>
+            )
+
+            const nativeComponentPure: FunctionComponent<MyStateValue> = props => <div className="native-component">{props.num}</div>
+
+            const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue>(
+                (shell, state) => ({
+                    num: state.test.num
+                }),
+                undefined,
+                mockShell
+            )(nativeComponentPure)
+
+            const { root } = renderInHost(
+                <ForeignComponent>
+                    <NativeComponent />
+                </ForeignComponent>,
+                host
+            )
+
+            const rootWrapper = root as ReactWrapper
+            const hostComponent = rootWrapper.find('div.native-component')
+
+            expect(hostComponent.text()).toBe(`${NATIVE_STORE_INITIAL_NUM}`)
+        })
+
+        it('should keep bound mapDispatchToProps', async () => {
+            const CHANGE_NUM = 'CHANGE_NUM'
+
+            function nativeStoreReducer(state: MyStoreState['test'] = { num: NATIVE_STORE_INITIAL_NUM }, action: AnyAction) {
+                switch (action.type) {
+                    case CHANGE_NUM:
+                        return {
+                            ...state,
+                            num: action.num
+                        }
+                    default:
+                        return state
+                }
+            }
+
+            function foreignStoreReducer(state: MyStoreState['test'] | undefined, action: AnyAction) {
+                switch (action.type) {
+                    case CHANGE_NUM:
+                        throw new Error('The wrong store')
+                    default:
+                        return { num: FOREIGN_STORE_NEW_NUM }
+                }
+            }
+
+            const host = createAppHost([])
+            const mockShell = addMockShell(host, {
+                attach: shell => {
+                    shell.contributeState<MyStoreState>(() => ({ test: nativeStoreReducer }))
+                }
+            })
+
+            const ForeignComponent: FunctionComponent = props => (
+                <Provider store={createStore(foreignStoreReducer, { num: FOREIGN_STORE_INITIAL_NUM })}>{props.children}</Provider>
+            )
+
+            const nativeComponentPure: FunctionComponent<{ num: number; changeState(): void }> = props => {
+                return (
+                    <div className="native-component" onClick={() => props.changeState()}>
+                        {props.num}
+                    </div>
+                )
+            }
+
+            const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue, { changeState(): void }>(
+                (shell, state) => {
+                    return {
+                        num: state.test.num
+                    }
+                },
+                (shell: Shell, dispatch: any) => {
+                    return {
+                        changeState: () => {
+                            dispatch({ num: NATIVE_STORE_NEW_NUM, type: CHANGE_NUM })
+                        }
+                    }
+                },
+                mockShell
+            )(nativeComponentPure)
+
+            const { root } = renderInHost(
+                <ForeignComponent>
+                    <NativeComponent />
+                </ForeignComponent>,
+                host
+            )
+
+            const rootWrapper = root as ReactWrapper
+            const component = rootWrapper.find('div.native-component')
+
+            _.attempt(component.prop('onClick') as () => {})
+            host.getStore().flush()
+            component.update()
+
+            expect(component.text()).toBe(`${NATIVE_STORE_NEW_NUM}`)
+        })
     })
 })
