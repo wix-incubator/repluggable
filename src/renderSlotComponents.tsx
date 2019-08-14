@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
+import { STORE_KEY } from './appStore'
 
 interface ShellRendererProps {
     shell: Shell
@@ -66,9 +67,14 @@ interface SlotRendererConnectedProps<T> extends SlotRendererIterators<T> {
     slot: ExtensionSlot<T>
 }
 
-const ConnectedSlot = connect((state, { slot }: SlotRendererConnectedProps<any>) => ({
-    items: slot.getItems()
-}))(SlotRendererPure)
+const ConnectedSlot = connect(
+    (state, { slot }: SlotRendererConnectedProps<any>) => ({
+        items: slot.getItems()
+    }),
+    undefined,
+    undefined,
+    { storeKey: STORE_KEY }
+)(SlotRendererPure)
 
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
     return <ConnectedSlot {...props} />
@@ -99,4 +105,9 @@ const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHoc
     predicateResult: ownProps.item.condition()
 })
 
-const ConnectedPredicateHoc = connect(mapPredicateHocStateToProps)(PredicateHoc)
+const ConnectedPredicateHoc = connect(
+    mapPredicateHocStateToProps,
+    undefined,
+    undefined,
+    { storeKey: STORE_KEY }
+)(PredicateHoc)
