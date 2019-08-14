@@ -3,6 +3,9 @@ import { SlotKey, ReactComponentContributor } from '../src/API'
 import { SlotRenderer } from '../src/renderSlotComponents'
 import { createAppHost, addMockShell, renderInHost } from '../testKit'
 import { ReactWrapper, mount } from 'enzyme'
+import { Provider } from 'react-redux'
+import { createStore } from 'redux'
+import { connectWithShell } from '../src'
 
 const CompA: FunctionComponent = () => <div id="A" className="mock-comp" />
 const CompB: FunctionComponent = () => <div id="B" className="mock-comp" />
@@ -173,6 +176,41 @@ describe('SlotRenderer', () => {
 
         expect(getCompId(root, 0)).toBe('A')
         expect(getCompId(root, 1)).toBe('B')
+    })
+
+    it('should ', () => {
+        const host = createAppHost([])
+        const mockShell = addMockShell(host, {
+            attach: shell => {
+                shell.contributeState(() => ({ test: () => ({ num: 123 }) }))
+            }
+        })
+
+        const ForeignComponent: FunctionComponent = props => (
+            <Provider store={createStore(() => ({ test: { num: 456 } }))}>{props.children}</Provider>
+        )
+
+        const nativeComponentPure: FunctionComponent<{ num: number }> = props => <div className="native-component">{props.num}</div>
+
+        const NativeComponent = connectWithShell<{ test: { num: number } }, {}, { num: number }>(
+            (shell, state) => ({
+                num: state.test.num
+            }),
+            undefined,
+            mockShell
+        )(nativeComponentPure)
+
+        const { root } = renderInHost(
+            <ForeignComponent>
+                <NativeComponent />
+            </ForeignComponent>,
+            host
+        )
+
+        const rootWrapper = root as ReactWrapper
+        const hostComponent = rootWrapper.find('div.native-component')
+
+        expect(hostComponent.text()).toBe(123)
     })
 
     it('should not remount component when slot items changed', () => {
