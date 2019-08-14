@@ -210,7 +210,7 @@ describe('SlotRenderer', () => {
         const rootWrapper = root as ReactWrapper
         const hostComponent = rootWrapper.find('div.native-component')
 
-        expect(hostComponent.text()).toBe(123)
+        expect(hostComponent.text()).toBe('123')
     })
 
     it('should not remount component when slot items changed', () => {
