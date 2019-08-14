@@ -1,15 +1,18 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { Provider } from 'react-redux'
+import { createProvider } from 'react-redux'
 import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
+import { STORE_KEY } from '../src/appStore'
 
 export { AppHost } from '../src/index'
 export * from './mockPackage'
+
+const Provider = createProvider(STORE_KEY)
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)

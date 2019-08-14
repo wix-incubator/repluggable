@@ -5,6 +5,7 @@ import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
+import { STORE_KEY } from './appStore'
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -40,6 +41,7 @@ const propsDeepEqual = (propsA: any, propsB: any) => {
 }
 
 const reduxConnectOptions: ReduxConnectOptions = {
+    storeKey: STORE_KEY,
     pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
