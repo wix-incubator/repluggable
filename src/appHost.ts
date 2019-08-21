@@ -111,7 +111,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
 
     const memoize: Shell['memoize'] = (func, resolver) => {
         if (options.monitoring.disableMemoization) {
-            return func;
+            return func
         }
         const memoized = _.memoize(func, resolver)
 
