@@ -84,6 +84,7 @@ export interface AppHost {
 export interface MonitoringOptions {
     disableMonitoring?: boolean
     enablePerformance?: boolean
+    disableMemoization?: boolean
 }
 
 export interface Trace {
@@ -130,8 +131,8 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
         func: T,
         resolver: FunctionWithSameArgs<T>,
         shouldClear?: () => boolean
-    ): T & _.MemoizedFunction & Partial<MemoizeMissHit>
-    memoize<T extends AnyFunction>(func: T, resolver: FunctionWithSameArgs<T>): T & _.MemoizedFunction & Partial<MemoizeMissHit>
+    ): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>
+    memoize<T extends AnyFunction>(func: T, resolver: FunctionWithSameArgs<T>): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>
 }
 
 export interface PrivateShell extends Shell {
