@@ -121,6 +121,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     getStore<TState>(): ScopedStore<TState>
     canUseAPIs(): boolean
     canUseStore(): boolean
+    wasInitializationCompleted(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
@@ -137,7 +138,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
 export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
-    setLifecycleState(enableStore: boolean, enableAPIs: boolean): void
+    setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
 }
 

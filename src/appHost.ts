@@ -209,11 +209,14 @@ miss: ${memoizedWithMissHit.miss}
             invokeEntryPointPhase('attach', shells, f => f.entryPoint.attach && f.entryPoint.attach(f), f => !!f.entryPoint.attach)
 
             buildStore()
-            shells.forEach(f => f.setLifecycleState(true, true))
+            shells.forEach(f => f.setLifecycleState(true, true, false))
 
             invokeEntryPointPhase('extend', shells, f => f.entryPoint.extend && f.entryPoint.extend(f), f => !!f.entryPoint.extend)
 
-            shells.forEach(f => addedShells.set(f.entryPoint.name, f))
+            shells.forEach(f => {
+                addedShells.set(f.entryPoint.name, f)
+                f.setLifecycleState(true, true, true)
+            })
         } finally {
             canInstallReadyEntryPoints = true
         }
@@ -545,6 +548,7 @@ miss: ${memoizedWithMissHit.miss}
     function createShell(entryPoint: EntryPoint): PrivateShell {
         let storeEnabled = false
         let APIsEnabled = false
+        let wasInitCompleted = false
         let dependencyAPIs: AnySlotKey[] = []
         const boundaryAspects: ShellBoundaryAspect[] = []
 
@@ -564,9 +568,10 @@ miss: ${memoizedWithMissHit.miss}
 
             declareSlot,
 
-            setLifecycleState(enableStore: boolean, enableAPIs: boolean) {
+            setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean) {
                 storeEnabled = enableStore
                 APIsEnabled = enableAPIs
+                wasInitCompleted = initCompleted
             },
 
             setDependencyAPIs(APIs: AnySlotKey[]): void {
@@ -579,6 +584,10 @@ miss: ${memoizedWithMissHit.miss}
 
             canUseStore(): boolean {
                 return storeEnabled
+            },
+
+            wasInitializationCompleted(): boolean {
+                return wasInitCompleted
             },
 
             addShells(entryPointsOrPackages: EntryPointOrPackage[]): void {

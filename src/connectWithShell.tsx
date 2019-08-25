@@ -107,12 +107,32 @@ function wrapWithShellContext<S, OP, SP, DP>(
     )
 }
 
+export interface ConnectWithShellOptions {
+    readonly allowOutOfEntryPoint?: boolean
+}
+
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
-    boundShell: Shell
+    boundShell: Shell,
+    options: ConnectWithShellOptions = {}
 ) {
+    const validateLifecycle = (component: React.ComponentType<any>) => {
+        if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
+            const componentText = component.displayName || component.name || component
+            const errorText =
+                `connectWithShell(${boundShell.name})(${componentText}): [will upgrade to ERROR by Sep 1]:` +
+                'attempt to create component type outside of Entry Point lifecycle. ' +
+                'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
+                'If you really have to create this component type dynamically, ' +
+                "pass {allowOutOfEntryPoint:true} in the 'options' parameter."
+            //TODO: replace with throw after a grace period
+            boundShell.log.warning(errorText)
+        }
+    }
+
     return (component: React.ComponentType<OP & SP & DP>) => {
+        validateLifecycle(component)
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
     }
 }
