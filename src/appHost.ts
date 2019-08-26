@@ -21,7 +21,9 @@ import {
     MemoizeMissHit,
     AppHostOptions,
     StatisticsMemoization,
-    Trace
+    Trace,
+    AnyFunction,
+    FunctionWithSameArgs
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -83,7 +85,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
 
-    const memoizedFunctions: { f: _.MemoizedFunction; shouldClear?(): boolean }[] = []
+    const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
     const hostAPI: AppHostAPI = {}
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
@@ -109,7 +111,13 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
     addShells([appHostServicesEntryPoint])
 
-    const memoize: Shell['memoize'] = (func, resolver) => {
+    const memoize = <T extends AnyFunction>(
+        func: T,
+        resolver: FunctionWithSameArgs<T>
+    ): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
+        if (options.monitoring.disableMemoization) {
+            return func
+        }
         const memoized = _.memoize(func, resolver)
 
         if (options.monitoring.disableMonitoring) {
@@ -399,7 +407,7 @@ miss: ${memoizedWithMissHit.miss}
             store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
             store.subscribe(() => {
                 memoizedFunctions.forEach(({ f, shouldClear }) => {
-                    if (f.cache.clear && (shouldClear || _.stubTrue)()) {
+                    if (f.cache && f.cache.clear && (shouldClear || _.stubTrue)()) {
                         f.cache.clear()
                     }
                 })
