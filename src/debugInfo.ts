@@ -17,10 +17,9 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
             const groupedArgs = _.groupBy(api, a => JSON.stringify(a.args))
             const groupedRes = _.groupBy(api, a => JSON.stringify(a.res))
             const groupedArgsAndRes = _.groupBy(api, a => JSON.stringify(a.args) + JSON.stringify(a.res))
-            return {groupedArgs, groupedRes, groupedArgsAndRes}
-        }
-        catch(err) {
-            return {groupedArgs: [], groupedRes: [], groupedArgsAndRes: []}
+            return { groupedArgs, groupedRes, groupedArgsAndRes }
+        } catch (err) {
+            return { groupedArgs: [], groupedRes: [], groupedArgsAndRes: [] }
         }
     }
     const printMemoizeTable = () => {
@@ -60,18 +59,19 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
                     const totalDuration = Number(_.sumBy(arr, 'duration').toFixed(2))
                     const times = arr.length
                     const avgDuration = Number((totalDuration / times).toFixed(2))
-                    const groups = _(getGroups(name)).mapValues((obj, group) => {
-                        const keys = Object.keys(obj)
-                        length = keys.length;
-                        if (group !== 'groupedRes' || length === 0) {
-                            return length
-                        }
-                        const joined = keys.join(' ')
-                        return joined.length < 15 ? `${length}: ${joined}` : length
+                    const groups = _(getGroups(name))
+                        .mapValues((obj, group) => {
+                            const keys = Object.keys(obj)
+                            length = keys.length
+                            if (group !== 'groupedRes' || length === 0) {
+                                return length
+                            }
+                            const joined = keys.join(' ')
+                            return joined.length < 15 ? `${length}: ${joined}` : length
+                        })
+                        .value()
 
-                    }).value()
-
-                    return { name, times, totalDuration, avgDuration, ...groups}
+                    return { name, times, totalDuration, avgDuration, ...groups }
                 })
                 // @ts-ignore
                 .orderBy('totalDuration', 'desc')
@@ -85,7 +85,7 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
         analyseAPI: (apiName: string) => {
             const groups = getGroups(apiName)
             if (groups) {
-                const {groupedArgs, groupedRes, groupedArgsAndRes} = groups
+                const { groupedArgs, groupedRes, groupedArgsAndRes } = groups
                 console.log(`groupedArgs: ${Object.keys(groupedArgs).length}`, groupedArgs)
                 console.log(`groupedRes: ${Object.keys(groupedRes).length}`, groupedRes)
                 console.log(`groupedArgsAndRes: ${Object.keys(groupedArgsAndRes).length}`, groupedArgsAndRes)
