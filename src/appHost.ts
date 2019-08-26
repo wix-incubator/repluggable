@@ -21,7 +21,9 @@ import {
     MemoizeMissHit,
     AppHostOptions,
     StatisticsMemoization,
-    Trace
+    Trace,
+    AnyFunction,
+    FunctionWithSameArgs
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -109,7 +111,10 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
     addShells([appHostServicesEntryPoint])
 
-    const memoize: Shell['memoize'] = (func, resolver) => {
+    const memoize = <T extends AnyFunction>(
+        func: T,
+        resolver: FunctionWithSameArgs<T>
+    ): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
         if (options.monitoring.disableMemoization) {
             return func
         }
