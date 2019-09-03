@@ -1,6 +1,6 @@
 import { ExtensionSlot } from './API'
 
-export function invokeSlotCallbacks<T extends any[]>(slot: ExtensionSlot<(...args: T) => void | Promise<void>>, ...args: T): any {
+export function invokeSlotCallbacks<T extends any[]>(slot: ExtensionSlot<(...args: T) => void | Promise<void>>, ...args: T): void {
     const slotItems = slot.getItems()
 
     if (slot.host.options.monitoring.disableMonitoring) {
