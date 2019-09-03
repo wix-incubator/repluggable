@@ -79,12 +79,13 @@ export interface AppHost {
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     readonly log: HostLogger
+    readonly options: AppHostOptions
 }
 
 export interface MonitoringOptions {
-    disableMonitoring?: boolean
     enablePerformance?: boolean
-    disableMemoization?: boolean
+    readonly disableMonitoring?: boolean
+    readonly disableMemoization?: boolean
 }
 
 export interface Trace {
@@ -96,8 +97,8 @@ export interface Trace {
 }
 
 export interface AppHostOptions {
-    logger?: HostLogger
-    monitoring: MonitoringOptions
+    readonly logger?: HostLogger
+    readonly monitoring: MonitoringOptions
 }
 
 export interface MemoizeMissHit {
@@ -116,7 +117,7 @@ export interface StatisticsMemoization {
 
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
     readonly name: string
     readonly log: ShellLogger
     getStore<TState>(): ScopedStore<TState>

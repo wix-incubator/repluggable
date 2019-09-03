@@ -102,7 +102,8 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
         onShellsChanged,
         removeShellsChangedCallback,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
-        log: options.logger ? options.logger : ConsoleHostLogger
+        log: options.logger ? options.logger : ConsoleHostLogger,
+        options
     }
 
     setupDebugInfo()
