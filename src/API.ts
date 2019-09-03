@@ -79,12 +79,13 @@ export interface AppHost {
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     readonly log: HostLogger
+    readonly options: AppHostOptions
 }
 
 export interface MonitoringOptions {
-    disableMonitoring?: boolean
-    enablePerformance?: boolean
-    disableMemoization?: boolean
+    readonly disableMonitoring?: boolean
+    readonly enablePerformance?: boolean
+    readonly disableMemoization?: boolean
 }
 
 export interface Trace {
@@ -96,8 +97,8 @@ export interface Trace {
 }
 
 export interface AppHostOptions {
-    logger?: HostLogger
-    monitoring: MonitoringOptions
+    readonly logger?: HostLogger
+    readonly monitoring: MonitoringOptions
 }
 
 export interface MemoizeMissHit {
