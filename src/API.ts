@@ -83,8 +83,8 @@ export interface AppHost {
 }
 
 export interface MonitoringOptions {
+    enablePerformance?: boolean
     readonly disableMonitoring?: boolean
-    readonly enablePerformance?: boolean
     readonly disableMemoization?: boolean
 }
 
@@ -117,7 +117,7 @@ export interface StatisticsMemoization {
 
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log'>> {
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
     readonly name: string
     readonly log: ShellLogger
     getStore<TState>(): ScopedStore<TState>
