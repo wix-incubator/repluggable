@@ -3,7 +3,7 @@ import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 
 export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush'>
-export type ReactComponentContributor = () => React.ReactNode
+export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
 export type ContributionPredicate = () => boolean
 export interface EntryPointTags {
