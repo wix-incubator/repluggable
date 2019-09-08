@@ -86,6 +86,7 @@ export interface MonitoringOptions {
     enablePerformance?: boolean
     readonly disableMonitoring?: boolean
     readonly disableMemoization?: boolean
+    readonly debugMemoization?: boolean
 }
 
 export interface Trace {
