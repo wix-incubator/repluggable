@@ -115,7 +115,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const memoize = <T extends AnyFunction>(
         func: T,
         resolver: FunctionWithSameArgs<T>
-    ): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
+    ): ((...args: Parameters<T>) => ReturnType<T>) & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
         if (options.monitoring.disableMemoization) {
             return func
         }
@@ -125,7 +125,22 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
             return memoized
         }
 
-        return enrichMemoization(memoized)
+        const enrichedMemoization = enrichMemoization(memoized)
+
+        if (options.monitoring.debugMemoization) {
+            return (...args: any[]) => {
+                const memRes = enrichedMemoization(...args)
+                const res = func(...args)
+                if (!_.isEqual(memRes, res)) {
+                    console.log(`Memoization Error`)
+                    console.log(`Memoization returns:`, memRes)
+                    console.log(`Original Func returns:`, res)
+                    console.log(`Original Func:`, func)
+                }
+                return memRes
+            }
+        }
+        return enrichedMemoization
     }
 
     return host
