@@ -125,23 +125,22 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
             return memoized
         }
 
-      const enrichedMemoization = enrichMemoization(memoized);
+        const enrichedMemoization = enrichMemoization(memoized)
 
-      if (options.monitoring.debugMemoization) {
-          return (...args: any[]) => {
-              const memRes =  enrichedMemoization(...args);
-              const res =  func(...args);
-              if (!_.isEqual(memRes, res)) {
-                  console.log(`Memoization Error`)
-                  console.log(`Memoization returns:`, memRes)
-                  console.log(`Original Func returns:`, res)
-                  console.log(`Original Func:`, func)
-
-              }
-              return memRes
-          }
-      }
-      return enrichedMemoization
+        if (options.monitoring.debugMemoization) {
+            return (...args: any[]) => {
+                const memRes = enrichedMemoization(...args)
+                const res = func(...args)
+                if (!_.isEqual(memRes, res)) {
+                    console.log(`Memoization Error`)
+                    console.log(`Memoization returns:`, memRes)
+                    console.log(`Original Func returns:`, res)
+                    console.log(`Original Func:`, func)
+                }
+                return memRes
+            }
+        }
+        return enrichedMemoization
     }
 
     return host
