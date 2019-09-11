@@ -115,7 +115,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const memoize = <T extends AnyFunction>(
         func: T,
         resolver: FunctionWithSameArgs<T>
-    ): T & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
+    ): ((...args: Parameters<T>) => ReturnType<T>) & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit> => {
         if (options.monitoring.disableMemoization) {
             return func
         }
