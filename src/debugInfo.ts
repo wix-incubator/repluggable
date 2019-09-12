@@ -73,8 +73,7 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
 
                     return { name, times, totalDuration, avgDuration, ...groups }
                 })
-                // @ts-ignore
-                .orderBy('totalDuration', 'desc')
+                .orderBy(x => x.totalDuration, 'desc')
                 .value()
 
             _.forEach(getMemoizedTable(), memoizeData => {

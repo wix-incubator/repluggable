@@ -52,7 +52,6 @@ export function monitorAPI<TAPI>(
         return api
     }
     return interceptAnyObject(api, (funcName, originalFunc) => {
-        // @ts-ignore
         let funcId = `${apiName}::${funcName}`
         if (isEnrichedMemoizationFunction(originalFunc)) {
             funcId += '(Memoized)'

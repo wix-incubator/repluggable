@@ -18,7 +18,6 @@ type Returns<T> = () => T
 type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
-// @ts-ignore
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 const propsDeepEqual = (propsA: any, propsB: any) => {
@@ -85,7 +84,6 @@ function wrapWithShellContext<S, OP, SP, DP>(
     const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
         props.children
             ? {
-                  // @ts-ignore
                   ...props,
                   children: <ShellContext.Provider value={originalShell}>{props.children}</ShellContext.Provider>
               }
@@ -96,10 +94,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
             {shell => {
                 return (
                     <ErrorBoundary shell={boundShell}>
-                        {
-                            // @ts-ignore
-                            <ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />
-                        }
+                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
             }}
