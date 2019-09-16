@@ -10,17 +10,18 @@ export function interceptAnyObject<T extends AnyObject>(
     inner: T,
     onFunction?: FunctionInterceptor,
     onProperty?: PropertyInterceptor,
-    includeNested?: boolean
+    includeNestedLevels?: number
 ): T {
     const result = _.mapValues(inner, (original, key) => {
         if (_.isFunction(original) && _.isFunction(onFunction)) {
             return onFunction(key, original)
         }
-        if (includeNested && _.isObjectLike(original)) {
+        if (includeNestedLevels && _.isObjectLike(original)) {
             return interceptAnyObject(
                 original,
                 onFunction ? (name, func) => onFunction(`${key}.${name}`, func) : undefined,
-                onProperty ? (name, value) => onProperty(`${key}.${name}`, value) : undefined
+                onProperty ? (name, value) => onProperty(`${key}.${name}`, value) : undefined,
+                includeNestedLevels - 1
             )
         }
         if (_.isFunction(onProperty)) {
