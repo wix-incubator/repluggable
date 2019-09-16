@@ -63,6 +63,3 @@ typings/
 
 # IDE specific settings
 .idea/
-
-# Yarn Lock file
-yarn.lock
