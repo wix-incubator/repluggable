@@ -165,7 +165,7 @@ describe('interceptAnyObject', () => {
     it('should intercept nested objects', () => {
         const spy: LogSpy = jest.fn()
         const real = createTestTarget(spy)
-        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), true)
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 10)
 
         const nestedPropValue = intercepted.objectProp.nestedProp
         const nestedFuncRetVal = intercepted.objectProp.nestedFunc()
@@ -178,7 +178,7 @@ describe('interceptAnyObject', () => {
     it('should intercept multiple levels of nested objects', () => {
         const spy: LogSpy = jest.fn()
         const real = createTestTarget(spy)
-        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), true)
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 10)
 
         const nestedFuncLevelTwoRetVal = intercepted.objectProp.nestedObject.nestedFuncLevelTwo()
 
