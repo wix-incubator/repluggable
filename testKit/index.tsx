@@ -174,6 +174,7 @@ function createShell(host: AppHost): PrivateShell {
         },
         contributeState: _.noop,
         contributeMainView: _.noop,
+        flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
         memoize: _.identity,
         log: createShellLogger(host, entryPoint)

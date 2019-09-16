@@ -422,15 +422,19 @@ miss: ${memoizedWithMissHit.miss}
         } else {
             store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
             store.subscribe(() => {
-                memoizedFunctions.forEach(({ f, shouldClear }) => {
-                    if (f.cache && f.cache.clear && (shouldClear || _.stubTrue)()) {
-                        f.cache.clear()
-                    }
-                })
+                flushMemoizedForState()
             })
         }
 
         return store
+    }
+
+    function flushMemoizedForState() {
+        memoizedFunctions.forEach(({ f, shouldClear }) => {
+            if (f.cache && f.cache.clear && (shouldClear || _.stubTrue)()) {
+                f.cache.clear()
+            }
+        })
     }
 
     function getPerShellReducersMapObject(): ShellsReducersMap {
@@ -692,6 +696,7 @@ miss: ${memoizedWithMissHit.miss}
                 memoizedFunctions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
                 return memoized
             },
+            flushMemoizedForState,
             memoize(func, resolver) {
                 return memoize(func, resolver)
             },

@@ -135,6 +135,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
         resolver: FunctionWithSameArgs<T>,
         shouldClear?: () => boolean
     ): ((...args: Parameters<T>) => ReturnType<T>) & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>
+    flushMemoizedForState(): void
     memoize<T extends AnyFunction>(
         func: T,
         resolver: FunctionWithSameArgs<T>
