@@ -30,8 +30,8 @@ export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ she
 )
 
 interface SlotRendererIterators<T> {
-    mapFunc?(item: T): ReactComponentContributor
-    filterFunc?(item: T): boolean
+    mapFunc?(item: T, index: number): ReactComponentContributor
+    filterFunc?(item: T, index: number): boolean
     sortFunc?(itemA: ExtensionItem<T>, itemB: ExtensionItem<T>): number
 }
 
@@ -55,7 +55,7 @@ const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc, sortFu
     <>
         {_.flow(
             _.compact([
-                filterFunc && ((slotItems: typeof items) => slotItems.filter(item => filterFunc(item.contribution))),
+                filterFunc && ((slotItems: typeof items) => slotItems.filter((item, index) => filterFunc(item.contribution, index))),
                 sortFunc && ((slotItems: typeof items) => slotItems.sort(sortFunc)),
                 (slotItems: typeof items) => slotItems.map(createSlotItemToShellRendererMap(mapFunc))
             ])
@@ -95,12 +95,12 @@ interface ConnectedPredicateHocProps<T> {
     index: number
     item: ExtensionItem<T>
     children?: ReactNode
-    mapFunc?(item: T): ReactComponentContributor
+    mapFunc?(item: T, index: number): ReactComponentContributor
 }
 
 const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHocProps<any>): PredicateHocProps => ({
     index: ownProps.index,
-    render: ownProps.mapFunc ? ownProps.mapFunc(ownProps.item.contribution) : ownProps.item.contribution,
+    render: ownProps.mapFunc ? ownProps.mapFunc(ownProps.item.contribution, ownProps.index) : ownProps.item.contribution,
     children: ownProps.children,
     predicateResult: ownProps.item.condition()
 })
