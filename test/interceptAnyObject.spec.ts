@@ -54,6 +54,11 @@ interface TestTarget {
 interface TestTargetNested {
     nestedFunc(): void
     nestedProp: string
+    nestedObject: TestTargetNestedLevelTwo
+}
+
+interface TestTargetNestedLevelTwo {
+    nestedFuncLevelTwo(): number
 }
 
 function createTestTarget(spy: LogSpy): TestTarget {
@@ -81,6 +86,12 @@ function createTestTarget(spy: LogSpy): TestTarget {
             nestedProp: 'original-nested',
             nestedFunc() {
                 spy('objectProp.nestedFunc')
+            },
+            nestedObject: {
+                nestedFuncLevelTwo() {
+                    spy('objectProp.nestedObject.nestedFuncLevelTwo')
+                    return 12345
+                }
             }
         }
     }
@@ -162,5 +173,21 @@ describe('interceptAnyObject', () => {
         const log = takeLog(spy)
         expect(log).toEqual(['BEFORE:objectProp.nestedFunc()', 'objectProp.nestedFunc', 'AFTER:objectProp.nestedFunc(undefined)'])
         expect(nestedPropValue).toBe('INTERCEPTED[objectProp.nestedProp]-nested')
+    })
+
+    it('should intercept multiple levels of nested objects', () => {
+        const spy: LogSpy = jest.fn()
+        const real = createTestTarget(spy)
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), true)
+
+        const nestedFuncLevelTwoRetVal = intercepted.objectProp.nestedObject.nestedFuncLevelTwo()
+
+        const log = takeLog(spy)
+        expect(log).toEqual([
+            'BEFORE:objectProp.nestedObject.nestedFuncLevelTwo()',
+            'objectProp.nestedObject.nestedFuncLevelTwo',
+            'AFTER:objectProp.nestedObject.nestedFuncLevelTwo(12345)'
+        ])
+        expect(nestedFuncLevelTwoRetVal).toBe(12345)
     })
 })

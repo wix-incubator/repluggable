@@ -20,7 +20,8 @@ export function interceptAnyObject<T extends AnyObject>(
             return interceptAnyObject(
                 original,
                 onFunction ? (name, func) => onFunction(`${key}.${name}`, func) : undefined,
-                onProperty ? (name, value) => onProperty(`${key}.${name}`, value) : undefined
+                onProperty ? (name, value) => onProperty(`${key}.${name}`, value) : undefined,
+                true
             )
         }
         if (_.isFunction(onProperty)) {
