@@ -1,15 +1,23 @@
 import _ from 'lodash'
 import React, { ReactNode, FunctionComponent } from 'react'
-import { connect } from 'react-redux'
+import { connect, Options as ReduxConnectOptions } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { STORE_KEY } from './appStore'
+import { propsDeepEqual } from './propsDeepEqual'
 
 interface ShellRendererProps {
     shell: Shell
     component: React.ReactNode
     name?: string
+}
+
+const connectOptions: ReduxConnectOptions = {
+    storeKey: STORE_KEY,
+    pure: true,
+    areStatePropsEqual: propsDeepEqual,
+    areOwnPropsEqual: propsDeepEqual
 }
 
 function renderWithAspects(shell: PrivateShell, component: ReactNode, aspectIndex: number): ReactNode {
@@ -109,5 +117,5 @@ const ConnectedPredicateHoc = connect(
     mapPredicateHocStateToProps,
     undefined,
     undefined,
-    { storeKey: STORE_KEY }
+    connectOptions
 )(PredicateHoc)

@@ -6,6 +6,7 @@ import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { STORE_KEY } from './appStore'
+import { propsDeepEqual } from './propsDeepEqual'
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -19,25 +20,6 @@ type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) 
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
-
-const propsDeepEqual = (propsA: any, propsB: any) => {
-    const customizer: _.IsEqualCustomizer = (a, b, key, objectA) => {
-        if (key === 'children' && objectA === propsA) {
-            if (_.isFunction(a) && _.isFunction(b)) {
-                return false
-            }
-            return
-        }
-
-        if (_.isFunction(a) && _.isFunction(b)) {
-            return true
-        }
-
-        return
-    }
-
-    return _.isEqualWith(propsA, propsB, customizer)
-}
 
 const reduxConnectOptions: ReduxConnectOptions = {
     storeKey: STORE_KEY,
