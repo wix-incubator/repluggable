@@ -34,11 +34,11 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost): Extensio
     }
 
     function getSingleItem(): ExtensionItem<T> {
-        return getItems()[0]
+        return items.find(item => item.condition()) as ExtensionItem<T>
     }
 
     function getItemByName(name: string): ExtensionItem<T> {
-        return items.filter(item => item.name === name && item.condition())[0]
+        return items.find(item => item.name === name && item.condition()) as ExtensionItem<T>
     }
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
