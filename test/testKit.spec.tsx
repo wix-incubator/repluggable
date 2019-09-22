@@ -78,17 +78,32 @@ describe('App Host TestKit', () => {
         // TODO: Should 'E' be included ?
         expect(getDependencies([F])).toEqual(toResult([B, C, (D as EntryPoint[])[0], F]))
     })
-})
 
-it('should add mock shell', async () => {
-    const host = createAppHost([mockPackage])
-    const shell = addMockShell(host, {
-        name: 'MOCK',
-        getDependencyAPIs() {
-            return [MockAPI]
-        }
+    it('should add mock shell', async () => {
+        const host = createAppHost([mockPackage])
+        const shell = addMockShell(host, {
+            name: 'MOCK',
+            getDependencyAPIs() {
+                return [MockAPI]
+            }
+        })
+        await new Promise(resolve => host.onShellsChanged(resolve))
+        expect(host.hasShell('MOCK')).toBe(true)
+        expect(() => shell.getAPI(MockAPI)).not.toThrow()
     })
-    await new Promise(resolve => host.onShellsChanged(resolve))
-    expect(host.hasShell('MOCK')).toBe(true)
-    expect(() => shell.getAPI(MockAPI)).not.toThrow()
+
+    it('should throw if could not add mock shell', async () => {
+        const host = createAppHost([mockPackage])
+        const APIKey = 'API that would never exist'
+        const add = async () => {
+            addMockShell(host, {
+                name: 'MOCK',
+                getDependencyAPIs() {
+                    return [MockAPI, { name: APIKey }]
+                }
+            })
+            await new Promise(resolve => host.onShellsChanged(resolve))
+        }
+        await expect(add()).rejects.toThrow(new RegExp(APIKey))
+    })
 })

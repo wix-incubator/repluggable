@@ -133,10 +133,23 @@ export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverr
         }
     ])
     if (!shell) {
-        //TODO: replace with throw after a grace period
-        console.warn('addMockShell: [will upgrade to ERROR by Sep 1]: overridden entry point is not ready (missing dependency APIs?)')
+        const dependencies = entryPointOverrides.getDependencyAPIs ? entryPointOverrides.getDependencyAPIs() : []
+        const canGetAPI = (key: AnySlotKey) => {
+            try {
+                host.getAPI(key)
+                return true
+            } catch (e) {
+                return false
+            }
+        }
+        const missing = dependencies.filter(key => !canGetAPI(key))
+        throw new Error(
+            `addMockShell: overridden entry point is not ready (missing dependency APIs?) host could not find: ${missing.map(
+                v => `"${v.name}"`
+            )}`
+        )
     }
-    return (shell as unknown) as Shell
+    return shell
 }
 
 function createShell(host: AppHost): PrivateShell {
