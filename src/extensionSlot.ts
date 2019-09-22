@@ -30,7 +30,7 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost): Extensio
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
-        return items.filter(item => forceAll || item.condition())
+        return forceAll ? items : items.filter(item => item.condition())
     }
 
     function getSingleItem(): ExtensionItem<T> {
