@@ -1,20 +1,21 @@
 import _ from 'lodash'
 import React, { ReactNode, FunctionComponent } from 'react'
-import { connect, Options as ReduxConnectOptions } from 'react-redux'
-import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell } from './API'
+import { connect, Options as ReduxConnectOptions, Provider } from 'react-redux'
+import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell, AppHost } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
-import { STORE_KEY } from './appStore'
 import { propsDeepEqual } from './propsDeepEqual'
+import { StoreContext } from './storeContext'
 
 interface ShellRendererProps {
     shell: Shell
     component: React.ReactNode
     name?: string
+    host?: AppHost
 }
 
 const connectOptions: ReduxConnectOptions = {
-    storeKey: STORE_KEY,
+    context: StoreContext,
     pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
@@ -31,9 +32,20 @@ function renderWithAspects(shell: PrivateShell, component: ReactNode, aspectInde
     return component
 }
 
-export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ shell, component, name }) => (
+const HostProvider: React.FunctionComponent<{ host?: AppHost; children: React.ReactNode }> = props =>
+    props.host ? (
+        <Provider store={props.host.getStore()} context={StoreContext}>
+            {props.children}
+        </Provider>
+    ) : (
+        <>{props.children}</>
+    )
+
+export const ShellRenderer: React.FunctionComponent<ShellRendererProps> = ({ shell, component, name, host }) => (
     <ErrorBoundary shell={shell} componentName={name}>
-        <ShellContext.Provider value={shell}>{renderWithAspects(shell as PrivateShell, component, 0)}</ShellContext.Provider>
+        <HostProvider host={host}>
+            <ShellContext.Provider value={shell}>{renderWithAspects(shell as PrivateShell, component, 0)}</ShellContext.Provider>
+        </HostProvider>
     </ErrorBoundary>
 )
 
@@ -81,9 +93,8 @@ const ConnectedSlot = connect(
     }),
     undefined,
     undefined,
-    { storeKey: STORE_KEY }
+    { context: StoreContext }
 )(SlotRendererPure)
-
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
     return <ConnectedSlot {...props} />
 }
