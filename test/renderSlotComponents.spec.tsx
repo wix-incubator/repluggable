@@ -1,12 +1,10 @@
 import _ from 'lodash'
 import React, { FunctionComponent } from 'react'
 import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
-import { SlotRenderer } from '../src/renderSlotComponents'
-import { createAppHost, addMockShell, renderInHost } from '../testKit'
+import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer } from '../testKit'
 import { ReactWrapper, mount } from 'enzyme'
 import { Provider } from 'react-redux'
 import { AnyAction, createStore } from 'redux'
-import { connectWithShell } from '../src'
 
 const CompA: FunctionComponent = () => <div id="A" className="mock-comp" />
 const CompB: FunctionComponent = () => <div id="B" className="mock-comp" />

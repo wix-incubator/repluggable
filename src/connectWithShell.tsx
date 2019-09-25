@@ -1,11 +1,11 @@
 import _ from 'lodash'
-import React, { ComponentType } from 'react'
+import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
-import { STORE_KEY } from './appStore'
+import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
 
 interface WrapperMembers<S, OP, SP, DP> {
@@ -22,7 +22,7 @@ type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
 const reduxConnectOptions: ReduxConnectOptions = {
-    storeKey: STORE_KEY,
+    context: StoreContext,
     pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
@@ -35,7 +35,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     boundShell: Shell
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
-        public connectedComponent: React.ComponentClass<OP>
+        public connectedComponent: React.ComponentType<OP>
         public mapStateToProps: (state: S, ownProps?: OP) => SP
         public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OP) => DP
 
@@ -53,7 +53,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
                 this.mapDispatchToProps,
                 undefined,
                 reduxConnectOptions
-            )(component) as any
+            )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
         }
 
         public render() {
@@ -76,7 +76,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
             {shell => {
                 return (
                     <ErrorBoundary shell={boundShell}>
-                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
+                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} context={StoreContext} />}
                     </ErrorBoundary>
                 )
             }}

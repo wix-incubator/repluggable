@@ -1,13 +1,13 @@
 import _ from 'lodash'
 import React, { FunctionComponent } from 'react'
-import { connect } from 'react-redux'
+import { connect, Provider } from 'react-redux'
 import { AppHost } from './API'
 import { mainViewSlotKey } from './appHost'
 import { AppHostServicesProvider } from './appHostServices'
 import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { SlotRenderer } from './renderSlotComponents'
 import { ShellContext } from './shellContext'
-import { Provider, STORE_KEY } from './appStore'
+import { StoreContext } from './storeContext'
 
 export interface AppMainViewProps {
     host: AppHost
@@ -37,11 +37,11 @@ const ConnectedSfc = connect(
     mapStateToProps,
     undefined,
     undefined,
-    { storeKey: STORE_KEY }
+    { context: StoreContext }
 )(sfc)
 
 export const AppMainView = (props: AppMainViewProps) => (
-    <Provider store={props.host.getStore()}>
+    <Provider store={props.host.getStore()} context={StoreContext}>
         <ConnectedSfc host={props.host} />
     </Provider>
 )

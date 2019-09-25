@@ -2,20 +2,14 @@ import _ from 'lodash'
 import React, { FunctionComponent, ReactElement } from 'react'
 
 import { AppHost, EntryPoint, Shell } from '../src/API'
-import { connectWithShell } from '../src/connectWithShell'
-import { createAppHost, MockAPI, mockPackage, mockShellStateKey, MockState, renderInHost } from '../testKit'
-import { mount, shallow, ReactWrapper } from 'enzyme'
-import { ShellRenderer } from '../src/renderSlotComponents'
-import { Provider } from 'react-redux'
-import { ErrorBoundary } from '../src'
-import { FragmentsOnCompositeTypesRule } from 'graphql'
+import { createAppHost, mockPackage, mockShellStateKey, MockState, renderInHost, connectWithShell } from '../testKit'
+import { ReactWrapper } from 'enzyme'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
 }
 
 const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name], null)
-const getValueFromAPI = (shellOrHost: Shell | AppHost) => `${shellOrHost.getAPI(MockAPI).stubTrue()}`
 const getValueFromState = (state: MockPackageState) => `${state[mockShellStateKey].mockValue}`
 
 const createMocks = (entryPoint: EntryPoint) => {
@@ -40,7 +34,7 @@ const createMocks = (entryPoint: EntryPoint) => {
 
 describe('connectWithShell', () => {
     it('should pass exact shell to mapStateToProps', () => {
-        const { host, shell, renderInShellContext } = createMocks(mockPackage)
+        const { shell, renderInShellContext } = createMocks(mockPackage)
 
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapStateToProps = (s: Shell) => ({ shellName: s.name })
@@ -53,7 +47,7 @@ describe('connectWithShell', () => {
     })
 
     it('should pass exact shell to mapDispatchToProps', () => {
-        const { host, shell, renderInShellContext } = createMocks(mockPackage)
+        const { shell, renderInShellContext } = createMocks(mockPackage)
 
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapDispatchToProps = (s: Shell) => ({ shellName: s.name })
@@ -77,7 +71,7 @@ describe('connectWithShell', () => {
         const func2: FuncProps = jest.fn()
         const renderSpy = jest.fn()
         let props = { obj: { a: 1 }, func: func1 }
-        const mapStateToProps = (s: Shell) => props
+        const mapStateToProps = () => props
 
         let counter = 0
         host.getStore().replaceReducer(() => ({
@@ -241,7 +235,7 @@ describe('connectWithShell', () => {
                 myShell.contributeBoundaryAspect(props => <div className="TEST-ASPECT">{props.children}</div>)
             }
         })
-        const PureComp: FunctionComponent<{}> = props => <div className="TEST-PURE-COMP">TEST</div>
+        const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
         const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
         // act
@@ -266,7 +260,7 @@ describe('connectWithShell', () => {
                 myShell.contributeBoundaryAspect(props => <div className="TEST-ASPECT-B">{props.children}</div>)
             }
         })
-        const PureComp: FunctionComponent<{}> = props => <div className="TEST-PURE-COMP">TEST</div>
+        const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
         const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
         // act
@@ -297,7 +291,7 @@ describe('connectWithShell', () => {
                 ))
             }
         })
-        const PureComp: FunctionComponent<{}> = props => (
+        const PureComp: FunctionComponent<{}> = () => (
             <TestAspectContext.Consumer>{aspect => <div className="TEST-PURE-COMP">{aspect.theNumber}</div>}</TestAspectContext.Consumer>
         )
         const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)

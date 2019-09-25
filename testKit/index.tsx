@@ -1,18 +1,16 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { createProvider } from 'react-redux'
 import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
-import { STORE_KEY } from '../src/appStore'
 
 export { AppHost } from '../src/index'
+export { connectWithShell } from '../src/connectWithShell'
+export { SlotRenderer } from '../src/renderSlotComponents'
 export * from './mockPackage'
-
-const Provider = createProvider(STORE_KEY)
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)
@@ -76,11 +74,7 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
 
 export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
 export const renderHost: RenderHostType = (host: AppHost) => {
-    const root = mount(
-        <Provider store={host.getStore()}>
-            <AppMainView host={host} />
-        </Provider>
-    ) as ReactWrapper
+    const root = mount(<AppMainView host={host} />) as ReactWrapper
     return { root, DOMNode: root && (root.getDOMNode() as HTMLElement) }
 }
 
@@ -95,9 +89,7 @@ export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = cr
     const shell = customShell || createShell(host)
 
     const root = mount(
-        <Provider store={host.getStore()}>
-            <ShellRenderer shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
-        </Provider>
+        <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
 
     const parentWrapper = root.find('[data-shell-in-host="true"]')
