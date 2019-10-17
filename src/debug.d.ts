@@ -19,11 +19,11 @@ export interface RepluggableAppDebugInfo {
     utils: RepluggableDebugUtils
 }
 
+export interface RepluggableDebugUtils {
+    apis: () => Array[APIDebugInfo]
+}
+
 export interface APIDebugInfo {
     key: AnySlotKey
     impl: () => any
-}
-
-export interface RepluggableDebugUtils {
-    apis: () => Array[APIDebugInfo]
 }

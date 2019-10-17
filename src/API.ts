@@ -125,6 +125,11 @@ export interface StatisticsMemoization {
     name: string
 }
 
+export interface ContributeAPIOptions<TAPI> {
+    includesNamespaces?: boolean
+    disableMonitoring?: boolean | (keyof TAPI)[]
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
@@ -135,7 +140,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     canUseStore(): boolean
     wasInitializationCompleted(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
+    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void

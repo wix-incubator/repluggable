@@ -24,7 +24,8 @@ import {
     Trace,
     AnyFunction,
     FunctionWithSameArgs,
-    APILayer
+    ContributeAPIOptions,
+    APILayer,
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -687,7 +688,7 @@ miss: ${memoizedWithMissHit.miss}
                 )
             },
 
-            contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI {
+            contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
                 host.log.event('debug', `Contributing API ${key.name}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
@@ -703,7 +704,7 @@ miss: ${memoizedWithMissHit.miss}
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, options, key.name, api, trace, memoizedArr)
+                const monitoredAPI = monitorAPI(shell, options, key.name, api /*, trace, memoizedArr*/, apiOptions)
                 const apiSlot = declareSlot<TAPI>(key)
 
                 APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
