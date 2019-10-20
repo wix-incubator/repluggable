@@ -221,7 +221,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
-        host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
+        host.log.log('debug', `Adding ${entryPointsOrPackages.length} packages.`)
 
         const entryPoints = _.flatten(entryPointsOrPackages)
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
@@ -512,7 +512,7 @@ miss: ${memoizedWithMissHit.miss}
         action: (shell: PrivateShell) => void,
         predicate?: (shell: PrivateShell) => boolean
     ): void {
-        host.log.event('debug', `--- ${phase} phase ---`)
+        host.log.log('debug', `--- ${phase} phase ---`)
 
         try {
             shell.filter(f => !predicate || predicate(f)).forEach(f => invokeShell(f, action, phase))
@@ -521,17 +521,17 @@ miss: ${memoizedWithMissHit.miss}
             throw err
         }
 
-        host.log.event('debug', `--- End of ${phase} phase ---`)
+        host.log.log('debug', `--- End of ${phase} phase ---`)
     }
 
     function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
-        host.log.event('debug', `${phase} : ${shell.entryPoint.name}`)
+        host.log.log('debug', `${phase} : ${shell.entryPoint.name}`)
 
         try {
             currentShell = shell
             action(shell)
         } catch (err) {
-            host.log.event('error', 'AppHost.shellFailed', {
+            host.log.log('error', 'AppHost.shellFailed', {
                 shell: shell.name,
                 phase,
                 message: `Shell '${shell.name}' FAILED ${phase} phase`,
@@ -578,11 +578,11 @@ miss: ${memoizedWithMissHit.miss}
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(ownKey.name)
 
-        host.log.event('debug', `-- Removed API: ${ownKey.name} --`)
+        host.log.log('debug', `-- Removed API: ${ownKey.name} --`)
     }
 
     function executeUninstallShells(names: string[]): void {
-        host.log.event('debug', `-- Uninstalling ${names} --`)
+        host.log.log('debug', `-- Uninstalling ${names} --`)
 
         invokeEntryPointPhase('detach', names.map(name => addedShells.get(name)) as PrivateShell[], f =>
             _.invoke(f.entryPoint, 'detach', f)
@@ -599,7 +599,7 @@ miss: ${memoizedWithMissHit.miss}
         })
         APIsToDiscard.forEach(discardAPI)
 
-        host.log.event('debug', `Done uninstalling ${names}`)
+        host.log.log('debug', `Done uninstalling ${names}`)
 
         addedShells.forEach(uninstallIfDependencyAPIsRemoved)
     }
@@ -689,7 +689,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
-                host.log.event('debug', `Contributing API ${key.name}.`)
+                host.log.log('debug', `Contributing API ${key.name}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)

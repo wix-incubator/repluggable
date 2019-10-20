@@ -179,25 +179,28 @@ export interface EntryPointInterceptor {
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }
 
-export type LogSeverity = 'debug' | 'info' | 'warning' | 'error' | 'span'
-export type LogSpanFlag = 'begin' | 'end'
+export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
+export type PromiseFactory<T> = () => Promise<T>
+export type PromiseOrFactory<T> = Promise<T> | PromiseFactory<T>
 
 export interface HostLogger {
-    event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void
+    log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
+    spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
 }
 
 export interface ShellLogger extends HostLogger {
     debug(messageId: string, keyValuePairs?: Object): void
     info(messageId: string, keyValuePairs?: Object): void
+    event(messageId: string, keyValuePairs?: Object): void
     warning(messageId: string, keyValuePairs?: Object): void
     error(messageId: string, keyValuePairs?: Object): void
-    begin(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
-    end(messageId: string, success: boolean, error?: Error, keyValuePairs?: Object): void
+    critical(messageId: string, keyValuePairs?: Object): void
+    spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     monitor<T>(messageId: string, keyValuePairs: Object, monitoredCode: () => T): T
 }
 
 export interface ShellLoggerSpan {
     end(success: boolean, error?: Error, keyValuePairs?: Object): void
-    success(): void
-    failure(error: Error): void
 }

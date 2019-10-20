@@ -12,10 +12,10 @@ export {
     ReducersMapObjectContributor,
     EntryPointInterceptor,
     ShellLogger,
+    ShellLoggerSpan,
     HostLogger,
     LogSeverity,
-    LogSpanFlag,
-    APILayer
+    APILayer,
 } from './API'
 
 export { AppMainView } from './appMainView'
