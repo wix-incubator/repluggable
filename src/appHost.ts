@@ -461,7 +461,7 @@ miss: ${memoizedWithMissHit.miss}
         if (store) {
             store.replaceReducer(reducer)
         } else {
-            store = createThrottledStore(reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store = createThrottledStore(host, reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
             store.subscribe(() => {
                 flushMemoizedForState()
             })
