@@ -23,7 +23,8 @@ import {
     StatisticsMemoization,
     Trace,
     AnyFunction,
-    FunctionWithSameArgs
+    FunctionWithSameArgs,
+    APICategory
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -72,6 +73,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
+    const categories: APICategory[] = options.categories || []
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
@@ -84,6 +86,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
+    const APICategories = new WeakMap<AnySlotKey, APICategory | undefined>()
 
     const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
@@ -182,6 +185,39 @@ miss: ${memoizedWithMissHit.miss}
         return memoizedWithMissHit
     }
 
+    function getAPICategory(apiKey: AnySlotKey): APICategory | undefined {
+        return APICategories.get(apiKey)
+    }
+
+    function getCategoryByName(categoryName: string): APICategory {
+        const category = _.find(categories, { name: categoryName })
+        if (!category) {
+            throw new Error(`Cannot find category ${categoryName}`)
+        }
+        return category
+    }
+
+    function validateEntryPointCategory(entryPoint: EntryPoint) {
+        if (!entryPoint.getDependencyAPIs || !entryPoint.category || _.isEmpty(categories)) {
+            return
+        }
+        const highestLevelDependency = _.chain(entryPoint.getDependencyAPIs())
+            .map(apiKey => ({ category: getAPICategory(apiKey), apiKey }))
+            .maxBy(({ category }) => (category ? category.level : -Infinity))
+            .value()
+        const currentCategory = getCategoryByName(entryPoint.category)
+
+        if (highestLevelDependency.category && currentCategory.level < highestLevelDependency.category.level) {
+            throw new Error(
+                `Entry point ${entryPoint.name} of category ${currentCategory.name} cannot depend on API ${highestLevelDependency.apiKey.name} of category ${highestLevelDependency.category.name}`
+            )
+        }
+    }
+
+    function validateCategories(entryPoints: AnyEntryPoint[]) {
+        _.forEach(entryPoints, ep => validateEntryPointCategory(ep))
+    }
+
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
         host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
 
@@ -189,6 +225,7 @@ miss: ${memoizedWithMissHit.miss}
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
         const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
 
+        validateCategories(entryPoints)
         validateUniqueShellNames(entryPoints)
         validateCircularDependency(allEntryPoints)
 
@@ -654,12 +691,21 @@ miss: ${memoizedWithMissHit.miss}
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
+                if ((entryPoint.category || key.category) && entryPoint.category !== key.category) {
+                    throw new Error(
+                        `Cannot contribute API ${key.name} of category ${key.category || '<BLANK>'} from entry point ${
+                            entryPoint.name
+                        } of category ${entryPoint.category || '<BLANK>'}`
+                    )
+                }
+
                 const api = factory()
                 const monitoredAPI = monitorAPI(shell, options, key.name, api, trace, memoizedArr)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
+                APICategories.set(key, entryPoint.category ? getCategoryByName(entryPoint.category) : undefined)
 
                 if (canInstallReadyEntryPoints) {
                     const shellNames = _.map(unReadyEntryPoints, 'name')

@@ -516,4 +516,123 @@ describe('App Host', () => {
             expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage])).toThrow()
         })
     })
+
+    describe('API Category', () => {
+        it('should allow dependency from high to lower level API', async () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', category: 'INFRA' }
+            const categories = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, categories })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                category: 'PRODUCT',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                category: 'INFRA',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            host.addShells([EntryPoint2])
+            await new Promise(resolve => host.onShellsChanged(resolve))
+
+            expect(() => host.addShells([EntryPoint1])).not.toThrow()
+        })
+
+        it('should not allow dependency from low to higher level API', async () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', category: 'PRODUCT' }
+            const categories = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, categories })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                category: 'INFRA',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                category: 'PRODUCT',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            host.addShells([EntryPoint2])
+            await new Promise(resolve => host.onShellsChanged(resolve))
+
+            expect(() => host.addShells([EntryPoint1])).toThrowError(
+                `Entry point ${EntryPoint1.name} of category ${categories[0].name} cannot depend on API ${MockAPI1.name} of category ${EntryPoint2.category}`
+            )
+        })
+
+        it('should not allow adding shell of unknown category', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', category: 'NON_EXIXTING_CATEGORY' }
+            const categories = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, categories })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                category: 'NON_EXIXTING_CATEGORY',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            expect(() => host.addShells([EntryPoint1])).toThrowError(`Cannot find category ${EntryPoint1.category}`)
+        })
+
+        it('should not allow contribution of API with non-matching entry point category', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', category: 'PRODUCT' }
+            const categories = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, categories })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                category: 'INFRA',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            expect(() => host.addShells([EntryPoint1])).toThrowError(
+                `Cannot contribute API ${MockAPI1.name} of category ${MockAPI1.category} from entry point ${EntryPoint1.name} of category ${EntryPoint1.category}`
+            )
+        })
+    })
 })
