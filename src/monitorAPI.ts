@@ -62,7 +62,6 @@ export function monitorAPI<TAPI>(
             ? (funcName: string) => {
                   const { disableMonitoring } = apiOptions
                   if (isMemberNamesArray(disableMonitoring)) {
-                      // for TypeScript
                       return !disableMonitoring.find(memberName => {
                           const memberNameString = memberName as string
                           return (
@@ -74,9 +73,6 @@ export function monitorAPI<TAPI>(
               }
             : () => true
 
-    // if (apiName.indexOf('Document') >= 0) {
-    //     debugger
-    // }
     return interceptAnyObject(
         api,
         (funcName, originalFunc) => {
