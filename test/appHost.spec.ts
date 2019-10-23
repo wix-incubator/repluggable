@@ -516,4 +516,123 @@ describe('App Host', () => {
             expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage])).toThrow()
         })
     })
+
+    describe('API layer', () => {
+        it('should allow dependency from high to lower level API', async () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'INFRA' }
+            const layers = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, layers })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: 'PRODUCT',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                layer: 'INFRA',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            host.addShells([EntryPoint2])
+            await new Promise(resolve => host.onShellsChanged(resolve))
+
+            expect(() => host.addShells([EntryPoint1])).not.toThrow()
+        })
+
+        it('should not allow dependency from low to higher level API', async () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'PRODUCT' }
+            const layers = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, layers })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: 'INFRA',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                layer: 'PRODUCT',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            host.addShells([EntryPoint2])
+            await new Promise(resolve => host.onShellsChanged(resolve))
+
+            expect(() => host.addShells([EntryPoint1])).toThrowError(
+                `Entry point ${EntryPoint1.name} of layer ${layers[0].name} cannot depend on API ${MockAPI1.name} of layer ${EntryPoint2.layer}`
+            )
+        })
+
+        it('should not allow adding shell of unknown layer', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'NON_EXIXTING_layer' }
+            const layers = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, layers })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: 'NON_EXIXTING_layer',
+                getDependencyAPIs: () => [MockAPI1]
+            }
+            expect(() => host.addShells([EntryPoint1])).toThrowError(`Cannot find layer ${EntryPoint1.layer}`)
+        })
+
+        it('should not allow contribution of API with non-matching entry point layer', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'PRODUCT' }
+            const layers = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+
+            const host = createAppHost([], { ...emptyLoggerOptions, layers })
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: 'INFRA',
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+            expect(() => host.addShells([EntryPoint1])).toThrowError(
+                `Cannot contribute API ${MockAPI1.name} of layer ${MockAPI1.layer} from entry point ${EntryPoint1.name} of layer ${EntryPoint1.layer}`
+            )
+        })
+    })
 })

@@ -23,7 +23,8 @@ import {
     StatisticsMemoization,
     Trace,
     AnyFunction,
-    FunctionWithSameArgs
+    FunctionWithSameArgs,
+    APILayer
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -72,6 +73,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
+    const layers: APILayer[] = options.layers || []
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
@@ -84,6 +86,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
+    const APILayers = new WeakMap<AnySlotKey, APILayer | undefined>()
 
     const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
@@ -182,6 +185,39 @@ miss: ${memoizedWithMissHit.miss}
         return memoizedWithMissHit
     }
 
+    function getAPILayer(apiKey: AnySlotKey): APILayer | undefined {
+        return APILayers.get(apiKey)
+    }
+
+    function getLayerByName(layerName: string): APILayer {
+        const layer = _.find(layers, { name: layerName })
+        if (!layer) {
+            throw new Error(`Cannot find layer ${layerName}`)
+        }
+        return layer
+    }
+
+    function validateEntryPointLayer(entryPoint: EntryPoint) {
+        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
+            return
+        }
+        const highestLevelDependency = _.chain(entryPoint.getDependencyAPIs())
+            .map(apiKey => ({ layer: getAPILayer(apiKey), apiKey }))
+            .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
+            .value()
+        const currentLayer = getLayerByName(entryPoint.layer)
+
+        if (highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
+            throw new Error(
+                `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${highestLevelDependency.apiKey.name} of layer ${highestLevelDependency.layer.name}`
+            )
+        }
+    }
+
+    function validateLayers(entryPoints: AnyEntryPoint[]) {
+        _.forEach(entryPoints, ep => validateEntryPointLayer(ep))
+    }
+
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
         host.log.event('debug', `Adding ${entryPointsOrPackages.length} packages.`)
 
@@ -189,6 +225,7 @@ miss: ${memoizedWithMissHit.miss}
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
         const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
 
+        validateLayers(entryPoints)
         validateUniqueShellNames(entryPoints)
         validateCircularDependency(allEntryPoints)
 
@@ -654,12 +691,21 @@ miss: ${memoizedWithMissHit.miss}
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
+                if ((entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
+                    throw new Error(
+                        `Cannot contribute API ${key.name} of layer ${key.layer || '<BLANK>'} from entry point ${
+                            entryPoint.name
+                        } of layer ${entryPoint.layer || '<BLANK>'}`
+                    )
+                }
+
                 const api = factory()
                 const monitoredAPI = monitorAPI(shell, options, key.name, api, trace, memoizedArr)
                 const apiSlot = declareSlot<TAPI>(key)
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
+                APILayers.set(key, entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
 
                 if (canInstallReadyEntryPoints) {
                     const shellNames = _.map(unReadyEntryPoints, 'name')
