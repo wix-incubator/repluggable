@@ -24,7 +24,7 @@ import {
     Trace,
     AnyFunction,
     FunctionWithSameArgs,
-    APICategory
+    APILayer
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
@@ -73,7 +73,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     let unReadyEntryPoints: EntryPoint[] = []
-    const categories: APICategory[] = options.categories || []
+    const layers: APILayer[] = options.layers || []
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
@@ -86,7 +86,7 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
-    const APICategories = new WeakMap<AnySlotKey, APICategory | undefined>()
+    const APILayers = new WeakMap<AnySlotKey, APILayer | undefined>()
 
     const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
@@ -185,37 +185,37 @@ miss: ${memoizedWithMissHit.miss}
         return memoizedWithMissHit
     }
 
-    function getAPICategory(apiKey: AnySlotKey): APICategory | undefined {
-        return APICategories.get(apiKey)
+    function getAPILayer(apiKey: AnySlotKey): APILayer | undefined {
+        return APILayers.get(apiKey)
     }
 
-    function getCategoryByName(categoryName: string): APICategory {
-        const category = _.find(categories, { name: categoryName })
-        if (!category) {
-            throw new Error(`Cannot find category ${categoryName}`)
+    function getLayerByName(layerName: string): APILayer {
+        const layer = _.find(layers, { name: layerName })
+        if (!layer) {
+            throw new Error(`Cannot find layer ${layerName}`)
         }
-        return category
+        return layer
     }
 
-    function validateEntryPointCategory(entryPoint: EntryPoint) {
-        if (!entryPoint.getDependencyAPIs || !entryPoint.category || _.isEmpty(categories)) {
+    function validateEntryPointLayer(entryPoint: EntryPoint) {
+        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
             return
         }
         const highestLevelDependency = _.chain(entryPoint.getDependencyAPIs())
-            .map(apiKey => ({ category: getAPICategory(apiKey), apiKey }))
-            .maxBy(({ category }) => (category ? category.level : -Infinity))
+            .map(apiKey => ({ layer: getAPILayer(apiKey), apiKey }))
+            .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
             .value()
-        const currentCategory = getCategoryByName(entryPoint.category)
+        const currentLayer = getLayerByName(entryPoint.layer)
 
-        if (highestLevelDependency.category && currentCategory.level < highestLevelDependency.category.level) {
+        if (highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
             throw new Error(
-                `Entry point ${entryPoint.name} of category ${currentCategory.name} cannot depend on API ${highestLevelDependency.apiKey.name} of category ${highestLevelDependency.category.name}`
+                `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${highestLevelDependency.apiKey.name} of layer ${highestLevelDependency.layer.name}`
             )
         }
     }
 
-    function validateCategories(entryPoints: AnyEntryPoint[]) {
-        _.forEach(entryPoints, ep => validateEntryPointCategory(ep))
+    function validateLayers(entryPoints: AnyEntryPoint[]) {
+        _.forEach(entryPoints, ep => validateEntryPointLayer(ep))
     }
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
@@ -225,7 +225,7 @@ miss: ${memoizedWithMissHit.miss}
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
         const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
 
-        validateCategories(entryPoints)
+        validateLayers(entryPoints)
         validateUniqueShellNames(entryPoints)
         validateCircularDependency(allEntryPoints)
 
@@ -691,11 +691,11 @@ miss: ${memoizedWithMissHit.miss}
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                if ((entryPoint.category || key.category) && entryPoint.category !== key.category) {
+                if ((entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
                     throw new Error(
-                        `Cannot contribute API ${key.name} of category ${key.category || '<BLANK>'} from entry point ${
+                        `Cannot contribute API ${key.name} of layer ${key.layer || '<BLANK>'} from entry point ${
                             entryPoint.name
-                        } of category ${entryPoint.category || '<BLANK>'}`
+                        } of layer ${entryPoint.layer || '<BLANK>'}`
                     )
                 }
 
@@ -705,7 +705,7 @@ miss: ${memoizedWithMissHit.miss}
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
-                APICategories.set(key, entryPoint.category ? getCategoryByName(entryPoint.category) : undefined)
+                APILayers.set(key, entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
 
                 if (canInstallReadyEntryPoints) {
                     const shellNames = _.map(unReadyEntryPoints, 'name')

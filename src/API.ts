@@ -25,13 +25,13 @@ export interface AnySlotKey {
 
 export interface SlotKey<T> extends AnySlotKey {
     readonly empty?: T // holds no value, only triggers type-checking of T
-    readonly category?: string
+    readonly layer?: string
 }
 
 export interface EntryPoint {
     readonly name: string
     readonly tags?: EntryPointTags
-    readonly category?: string
+    readonly layer?: string
     getDependencyAPIs?(): AnySlotKey[]
     declareAPIs?(): AnySlotKey[]
     attach?(shell: Shell): void
@@ -99,7 +99,7 @@ export interface Trace {
     args: any[]
 }
 
-export interface APICategory {
+export interface APILayer {
     level: number
     name: string
 }
@@ -107,7 +107,7 @@ export interface APICategory {
 export interface AppHostOptions {
     readonly logger?: HostLogger
     readonly monitoring: MonitoringOptions
-    readonly categories?: APICategory[]
+    readonly layers?: APILayer[]
 }
 
 export interface MemoizeMissHit {
