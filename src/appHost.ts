@@ -225,7 +225,9 @@ miss: ${memoizedWithMissHit.miss}
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
         const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
 
-        validateLayers(entryPoints)
+        if (!options.disableLayersValidation) {
+            validateLayers(entryPoints)
+        }
         validateUniqueShellNames(entryPoints)
         validateCircularDependency(allEntryPoints)
 
@@ -691,7 +693,7 @@ miss: ${memoizedWithMissHit.miss}
                     throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
                 }
 
-                if ((entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
+                if (!options.disableLayersValidation && (entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
                     throw new Error(
                         `Cannot contribute API ${key.name} of layer ${key.layer || '<BLANK>'} from entry point ${
                             entryPoint.name

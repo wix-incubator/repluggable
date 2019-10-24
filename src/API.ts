@@ -108,6 +108,7 @@ export interface AppHostOptions {
     readonly logger?: HostLogger
     readonly monitoring: MonitoringOptions
     readonly layers?: APILayer[]
+    readonly disableLayersValidation?: boolean
 }
 
 export interface MemoizeMissHit {
