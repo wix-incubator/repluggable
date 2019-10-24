@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import { EntryPoint, EntryPointOrPackage } from '../src/API'
+import { EntryPoint, EntryPointOrPackage, AnySlotKey, SlotKey } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
-import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage } from '../testKit'
+import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage, createAppHostWithPacts, PactAPI } from '../testKit'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot
@@ -105,5 +105,18 @@ describe('App Host TestKit', () => {
             await new Promise(resolve => host.onShellsChanged(resolve))
         }
         await expect(add()).rejects.toThrow(new RegExp(APIKey))
+    })
+
+    it('should create app host with provided pacts', () => {
+        interface MockAPI1 {
+            f(): number
+        }
+        const key: SlotKey<MockAPI1> = { name: 'MOCK-API', layer: 'MOCK_LAYER' }
+        const pactAPI: MockAPI1 & PactAPI<MockAPI1> = {
+            getAPIKey: () => key,
+            f: () => 1
+        }
+        const host = createAppHostWithPacts([], [pactAPI])
+        expect(host.getAPI(key).f()).toBe(1)
     })
 })
