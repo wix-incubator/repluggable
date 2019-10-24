@@ -12,6 +12,7 @@ export function interceptEntryPointsMap(entryPointsMap: EntryPointOrPackagesMap,
 function applyInterceptor(inner: EntryPoint, interceptor: EntryPointInterceptor): EntryPoint {
     return {
         name: interceptor.interceptName ? interceptor.interceptName(inner.name) : inner.name,
+        layer: inner.layer,
         tags: interceptor.interceptTags ? interceptor.interceptTags(inner.tags) : inner.tags,
         getDependencyAPIs: interceptor.interceptGetDependencyAPIs
             ? interceptor.interceptGetDependencyAPIs(inner.getDependencyAPIs)
