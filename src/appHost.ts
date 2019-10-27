@@ -197,17 +197,18 @@ miss: ${memoizedWithMissHit.miss}
         return layer
     }
 
+    type Dependency = { layer?: APILayer; apiKey: AnySlotKey } | undefined
     function validateEntryPointLayer(entryPoint: EntryPoint) {
         if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
             return
         }
-        const highestLevelDependency = _.chain(entryPoint.getDependencyAPIs())
+        const highestLevelDependency: Dependency = _.chain(entryPoint.getDependencyAPIs())
             .map(apiKey => ({ layer: getAPILayer(apiKey), apiKey }))
             .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
             .value()
         const currentLayer = getLayerByName(entryPoint.layer)
 
-        if (highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
+        if (highestLevelDependency && highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
             throw new Error(
                 `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${highestLevelDependency.apiKey.name} of layer ${highestLevelDependency.layer.name}`
             )
