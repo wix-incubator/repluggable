@@ -708,7 +708,7 @@ miss: ${memoizedWithMissHit.miss}
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
-                APILayers.set(key, entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
+                APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
 
                 if (canInstallReadyEntryPoints) {
                     const shellNames = _.map(unReadyEntryPoints, 'name')
