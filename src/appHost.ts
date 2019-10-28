@@ -197,13 +197,13 @@ miss: ${memoizedWithMissHit.miss}
         return layer
     }
 
-    type Dependency = { layer?: APILayer; apiKey: AnySlotKey } | undefined
+    type Dependency = { layer?: APILayer; apiKey: SlotKey<any> } | undefined
     function validateEntryPointLayer(entryPoint: EntryPoint) {
         if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
             return
         }
         const highestLevelDependency: Dependency = _.chain(entryPoint.getDependencyAPIs())
-            .map(apiKey => ({ layer: getAPILayer(apiKey), apiKey }))
+            .map(apiKey => ({ layer: apiKey.layer ? getLayerByName(apiKey.layer) : undefined, apiKey }))
             .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
             .value()
         const currentLayer = getLayerByName(entryPoint.layer)
@@ -705,10 +705,11 @@ miss: ${memoizedWithMissHit.miss}
                 const api = factory()
                 const monitoredAPI = monitorAPI(shell, options, key.name, api, trace, memoizedArr)
                 const apiSlot = declareSlot<TAPI>(key)
+
+                APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
-                APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
 
                 if (canInstallReadyEntryPoints) {
                     const shellNames = _.map(unReadyEntryPoints, 'name')
