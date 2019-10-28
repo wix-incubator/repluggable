@@ -32,8 +32,8 @@ export interface EntryPoint {
     readonly name: string
     readonly tags?: EntryPointTags
     readonly layer?: string
-    getDependencyAPIs?(): AnySlotKey[]
-    declareAPIs?(): AnySlotKey[]
+    getDependencyAPIs?(): SlotKey<any>[]
+    declareAPIs?(): SlotKey<any>[]
     attach?(shell: Shell): void
     extend?(shell: Shell): void
     detach?(shell: Shell): void
