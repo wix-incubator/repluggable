@@ -25,7 +25,7 @@ import {
     AnyFunction,
     FunctionWithSameArgs,
     ContributeAPIOptions,
-    APILayer,
+    APILayer
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
