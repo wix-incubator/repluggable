@@ -84,7 +84,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
             {shell => {
                 return (
                     <ErrorBoundary shell={boundShell}>
-                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} context={StoreContext} />}
+                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
             }}
