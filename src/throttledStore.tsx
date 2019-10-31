@@ -1,4 +1,5 @@
 import { Reducer, Action, createStore, Store } from 'redux'
+import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
 
 const curry = _.curry
@@ -28,6 +29,7 @@ export interface ThrottledStore<T = any> extends Store<T> {
 }
 
 export const createThrottledStore = (
+    host: AppHostServicesProvider,
     reducer: Reducer<any, Action<any>>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
@@ -42,7 +44,9 @@ export const createThrottledStore = (
             subscribers = _.without(subscribers, subscriber)
         }
     }
-    const notifySubscribers = () => _.forEach(subscribers, invoke)
+    const notifySubscribers = () => {
+        host.getAppHostServicesShell().log.monitor('ThrottledStore.notifySubscribers', {}, () => _.forEach(subscribers, invoke))
+    }
 
     const notifySubscribersOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, notifySubscribers)
 

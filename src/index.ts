@@ -12,9 +12,9 @@ export {
     ReducersMapObjectContributor,
     EntryPointInterceptor,
     ShellLogger,
+    ShellLoggerSpan,
     HostLogger,
     LogSeverity,
-    LogSpanFlag,
     APILayer
 } from './API'
 
@@ -29,3 +29,4 @@ export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
 export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
 export { interceptAnyObject } from './interceptAnyObject'
+export { monitorAPI } from './monitorAPI'

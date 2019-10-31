@@ -125,6 +125,11 @@ export interface StatisticsMemoization {
     name: string
 }
 
+export interface ContributeAPIOptions<TAPI> {
+    includesNamespaces?: boolean
+    disableMonitoring?: boolean | (keyof TAPI)[]
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
@@ -135,7 +140,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     canUseStore(): boolean
     wasInitializationCompleted(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI): TAPI
+    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void
@@ -174,25 +179,29 @@ export interface EntryPointInterceptor {
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }
 
-export type LogSeverity = 'debug' | 'info' | 'warning' | 'error' | 'span'
-export type LogSpanFlag = 'begin' | 'end'
+export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
+export type LogSpanFlag = 'begin' | 'end' //TODO:deprecated-kept-for-backward-compat
 
 export interface HostLogger {
+    log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
+    spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    //TODO:deprecated-kept-for-backward-compat
     event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void
 }
 
 export interface ShellLogger extends HostLogger {
     debug(messageId: string, keyValuePairs?: Object): void
     info(messageId: string, keyValuePairs?: Object): void
+    event(messageId: string, keyValuePairs?: Object): void
     warning(messageId: string, keyValuePairs?: Object): void
     error(messageId: string, keyValuePairs?: Object): void
-    begin(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
-    end(messageId: string, success: boolean, error?: Error, keyValuePairs?: Object): void
+    critical(messageId: string, keyValuePairs?: Object): void
+    spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     monitor<T>(messageId: string, keyValuePairs: Object, monitoredCode: () => T): T
 }
 
 export interface ShellLoggerSpan {
     end(success: boolean, error?: Error, keyValuePairs?: Object): void
-    success(): void
-    failure(error: Error): void
 }

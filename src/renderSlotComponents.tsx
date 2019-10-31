@@ -95,6 +95,7 @@ const ConnectedSlot = connect(
     undefined,
     { context: StoreContext }
 )(SlotRendererPure)
+
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
     return <ConnectedSlot {...props} />
 }

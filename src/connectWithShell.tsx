@@ -42,10 +42,18 @@ function wrapWithShellContext<S, OP, SP, DP>(
         constructor(props: WrappedComponentOwnProps<OP>) {
             super(props)
             this.mapStateToProps = mapStateToProps
-                ? (__, ownProps?) => mapStateToProps(this.props.shell, this.props.shell.getStore<S>().getState(), ownProps)
+                ? (__, ownProps?) => {
+                      return this.props.shell.log.monitor('connectWithShell.mapStateToProps', {}, () =>
+                          mapStateToProps(this.props.shell, this.props.shell.getStore<S>().getState(), ownProps)
+                      )
+                  }
                 : (_.stubObject as Returns<SP>)
             this.mapDispatchToProps = mapDispatchToProps
-                ? (dispatch, ownProps?) => mapDispatchToProps(this.props.shell, dispatch, ownProps)
+                ? (dispatch, ownProps?) => {
+                      return this.props.shell.log.monitor('connectWithShell.mapDispatchToProps', {}, () =>
+                          mapDispatchToProps(this.props.shell, dispatch, ownProps)
+                      )
+                  }
                 : (_.stubObject as Returns<DP>)
 
             this.connectedComponent = reduxConnect<SP, DP, OP, S>(

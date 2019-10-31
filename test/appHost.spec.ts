@@ -83,13 +83,24 @@ describe('App Host', () => {
 
     describe('AppHost Options', () => {
         it('should use ConsoleHostLogger by default', () => {
-            spyOn(ConsoleHostLogger, 'event')
+            spyOn(ConsoleHostLogger, 'log')
             const host = _createAppHost([])
             expect(host.log).toBe(ConsoleHostLogger)
         })
         it('should use custom host logger if specified', () => {
             const logger: HostLogger = {
-                event() {}
+                event() {},
+                log() {},
+                spanRoot() {
+                    return {
+                        end() {}
+                    } as any
+                },
+                spanChild() {
+                    return {
+                        end() {}
+                    } as any
+                }
             }
             const options: AppHostOptions = {
                 logger,
