@@ -5,6 +5,9 @@ const noopLoggerSpan: ShellLoggerSpan = {
 }
 
 export const ConsoleHostLogger: HostLogger = {
+    event() {
+        //TODO:deprecated
+    },
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan {
         return noopLoggerSpan
     },

@@ -180,13 +180,14 @@ export interface EntryPointInterceptor {
 }
 
 export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
-export type PromiseFactory<T> = () => Promise<T>
-export type PromiseOrFactory<T> = Promise<T> | PromiseFactory<T>
+export type LogSpanFlag = 'begin' | 'end' //TODO:deprecated-kept-for-backward-compat
 
 export interface HostLogger {
     log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
     spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    //TODO:deprecated-kept-for-backward-compat
+    event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void
 }
 
 export interface ShellLogger extends HostLogger {

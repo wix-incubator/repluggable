@@ -12,6 +12,7 @@ describe('ShellLogger', () => {
             tags
         }
         const hostLogger: HostLogger = {
+            event: logSpy,
             log: logSpy,
             spanChild: spanSpy,
             spanRoot: spanSpy
