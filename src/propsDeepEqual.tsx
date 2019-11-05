@@ -1,6 +1,9 @@
 import _ from 'lodash'
+export interface ComparePropsOptions {
+    compareFuncProps: boolean
+}
 
-export const propsDeepEqual = (propsA: any, propsB: any) => {
+export const propsDeepEqual = ({ compareFuncProps }: ComparePropsOptions) => (propsA: any, propsB: any) => {
     const customizer: _.IsEqualCustomizer = (a, b, key, objectA) => {
         if (key === 'children' && objectA === propsA) {
             if (_.isFunction(a) && _.isFunction(b)) {
@@ -8,7 +11,7 @@ export const propsDeepEqual = (propsA: any, propsB: any) => {
             }
             return
         }
-        if (_.isFunction(a) && _.isFunction(b)) {
+        if (!compareFuncProps && _.isFunction(a) && _.isFunction(b)) {
             return true
         }
         return

@@ -17,8 +17,8 @@ interface ShellRendererProps {
 const connectOptions: ReduxConnectOptions = {
     context: StoreContext,
     pure: true,
-    areStatePropsEqual: propsDeepEqual,
-    areOwnPropsEqual: propsDeepEqual
+    areStatePropsEqual: propsDeepEqual({ compareFuncProps: false }),
+    areOwnPropsEqual: propsDeepEqual({ compareFuncProps: false })
 }
 
 function renderWithAspects(shell: PrivateShell, component: ReactNode, aspectIndex: number): ReactNode {

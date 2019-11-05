@@ -6,7 +6,7 @@ import { Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
-import { propsDeepEqual } from './propsDeepEqual'
+import { propsDeepEqual, ComparePropsOptions } from './propsDeepEqual'
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -21,18 +21,19 @@ type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
-const reduxConnectOptions: ReduxConnectOptions = {
+const getReduxConnectOptions = (options: ComparePropsOptions): ReduxConnectOptions => ({
     context: StoreContext,
     pure: true,
-    areStatePropsEqual: propsDeepEqual,
-    areOwnPropsEqual: propsDeepEqual
-}
+    areStatePropsEqual: propsDeepEqual(options),
+    areOwnPropsEqual: propsDeepEqual(options)
+})
 
 function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
-    boundShell: Shell
+    boundShell: Shell,
+    reduxConnectOptions: ReduxConnectOptions
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
         public connectedComponent: React.ComponentType<OP>
@@ -92,7 +93,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     )
 }
 
-export interface ConnectWithShellOptions {
+export interface ConnectWithShellOptions extends ComparePropsOptions {
     readonly allowOutOfEntryPoint?: boolean
 }
 
@@ -100,7 +101,7 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
-    options: ConnectWithShellOptions = {}
+    options: ConnectWithShellOptions = { compareFuncProps: false }
 ) {
     const validateLifecycle = (component: React.ComponentType<any>) => {
         if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
@@ -118,6 +119,6 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
 
     return (component: React.ComponentType<OP & SP & DP>) => {
         validateLifecycle(component)
-        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
+        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, getReduxConnectOptions(options))
     }
 }
