@@ -669,7 +669,7 @@ miss: ${memoizedWithMissHit.miss}
             removeShells(names: string[]): void {
                 const namesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 const namesNotInstalledByCurrentEntryPoint = _.difference(names, namesInstalledByCurrentEntryPoint)
-                // TODO: Allow entry point to uninstall its own shell?
+                // TODO: Allow entry point to uninstall its own shell ?
                 if (!_.isEmpty(namesNotInstalledByCurrentEntryPoint)) {
                     throw new Error(
                         `Shell ${entryPoint.name} is trying to uninstall shells: ${names} which is are not installed by entry point ${entryPoint.name} - This is not allowed`
