@@ -186,14 +186,11 @@ export interface HostLogger {
     log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
     spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
-    //TODO:deprecated-kept-for-backward-compat
-    event(severity: LogSeverity, id: string, keyValuePairs?: Object, spanFlag?: LogSpanFlag): void
 }
 
 export interface ShellLogger extends HostLogger {
     debug(messageId: string, keyValuePairs?: Object): void
     info(messageId: string, keyValuePairs?: Object): void
-    event(messageId: string, keyValuePairs?: Object): void
     warning(messageId: string, keyValuePairs?: Object): void
     error(messageId: string, keyValuePairs?: Object): void
     critical(messageId: string, keyValuePairs?: Object): void

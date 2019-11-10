@@ -5,9 +5,6 @@ const noopLoggerSpan: ShellLoggerSpan = {
 }
 
 export const ConsoleHostLogger: HostLogger = {
-    event() {
-        //TODO:deprecated
-    },
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan {
         return noopLoggerSpan
     },
@@ -40,9 +37,6 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
         },
         info(messageId: string, keyValuePairs?: Object): void {
             host.log.log('info', messageId, withEntryPointTags(keyValuePairs))
-        },
-        event(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('event', messageId, withEntryPointTags(keyValuePairs))
         },
         warning(messageId: string, keyValuePairs?: Object): void {
             host.log.log('warning', messageId, withEntryPointTags(keyValuePairs))

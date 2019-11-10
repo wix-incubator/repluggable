@@ -89,7 +89,6 @@ describe('App Host', () => {
         })
         it('should use custom host logger if specified', () => {
             const logger: HostLogger = {
-                event() {},
                 log() {},
                 spanRoot() {
                     return {
