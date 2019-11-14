@@ -228,7 +228,6 @@ describe('connectWithShell', () => {
 
     it('should render contributed boundary aspect', () => {
         // arrange
-
         const { host, shell } = createMocks({
             name: 'ASPECT-TEST-EP',
             attach: myShell => {
@@ -239,11 +238,9 @@ describe('connectWithShell', () => {
         const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
         // act
-
         const result = renderInHost(<ConnectedComp />, host, shell)
 
         // assert
-
         const rootWrapper = result.root as ReactWrapper
         expect(rootWrapper.find('div.TEST-ASPECT').length).toBe(1)
         expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
