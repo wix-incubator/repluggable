@@ -454,7 +454,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function buildStore(): Store {
-        // TODO: preserve existing state
+        // TODO:  preserve existing state
         const reducersMap = buildReducersMapObject()
         const reducer = combineReducers(reducersMap)
 
