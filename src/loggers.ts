@@ -14,7 +14,9 @@ export const ConsoleHostLogger: HostLogger = {
     log(severity: LogSeverity, id: string, keyValuePairs?: Object): void {
         const consoleFunc = getConsoleOutputFunc(severity)
         consoleFunc(id, keyValuePairs)
-    }
+    },
+    interactionStarted(interactionName: string) {},
+    interactionEnded(interactionName: string) {}
 }
 
 export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellLogger {
@@ -46,6 +48,12 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
         },
         critical(messageId: string, keyValuePairs?: Object): void {
             host.log.log('critical', messageId, withEntryPointTags(keyValuePairs))
+        },
+        interactionStarted(interactionName: string) {
+            return host.log.interactionStarted(interactionName)
+        },
+        interactionEnded(interactionName: string) {
+            return host.log.interactionEnded(interactionName)
         },
         spanChild,
         spanRoot,

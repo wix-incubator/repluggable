@@ -99,7 +99,9 @@ describe('App Host', () => {
                     return {
                         end() {}
                     } as any
-                }
+                },
+                interactionStarted: () => {},
+                interactionEnded: () => {}
             }
             const options: AppHostOptions = {
                 logger,

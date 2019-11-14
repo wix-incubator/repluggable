@@ -14,7 +14,9 @@ describe('ShellLogger', () => {
         const hostLogger: HostLogger = {
             log: logSpy,
             spanChild: spanSpy,
-            spanRoot: spanSpy
+            spanRoot: spanSpy,
+            interactionStarted: jest.fn(),
+            interactionEnded: jest.fn()
         }
         const host = createAppHost([], { logger: hostLogger, monitoring: {} })
         const shellLogger = createShellLogger(host, entryPoint)

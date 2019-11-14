@@ -8,7 +8,9 @@ export const emptyLoggerOptions: AppHostOptions = {
         })),
         spanRoot: jest.fn().mockImplementation(() => ({
             end() {}
-        }))
+        })),
+        interactionStarted: jest.fn(),
+        interactionEnded: jest.fn()
     },
     monitoring: {}
 }

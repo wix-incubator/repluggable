@@ -186,6 +186,8 @@ export interface HostLogger {
     log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
     spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
+    interactionStarted(interactionName: string): void
+    interactionEnded(interactionName: string): void
 }
 
 export interface ShellLogger extends HostLogger {
