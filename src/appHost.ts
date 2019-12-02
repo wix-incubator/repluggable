@@ -316,9 +316,9 @@ miss: ${memoizedWithMissHit.miss}
         shellsChangedCallbacks.delete(callbackId)
     }
 
-    function declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
+    function declareSlot<TItem>(key: SlotKey<TItem>, declaringShell?: Shell): ExtensionSlot<TItem> {
         if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
-            const newSlot = createExtensionSlot<TItem>(key, host)
+            const newSlot = createExtensionSlot<TItem>(key, host, declaringShell)
 
             extensionSlots.set(key, newSlot)
             slotKeysByName.set(key.name, key)
@@ -571,14 +571,14 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
-    function discardAPI<TAPI>(APIKey: SlotKey<TAPI>) {
-        const ownKey = getOwnSlotKey(APIKey)
+    function discardSlotKey<T>(key: SlotKey<T>) {
+        const ownKey = getOwnSlotKey(key)
 
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(ownKey.name)
 
-        host.log.log('debug', `-- Removed API: ${ownKey.name} --`)
+        host.log.log('debug', `-- Removed slot keys: ${ownKey.name} --`)
     }
 
     function executeUninstallShells(names: string[]): void {
@@ -588,7 +588,8 @@ miss: ${memoizedWithMissHit.miss}
             _.invoke(f.entryPoint, 'detach', f)
         )
 
-        const APIsToDiscard = [...readyAPIs].filter(APIKey => _.includes(names, _.get(getAPIContributor(APIKey), 'name')))
+        const slotKeysToDiscard = findContributedAPIs(names).concat(findDeclaredSlotKeys(names))
+
         extensionSlots.forEach(extensionSlot =>
             (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToShells(extensionItem, names))
         )
@@ -597,11 +598,27 @@ miss: ${memoizedWithMissHit.miss}
             addedShells.delete(name)
             uniqueShellNames.delete(name)
         })
-        APIsToDiscard.forEach(discardAPI)
+        slotKeysToDiscard.forEach(discardSlotKey)
 
         host.log.log('debug', `Done uninstalling ${names}`)
 
         addedShells.forEach(uninstallIfDependencyAPIsRemoved)
+    }
+
+    function findContributedAPIs(shellNames: string[]) {
+        return [...readyAPIs].filter(APIKey => _.includes(shellNames, _.get(getAPIContributor(APIKey), 'name')))
+    }
+
+    function findDeclaredSlotKeys(shellNames: string[]) {
+        const shellNameSet = new Set<string>(shellNames)
+        const result: AnySlotKey[] = []
+        for (const entry of extensionSlots.entries()) {
+            const { declaringShell } = entry[1]
+            if (declaringShell && shellNameSet.has(declaringShell.name)) {
+                result.push(entry[0])
+            }
+        }
+        return result
     }
 
     function getInstalledShellNames(): string[] {
@@ -635,7 +652,9 @@ miss: ${memoizedWithMissHit.miss}
             onShellsChanged: host.onShellsChanged,
             removeShellsChangedCallback: host.removeShellsChangedCallback,
 
-            declareSlot,
+            declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
+                return declareSlot<TItem>(key, shell)
+            },
 
             setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean) {
                 storeEnabled = enableStore

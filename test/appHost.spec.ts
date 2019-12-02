@@ -527,6 +527,65 @@ describe('App Host', () => {
         })
     })
 
+    describe('Entry Point HMR support', () => {
+        const LowLevelSlotKey: SlotKey<string> = { name: 'LOW-LEVEL-SLOT' }
+        const HighLevelSlotKey: SlotKey<string> = { name: 'HIGH-LEVEL-SLOT' }
+        const ConsumerSlotKey: SlotKey<string> = { name: 'CONSUMER-SLOT' }
+        const LowLevelAPI: SlotKey<{ lowLevelFunc(s: string): void }> = { name: 'LOW-LEVEL-API' }
+        const HighLevelAPI: SlotKey<{ highLevelFunc(s: string): void }> = { name: 'HIGH-LEVEL-API' }
+        const hmrTestPackage: EntryPoint[] = [
+            {
+                name: 'LOW_LEVEL_API_ENTRY_POINT',
+                declareAPIs() {
+                    return [LowLevelAPI]
+                },
+                attach(shell: Shell) {
+                    shell.declareSlot(LowLevelSlotKey)
+                    shell.contributeAPI(LowLevelAPI, () => ({
+                        lowLevelFunc: jest.fn()
+                    }))
+                }
+            },
+            {
+                name: 'HIGH_LEVEL_API_ENTRY_POINT',
+                getDependencyAPIs() {
+                    return [LowLevelAPI]
+                },
+                declareAPIs() {
+                    return [HighLevelAPI]
+                },
+                attach(shell: Shell) {
+                    shell.declareSlot(HighLevelSlotKey)
+                    shell.contributeAPI(HighLevelAPI, () => ({
+                        highLevelFunc: jest.fn
+                    }))
+                },
+                extend(shell: Shell) {
+                    shell.getAPI(LowLevelAPI).lowLevelFunc('HIGH')
+                }
+            },
+            {
+                name: 'CONSUMER_ENTRY_POINT',
+                getDependencyAPIs() {
+                    return [HighLevelAPI]
+                },
+                extend(shell: Shell) {
+                    shell.declareSlot(ConsumerSlotKey)
+                    shell.getAPI(HighLevelAPI).highLevelFunc('CONSUMER')
+                }
+            }
+        ]
+
+        it('should be able to reload entry points', () => {
+            const appHost = createAppHost(hmrTestPackage)
+
+            appHost.removeShells(['LOW_LEVEL_API_ENTRY_POINT'])
+            appHost.addShells([hmrTestPackage[0]])
+
+            expect(appHost.getAPI(HighLevelAPI)).toBeDefined()
+        })
+    })
+
     describe('API layer', () => {
         it('should allow dependency from high to lower level API', async () => {
             const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'INFRA' }
