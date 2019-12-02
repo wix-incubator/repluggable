@@ -49,6 +49,7 @@ export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolea
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
+    readonly declaringShell?: Shell
     contribute(shell: Shell, item: T, condition?: ContributionPredicate): void
     getItems(forceAll?: boolean): ExtensionItem<T>[]
     getSingleItem(): ExtensionItem<T>

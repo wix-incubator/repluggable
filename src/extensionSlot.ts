@@ -3,15 +3,17 @@ import _ from 'lodash'
 
 export interface AnyExtensionSlot {
     readonly name: string
+    readonly declaringShell?: Shell
 }
 
 const alwaysTrue = () => true
 
-export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost): ExtensionSlot<T> & AnyExtensionSlot {
+export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): ExtensionSlot<T> & AnyExtensionSlot {
     let items: ExtensionItem<T>[] = []
 
     return {
         host,
+        declaringShell,
         name: key.name,
         contribute,
         getItems,
