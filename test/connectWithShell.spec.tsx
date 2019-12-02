@@ -205,13 +205,21 @@ describe('connectWithShell', () => {
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(mapStateToProps, undefined, shell)(PureCompWithChildren)
+        >(
+            mapStateToProps,
+            undefined,
+            shell
+        )(PureCompWithChildren)
 
         const ConnectedBoundCompWithChildren = connectWithShell<
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(mapStateToProps, undefined, getBoundShell())(PureCompWithChildren)
+        >(
+            mapStateToProps,
+            undefined,
+            getBoundShell()
+        )(PureCompWithChildren)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(
             <ConnectedUnboundCompWithChildren id="A">

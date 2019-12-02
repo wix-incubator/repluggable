@@ -271,12 +271,22 @@ miss: ${memoizedWithMissHit.miss}
                 f => !!f.entryPoint.getDependencyAPIs
             )
 
-            invokeEntryPointPhase('attach', shells, f => f.entryPoint.attach && f.entryPoint.attach(f), f => !!f.entryPoint.attach)
+            invokeEntryPointPhase(
+                'attach',
+                shells,
+                f => f.entryPoint.attach && f.entryPoint.attach(f),
+                f => !!f.entryPoint.attach
+            )
 
             buildStore()
             shells.forEach(f => f.setLifecycleState(true, true, false))
 
-            invokeEntryPointPhase('extend', shells, f => f.entryPoint.extend && f.entryPoint.extend(f), f => !!f.entryPoint.extend)
+            invokeEntryPointPhase(
+                'extend',
+                shells,
+                f => f.entryPoint.extend && f.entryPoint.extend(f),
+                f => !!f.entryPoint.extend
+            )
 
             shells.forEach(f => {
                 addedShells.set(f.entryPoint.name, f)
@@ -398,7 +408,10 @@ miss: ${memoizedWithMissHit.miss}
 
         const validateEntryPointAPIs = (entryPoint: AnyEntryPoint, visited: Set<AnyEntryPoint>) => {
             if (visited.has(entryPoint)) {
-                console.debug('Circular API dependency found', [...visited, entryPoint].map(x => x.name))
+                console.debug(
+                    'Circular API dependency found',
+                    [...visited, entryPoint].map(x => x.name)
+                )
                 throw new Error(`Circular API dependency found`)
             }
 

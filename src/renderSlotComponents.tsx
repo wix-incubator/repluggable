@@ -125,9 +125,4 @@ const mapPredicateHocStateToProps = (state: any, ownProps: ConnectedPredicateHoc
     predicateResult: ownProps.item.condition()
 })
 
-const ConnectedPredicateHoc = connect(
-    mapPredicateHocStateToProps,
-    undefined,
-    undefined,
-    connectOptions
-)(PredicateHoc)
+const ConnectedPredicateHoc = connect(mapPredicateHocStateToProps, undefined, undefined, connectOptions)(PredicateHoc)

@@ -33,12 +33,7 @@ const mapStateToProps = (state: any, ownProps: AppMainViewProps): SfcProps => ({
     host: ownProps.host
 })
 
-const ConnectedSfc = connect(
-    mapStateToProps,
-    undefined,
-    undefined,
-    { context: StoreContext }
-)(sfc)
+const ConnectedSfc = connect(mapStateToProps, undefined, undefined, { context: StoreContext })(sfc)
 
 export const AppMainView = (props: AppMainViewProps) => (
     <Provider store={props.host.getStore()} context={StoreContext}>

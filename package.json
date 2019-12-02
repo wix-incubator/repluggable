@@ -19,7 +19,7 @@
     "testKit"
   ],
   "scripts": {
-    "start": "yoshi start",
+    "start": "yoshi start --no-server",
     "build": "yoshi build",
     "test": "yoshi test --coverage",
     "posttest": "yoshi lint",
