@@ -48,12 +48,6 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
     }
 }
 
-export function createAppHost(entryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
-    const host = createAppHostImpl(options)
-    host.addShells(entryPointsOrPackages)
-    return host
-}
-
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = {
     name: 'mainView'
 }
@@ -68,7 +62,7 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
-function createAppHostImpl(options: AppHostOptions): AppHost {
+export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
@@ -147,6 +141,9 @@ function createAppHostImpl(options: AppHostOptions): AppHost {
         return enrichedMemoization
     }
 
+    // we know that addShells completes synchronously
+    addShells(initialEntryPointsOrPackages)
+
     return host
 
     //TODO: get rid of LazyEntryPointDescriptor
@@ -220,7 +217,7 @@ miss: ${memoizedWithMissHit.miss}
         _.forEach(entryPoints, ep => validateEntryPointLayer(ep))
     }
 
-    function addShells(entryPointsOrPackages: EntryPointOrPackage[]) {
+    function addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void> {
         host.log.log('debug', `Adding ${entryPointsOrPackages.length} packages.`)
 
         const entryPoints = _.flatten(entryPointsOrPackages)
@@ -242,6 +239,7 @@ miss: ${memoizedWithMissHit.miss}
         lazyEntryPointsList.forEach(registerLazyEntryPoint)
 
         setInstalledShellNames(getInstalledShellNames().concat(_.map(lazyEntryPointsList, 'name')))
+        return Promise.resolve()
     }
 
     function executeInstallShell(entryPoints: EntryPoint[]): void {
@@ -302,15 +300,13 @@ miss: ${memoizedWithMissHit.miss}
         shellsChangedCallbacks.forEach(f => f(_.keys(InstalledShellsSelectors.getInstalledShellsSet(getStore().getState()))))
     }
 
-    async function setInstalledShellNames(names: string[]) {
-        await ensureLazyShellsInstalled(names)
+    function setInstalledShellNames(names: string[]) {
         const updates = toShellToggleSet(names, true)
         getStore().dispatch(InstalledShellsActions.updateInstalledShells(updates))
         executeShellsChangedCallbacks()
     }
 
-    async function setUninstalledShellNames(names: string[]) {
-        await Promise.resolve()
+    function setUninstalledShellNames(names: string[]) {
         const updates = toShellToggleSet(names, false)
         getStore().dispatch(InstalledShellsActions.updateInstalledShells(updates))
         executeShellsChangedCallbacks()
@@ -458,12 +454,6 @@ miss: ${memoizedWithMissHit.miss}
         }
 
         throw new Error(`Shell '${name}' could not be found.`)
-    }
-
-    async function ensureLazyShellsInstalled(names: string[]) {
-        const lazyLoadPromises = names.filter(name => !addedShells.has(name)).map(loadLazyShell)
-        const shellsToInstall = await Promise.all(lazyLoadPromises)
-        executeInstallShell(shellsToInstall)
     }
 
     function buildStore(): Store {
@@ -638,10 +628,12 @@ miss: ${memoizedWithMissHit.miss}
         return [...addedShells].map(([v]) => v)
     }
 
-    function removeShells(names: string[]) {
+    function removeShells(names: string[]): Promise<void> {
         const shellNames = getInstalledShellNames()
         executeUninstallShells(names)
         setUninstalledShellNames(_.difference(shellNames, getInstalledShellNames()))
+
+        return Promise.resolve()
     }
 
     function createShell(entryPoint: EntryPoint): PrivateShell {
@@ -691,14 +683,14 @@ miss: ${memoizedWithMissHit.miss}
                 return wasInitCompleted
             },
 
-            addShells(entryPointsOrPackages: EntryPointOrPackage[]): void {
+            addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void> {
                 const shellNamesToBeinstalled = _.flatten(entryPointsOrPackages).map(x => x.name)
                 const shellNamesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 shellInstallers.set(shell, [...shellNamesInstalledByCurrentEntryPoint, ...shellNamesToBeinstalled])
-                host.addShells(entryPointsOrPackages)
+                return host.addShells(entryPointsOrPackages)
             },
 
-            removeShells(names: string[]): void {
+            removeShells(names: string[]): Promise<void> {
                 const namesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
                 const namesNotInstalledByCurrentEntryPoint = _.difference(names, namesInstalledByCurrentEntryPoint)
                 // TODO: Allow entry point to uninstall its own shell ?
@@ -708,7 +700,7 @@ miss: ${memoizedWithMissHit.miss}
                     )
                 }
                 shellInstallers.set(shell, _.without(namesInstalledByCurrentEntryPoint, ...names))
-                host.removeShells(names)
+                return host.removeShells(names)
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {

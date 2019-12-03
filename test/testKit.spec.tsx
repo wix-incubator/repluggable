@@ -87,7 +87,7 @@ describe('App Host TestKit', () => {
                 return [MockAPI]
             }
         })
-        await new Promise(resolve => host.onShellsChanged(resolve))
+        //await new Promise(resolve => host.onShellsChanged(resolve))
         expect(host.hasShell('MOCK')).toBe(true)
         expect(() => shell.getAPI(MockAPI)).not.toThrow()
     })
@@ -102,7 +102,7 @@ describe('App Host TestKit', () => {
                     return [MockAPI, { name: APIKey }]
                 }
             })
-            await new Promise(resolve => host.onShellsChanged(resolve))
+            //await new Promise(resolve => host.onShellsChanged(resolve))
         }
         await expect(add()).rejects.toThrow(new RegExp(APIKey))
     })

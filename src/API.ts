@@ -77,8 +77,8 @@ export interface AppHost {
     getAllEntryPoints(): EntryPointsInfo[]
     hasShell(name: string): boolean
     isLazyEntryPoint(name: string): boolean
-    addShells(entryPointsOrPackages: EntryPointOrPackage[]): void
-    removeShells(names: string[]): void
+    addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void>
+    removeShells(names: string[]): Promise<void>
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     readonly log: HostLogger

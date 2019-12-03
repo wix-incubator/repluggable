@@ -110,6 +110,7 @@ interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
     name?: EntryPoint['name']
 }
 
+// this function assumes that addShells completes synchronously
 export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverrides = {}): Shell => {
     let shell = null
     host.addShells([
@@ -155,7 +156,6 @@ function createShell(host: AppHost): PrivateShell {
         ...host,
         declareSlot() {
             const slot: any = {}
-
             return slot
         },
         setLifecycleState: _.noop,
