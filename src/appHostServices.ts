@@ -2,6 +2,8 @@ import { EntryPoint, Shell, SlotKey } from './API'
 
 export interface AppHostAPI {} /* tslint:disable-line:no-empty-interface */
 
+export const AppHostServicesEntryPointName = 'APP-HOST-SERVICES'
+
 export const AppHostAPI: SlotKey<AppHostAPI> = {
     name: 'AppHost API',
     public: true
@@ -15,7 +17,7 @@ export function createAppHostServicesEntryPoint(apiFactory: () => AppHostAPI): E
     let cachedShell: Shell | null = null
 
     return {
-        name: 'APP-HOST-SERVICES',
+        name: AppHostServicesEntryPointName,
 
         declareAPIs() {
             return [AppHostAPI]

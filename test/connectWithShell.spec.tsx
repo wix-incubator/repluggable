@@ -132,7 +132,7 @@ describe('connectWithShell', () => {
         expect(withConnectedState && withConnectedState.text()).toBe(getValueFromState(getMockShellState(host)))
     })
 
-    it('should bind shell context', () => {
+    it('should bind shell context', async () => {
         const { host, renderInShellContext } = createMocks(mockPackage)
 
         let cachedBoundShell: Shell | null = null
@@ -148,7 +148,7 @@ describe('connectWithShell', () => {
         }
         const getBoundShell = () => cachedBoundShell as Shell
 
-        host.addShells([otherEntryPoint])
+        await host.addShells([otherEntryPoint])
 
         const PureComp = ({ value }: { value: string }) => <div>{value}</div>
         const mapStateToProps = (shell: Shell, state: MockPackageState) => ({
@@ -162,7 +162,7 @@ describe('connectWithShell', () => {
         expect(withConnectedState && withConnectedState.text()).toBe(boundShellState.mockValue)
     })
 
-    it('should re-provide shell context for children of bound component', () => {
+    it('should re-provide shell context for children of bound component', async () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
         let cachedBoundShell: Shell | null = null
@@ -178,7 +178,7 @@ describe('connectWithShell', () => {
         }
         const getBoundShell = () => cachedBoundShell as Shell
 
-        host.addShells([otherEntryPoint])
+        await host.addShells([otherEntryPoint])
 
         const PureComp = ({ value }: { value: string }) => <div>{value}</div>
         interface PureCompWithChildrenOwnProps {
