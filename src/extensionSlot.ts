@@ -1,4 +1,14 @@
-import { AppHost, ContributionPredicate, ExtensionItem, ExtensionItemFilter, ExtensionSlot, Shell, SlotKey } from './API'
+import {
+    AppHost,
+    ContributionPredicate,
+    ExtensionItem,
+    ExtensionItemFilter,
+    ExtensionSlot,
+    Shell,
+    SlotKey,
+    CustomExtensionSlot,
+    CustomExtensionSlotHandler
+} from './API'
 import _ from 'lodash'
 
 export interface AnyExtensionSlot {
@@ -45,5 +55,20 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
         items = items.filter(v => !predicate(v))
+    }
+}
+
+export function createCustomExtensionSlot<T>(
+    key: SlotKey<T>,
+    handler: CustomExtensionSlotHandler<T>,
+    host: AppHost,
+    declaringShell?: Shell
+): CustomExtensionSlot<T> & AnyExtensionSlot {
+    return {
+        name: key.name,
+        host,
+        declaringShell,
+        contribute: (...args) => handler.contribute(...args),
+        discardBy: (...args) => handler.discardBy(...args)
     }
 }

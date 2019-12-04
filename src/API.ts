@@ -57,6 +57,17 @@ export interface ExtensionSlot<T> {
     discardBy(predicate: ExtensionItemFilter<T>): void
 }
 
+export interface CustomExtensionSlotHandler<T> {
+    contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void
+    discardBy(predicate: ExtensionItemFilter<T>): void
+}
+
+export interface CustomExtensionSlot<T> extends CustomExtensionSlotHandler<T> {
+    readonly name: string
+    readonly host: AppHost
+    readonly declaringShell?: Shell
+}
+
 export interface ExtensionItem<T> {
     readonly name?: string
     readonly shell: Shell
@@ -141,6 +152,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     canUseStore(): boolean
     wasInitializationCompleted(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
+    declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem>
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void

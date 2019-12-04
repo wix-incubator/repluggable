@@ -25,12 +25,14 @@ import {
     AnyFunction,
     FunctionWithSameArgs,
     ContributeAPIOptions,
-    APILayer
+    APILayer,
+    CustomExtensionSlotHandler,
+    CustomExtensionSlot
 } from './API'
 import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
-import { AnyExtensionSlot, createExtensionSlot } from './extensionSlot'
+import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
 import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
@@ -323,8 +325,22 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>, declaringShell?: Shell): ExtensionSlot<TItem> {
+        const newSlot = registerSlotOrThrow(key, () => createExtensionSlot(key, host, declaringShell))
+        return newSlot
+    }
+
+    function declareCustomSlot<TItem>(
+        key: SlotKey<TItem>,
+        handler: CustomExtensionSlotHandler<TItem>,
+        declaringShell?: Shell
+    ): CustomExtensionSlot<TItem> {
+        const newSlot = registerSlotOrThrow(key, () => createCustomExtensionSlot(key, handler, host, declaringShell))
+        return newSlot
+    }
+
+    function registerSlotOrThrow<TItem, TSlot extends AnyExtensionSlot>(key: SlotKey<TItem>, factory: () => TSlot): TSlot {
         if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
-            const newSlot = createExtensionSlot<TItem>(key, host, declaringShell)
+            const newSlot = factory()
 
             extensionSlots.set(key, newSlot)
             slotKeysByName.set(key.name, key)
@@ -659,6 +675,10 @@ miss: ${memoizedWithMissHit.miss}
 
             declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
                 return declareSlot<TItem>(key, shell)
+            },
+
+            declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem> {
+                return declareCustomSlot<TItem>(key, handler, shell)
             },
 
             setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean) {

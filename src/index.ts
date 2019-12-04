@@ -6,6 +6,8 @@ export {
     Shell,
     ExtensionSlot,
     ExtensionItem,
+    CustomExtensionSlot,
+    CustomExtensionSlotHandler,
     AnySlotKey,
     SlotKey,
     ReactComponentContributor,
