@@ -1354,9 +1354,9 @@
     "@babel/types" "^7.3.0"
 
 "@types/cheerio@*":
-  version "0.22.14"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/cheerio/-/cheerio-0.22.14.tgz#d150889891e7db892c6a0b16bd5583cc70b3fc44"
-  integrity sha1-0VCImJHn24ksagsWvVWDzHCz/EQ=
+  version "0.22.15"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/cheerio/-/cheerio-0.22.15.tgz#69040ffa92c309beeeeb7e92db66ac3f80700c0b"
+  integrity sha1-aQQP+pLDCb7u636S22asP4BwDAs=
   dependencies:
     "@types/node" "*"
 
@@ -1475,9 +1475,9 @@
     redux "^4.0.0"
 
 "@types/react@*", "@types/react@^16.0.0":
-  version "16.9.13"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/react/-/react-16.9.13.tgz#b3ea5dd443f4a680599e2abba8cc66f5e1ce0059"
-  integrity sha1-s+pd1EP0poBZniq7qMxm9eHOAFk=
+  version "16.9.14"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/react/-/react-16.9.14.tgz#7f1158ce450b4b5aa83b1c5e1324fa75f348bdd1"
+  integrity sha1-fxFYzkULS1qoOxxeEyT6dfNIvdE=
   dependencies:
     "@types/prop-types" "*"
     csstype "^2.2.0"
@@ -1807,9 +1807,9 @@
   integrity sha1-0pHGpOl5ibXGHZrPOWrk/hM6cY0=
 
 ab-translate@~1.1.0:
-  version "1.1.296"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/ab-translate/-/ab-translate-1.1.296.tgz#9696495d9314cdedcd5027cb2c3c523a63106606"
-  integrity sha1-lpZJXZMUze3NUCfLLDxSOmMQZgY=
+  version "1.1.298"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/ab-translate/-/ab-translate-1.1.298.tgz#c581744b901151af34dcc86956626670a85b0e2b"
+  integrity sha1-xYF0S5ARUa803MhpVmJmcKhbDis=
   dependencies:
     babel-preset-es2015 "^6.24.1"
     babel-runtime "^6.22.0"
@@ -2075,12 +2075,7 @@ are-we-there-yet@~1.1.2:
     delegates "^1.0.0"
     readable-stream "^2.0.6"
 
-arg@4.1.1:
-  version "4.1.1"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/arg/-/arg-4.1.1.tgz#485f8e7c390ce4c5f78257dbea80d4be11feda4c"
-  integrity sha1-SF+OfDkM5MX3glfb6oDUvhH+2kw=
-
-arg@^4.1.1:
+arg@4.1.2, arg@^4.1.1:
   version "4.1.2"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/arg/-/arg-4.1.2.tgz#e70c90579e02c63d80e3ad4e31d8bfdb8bd50064"
   integrity sha1-5wyQV54Cxj2A461OMdi/24vVAGQ=
@@ -2305,20 +2300,7 @@ atob@^2.1.1:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha1-bZUX654DDSQ2ZmZR6GvZ9vE1M8k=
 
-autoprefixer@9.7.2:
-  version "9.7.2"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/autoprefixer/-/autoprefixer-9.7.2.tgz#26cf729fbb709323b40171a874304884dcceffed"
-  integrity sha1-Js9yn7twkyO0AXGodDBIhNzO/+0=
-  dependencies:
-    browserslist "^4.7.3"
-    caniuse-lite "^1.0.30001010"
-    chalk "^2.4.2"
-    normalize-range "^0.1.2"
-    num2fraction "^1.2.2"
-    postcss "^7.0.23"
-    postcss-value-parser "^4.0.2"
-
-autoprefixer@^9.0.0:
+autoprefixer@9.7.3, autoprefixer@^9.0.0:
   version "9.7.3"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/autoprefixer/-/autoprefixer-9.7.3.tgz#fd42ed03f53de9beb4ca0d61fb4f7268a9bb50b4"
   integrity sha1-/ULtA/U96b60yg1h+09yaKm7ULQ=
@@ -2332,19 +2314,19 @@ autoprefixer@^9.0.0:
     postcss-value-parser "^4.0.2"
 
 aws-sdk@^2.458.0:
-  version "2.581.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/aws-sdk/-/aws-sdk-2.581.0.tgz#60640dd99a70da41aa171ebf4d791754161953a0"
-  integrity sha1-YGQN2Zpw2kGqFx6/TXkXVBYZU6A=
+  version "2.584.0"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/aws-sdk/-/aws-sdk-2.584.0.tgz#f65a2ecd2a53cea5a2ff04eaa276a39e0db1db2c"
+  integrity sha1-9louzSpTzqWi/wTqonajng2x2yw=
   dependencies:
-    buffer "^4.9.1"
-    events "^1.1.1"
-    ieee754 "^1.1.13"
-    jmespath "^0.15.0"
-    querystring "^0.2.0"
-    sax "^1.2.1"
-    url "^0.10.3"
-    uuid "^3.3.2"
-    xml2js "^0.4.19"
+    buffer "4.9.1"
+    events "1.1.1"
+    ieee754 "1.1.13"
+    jmespath "0.15.0"
+    querystring "0.2.0"
+    sax "1.2.1"
+    url "0.10.3"
+    uuid "3.3.2"
+    xml2js "0.4.19"
 
 aws-sign2@~0.6.0:
   version "0.6.0"
@@ -3134,7 +3116,7 @@ browserslist@4.4.1:
     electron-to-chromium "^1.3.103"
     node-releases "^1.1.3"
 
-browserslist@^4.0.0, browserslist@^4.6.0, browserslist@^4.7.3, browserslist@^4.8.0:
+browserslist@^4.0.0, browserslist@^4.6.0, browserslist@^4.8.0:
   version "4.8.0"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/browserslist/-/browserslist-4.8.0.tgz#6f06b0f974a7cc3a84babc2ccc56493668e3c789"
   integrity sha1-bwaw+XSnzDqEurwszFZJNmjjx4k=
@@ -3177,7 +3159,16 @@ buffer-xor@^1.0.3:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/buffer-xor/-/buffer-xor-1.0.3.tgz#26e61ed1422fb70dd42e6e36729ed51d855fe8d9"
   integrity sha1-JuYe0UIvtw3ULm42cp7VHYVf6Nk=
 
-buffer@^4.3.0, buffer@^4.9.1:
+buffer@4.9.1:
+  version "4.9.1"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/buffer/-/buffer-4.9.1.tgz#6d1bb601b07a4efced97094132093027c95bc298"
+  integrity sha1-bRu2AbB6TvztlwlBMgkwJ8lbwpg=
+  dependencies:
+    base64-js "^1.0.2"
+    ieee754 "^1.1.4"
+    isarray "^1.0.0"
+
+buffer@^4.3.0:
   version "4.9.2"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/buffer/-/buffer-4.9.2.tgz#230ead344002988644841ab0244af8c44bbe3ef8"
   integrity sha1-Iw6tNEACmIZEhBqwJEr4xEu+Pvg=
@@ -3342,10 +3333,10 @@ caniuse-api@^3.0.0:
     lodash.memoize "^4.1.2"
     lodash.uniq "^4.5.0"
 
-caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000929, caniuse-lite@^1.0.30001010, caniuse-lite@^1.0.30001012:
-  version "1.0.30001013"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/caniuse-lite/-/caniuse-lite-1.0.30001013.tgz#da2440d4d266a17d40eb79bd19c0c8cc1d029c72"
-  integrity sha1-2iRA1NJmoX1A63m9GcDIzB0CnHI=
+caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000929, caniuse-lite@^1.0.30001012:
+  version "1.0.30001015"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/caniuse-lite/-/caniuse-lite-1.0.30001015.tgz#15a7ddf66aba786a71d99626bc8f2b91c6f0f5f0"
+  integrity sha1-Fafd9mq6eGpx2ZYmvI8rkcbw9fA=
 
 capture-exit@^2.0.0:
   version "2.0.0"
@@ -4484,10 +4475,10 @@ depd@~1.1.2:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/depd/-/depd-1.1.2.tgz#9bcd52e14c097763e749b274c4346ed2e560b5a9"
   integrity sha1-m81S4UwJd2PnSbJ0xDRu0uVgtak=
 
-depkeeper@1.0.290:
-  version "1.0.290"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/depkeeper/-/depkeeper-1.0.290.tgz#1e33db4c73406d83fff63f817c5a69ba94956210"
-  integrity sha1-HjPbTHNAbYP/9j+BfFppupSVYhA=
+depkeeper@1.0.297:
+  version "1.0.297"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/depkeeper/-/depkeeper-1.0.297.tgz#d5b522fce5894a074ad01bd35dcd1032f8f3ec66"
+  integrity sha1-1bUi/OWJSgdK0BvTXc0QMvjz7GY=
   dependencies:
     ini "~1.3.0"
     minimatch "~3.0.0"
@@ -4495,9 +4486,9 @@ depkeeper@1.0.290:
     semver "~5.4.0"
 
 depkeeper@~1.0.36:
-  version "1.0.298"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/depkeeper/-/depkeeper-1.0.298.tgz#80b98f1d1a40d8720efad5d894fd0d99c8dd6471"
-  integrity sha1-gLmPHRpA2HIO+tXYlP0NmcjdZHE=
+  version "1.0.300"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/depkeeper/-/depkeeper-1.0.300.tgz#8c1b06c39bd5ac8efb15f83dde34f68f7f67f07d"
+  integrity sha1-jBsGw5vVrI77Ffg93jT2j39n8H0=
   dependencies:
     ini "~1.3.0"
     minimatch "~3.0.0"
@@ -4786,9 +4777,9 @@ ejs@^2.6.1:
   integrity sha1-SGYSh1c9zFPjZsehrlLDoSDuybo=
 
 electron-to-chromium@^1.3.103, electron-to-chromium@^1.3.317:
-  version "1.3.321"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/electron-to-chromium/-/electron-to-chromium-1.3.321.tgz#913869f5ec85daabba0e75c9c314b4bf26cdb01e"
-  integrity sha1-kThp9eyF2qu6DnXJwxS0vybNsB4=
+  version "1.3.322"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/electron-to-chromium/-/electron-to-chromium-1.3.322.tgz#a6f7e1c79025c2b05838e8e344f6e89eb83213a8"
+  integrity sha1-pvfhx5AlwrBYOOjjRPbonrgyE6g=
 
 elegant-spinner@^1.0.1:
   version "1.0.1"
@@ -5082,6 +5073,11 @@ eslint-module-utils@^2.4.0:
     debug "^2.6.8"
     pkg-dir "^2.0.0"
 
+eslint-plugin-eslint-plugin@^2.1.0:
+  version "2.1.0"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-eslint-plugin/-/eslint-plugin-eslint-plugin-2.1.0.tgz#a7a00f15a886957d855feacaafee264f039e62d5"
+  integrity sha1-p6APFaiGlX2FX+rKr+4mTwOeYtU=
+
 eslint-plugin-import@2.18.2:
   version "2.18.2"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-import/-/eslint-plugin-import-2.18.2.tgz#02f1180b90b077b33d447a17a2326ceb400aceb6"
@@ -5141,25 +5137,26 @@ eslint-plugin-react-hooks@^1.6.0:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-1.7.0.tgz#6210b6d5a37205f0b92858f895a4e827020a7d04"
   integrity sha1-YhC21aNyBfC5KFj4laToJwIKfQQ=
 
-eslint-plugin-react@7.16.0:
-  version "7.16.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-react/-/eslint-plugin-react-7.16.0.tgz#9928e4f3e2122ed3ba6a5b56d0303ba3e41d8c09"
-  integrity sha1-mSjk8+ISLtO6altW0DA7o+QdjAk=
+eslint-plugin-react@7.17.0:
+  version "7.17.0"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-react/-/eslint-plugin-react-7.17.0.tgz#a31b3e134b76046abe3cd278e7482bd35a1d12d7"
+  integrity sha1-oxs+E0t2BGq+PNJ450gr01odEtc=
   dependencies:
     array-includes "^3.0.3"
     doctrine "^2.1.0"
+    eslint-plugin-eslint-plugin "^2.1.0"
     has "^1.0.3"
-    jsx-ast-utils "^2.2.1"
+    jsx-ast-utils "^2.2.3"
     object.entries "^1.1.0"
-    object.fromentries "^2.0.0"
+    object.fromentries "^2.0.1"
     object.values "^1.1.0"
     prop-types "^15.7.2"
-    resolve "^1.12.0"
+    resolve "^1.13.1"
 
-eslint-plugin-wix-style-react@1.0.290:
-  version "1.0.290"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-wix-style-react/-/eslint-plugin-wix-style-react-1.0.290.tgz#5c7daca0108fbe9b89daff2069ecd0c4bb8fe5a3"
-  integrity sha1-XH2soBCPvpuJ2v8gaezQxLuP5aM=
+eslint-plugin-wix-style-react@1.0.296:
+  version "1.0.296"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eslint-plugin-wix-style-react/-/eslint-plugin-wix-style-react-1.0.296.tgz#237ac3269ed7f6d31fbad5d1ce78e90b4a1d4aca"
+  integrity sha1-I3rDJp7X9tMfutXRznjpC0odSso=
   dependencies:
     resolve "^1.10.0"
     semver "^5.6.0"
@@ -5297,7 +5294,7 @@ eventemitter3@^4.0.0:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/eventemitter3/-/eventemitter3-4.0.0.tgz#d65176163887ee59f386d64c82610b696a4a74eb"
   integrity sha1-1lF2FjiH7lnzhtZMgmELaWpKdOs=
 
-events@^1.1.1:
+events@1.1.1:
   version "1.1.1"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/events/-/events-1.1.1.tgz#9ebdb7635ad099c70dcc4c2a1f5004288e8bd924"
   integrity sha1-nr23Y1rQmccNzEwqH1AEKI6L2SQ=
@@ -6956,7 +6953,7 @@ identity-obj-proxy@^3.0.0:
   dependencies:
     harmony-reflect "^1.4.6"
 
-ieee754@^1.1.13, ieee754@^1.1.4:
+ieee754@1.1.13, ieee754@^1.1.4:
   version "1.1.13"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/ieee754/-/ieee754-1.1.13.tgz#ec168558e95aa181fd87d37f55c32bbcb6708b84"
   integrity sha1-7BaFWOlaoYH9h9N/VcMrvLZwi4Q=
@@ -8235,7 +8232,7 @@ jest@24.9.0:
     import-local "^2.0.0"
     jest-cli "^24.9.0"
 
-jmespath@^0.15.0:
+jmespath@0.15.0:
   version "0.15.0"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/jmespath/-/jmespath-0.15.0.tgz#a3f222a9aae9f966f5d27c796510e28091764217"
   integrity sha1-o/Iiqarp+Wb10nx5ZRDigJF2Qhc=
@@ -8435,7 +8432,7 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-jsx-ast-utils@^2.2.1:
+jsx-ast-utils@^2.2.1, jsx-ast-utils@^2.2.3:
   version "2.2.3"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/jsx-ast-utils/-/jsx-ast-utils-2.2.3.tgz#8a9364e402448a3ce7f14d357738310d9248054f"
   integrity sha1-ipNk5AJEijzn8U01dzgxDZJIBU8=
@@ -9678,9 +9675,9 @@ node-pre-gyp@^0.12.0:
     tar "^4"
 
 node-releases@^1.1.3, node-releases@^1.1.41:
-  version "1.1.41"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/node-releases/-/node-releases-1.1.41.tgz#57674a82a37f812d18e3b26118aefaf53a00afed"
-  integrity sha1-V2dKgqN/gS0Y47JhGK769ToAr+0=
+  version "1.1.42"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/node-releases/-/node-releases-1.1.42.tgz#a999f6a62f8746981f6da90627a8d2fc090bbad7"
+  integrity sha1-qZn2pi+HRpgfbakGJ6jS/AkLutc=
   dependencies:
     semver "^6.3.0"
 
@@ -9901,7 +9898,7 @@ object.entries@^1.0.4, object.entries@^1.1.0:
     function-bind "^1.1.1"
     has "^1.0.3"
 
-object.fromentries@^2.0.0, object.fromentries@^2.0.1:
+object.fromentries@^2.0.1:
   version "2.0.1"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/object.fromentries/-/object.fromentries-2.0.1.tgz#050f077855c7af8ae6649f45c80b16ee2d31e704"
   integrity sha1-BQ8HeFXHr4rmZJ9FyAsW7i0x5wQ=
@@ -10460,10 +10457,10 @@ performance-now@^2.1.0:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
-petri-specs@1.3.151:
-  version "1.3.151"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/petri-specs/-/petri-specs-1.3.151.tgz#8aa467b29113e5e8bc4c36a7489ea54af6c66320"
-  integrity sha1-iqRnspET5ei8TDanSJ6lSvbGYyA=
+petri-specs@1.3.158:
+  version "1.3.158"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/petri-specs/-/petri-specs-1.3.158.tgz#f40f6cb89780140ba892c41fd324c7a0e07da011"
+  integrity sha1-9A9suJeAFAuoksQf0yTHoOB9oBE=
   dependencies:
     ab-translate "~1.1.0"
     chalk "^1.1.3"
@@ -11981,7 +11978,7 @@ resolve@1.1.7:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/resolve/-/resolve-1.1.7.tgz#203114d82ad2c5ed9e8e0411b3932875e889e97b"
   integrity sha1-IDEU2CrSxe2ejgQRs5ModeiJ6Xs=
 
-resolve@1.x, resolve@^1.1.6, resolve@^1.10.0, resolve@^1.11.0, resolve@^1.11.1, resolve@^1.12.0, resolve@^1.3.2, resolve@^1.5.0, resolve@^1.8.1:
+resolve@1.x, resolve@^1.1.6, resolve@^1.10.0, resolve@^1.11.0, resolve@^1.11.1, resolve@^1.12.0, resolve@^1.13.1, resolve@^1.3.2, resolve@^1.5.0, resolve@^1.8.1:
   version "1.13.1"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/resolve/-/resolve-1.13.1.tgz#be0aa4c06acd53083505abb35f4d66932ab35d16"
   integrity sha1-vgqkwGrNUwg1BauzX01mkyqzXRY=
@@ -12176,6 +12173,11 @@ sane@^4.0.3:
     micromatch "^3.1.4"
     minimist "^1.1.1"
     walker "~1.0.5"
+
+sax@1.2.1:
+  version "1.2.1"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/sax/-/sax-1.2.1.tgz#7b8e656190b228e81a66aea748480d828cd2d37a"
+  integrity sha1-e45lYZCyKOgaZq6nSEgNgozS03o=
 
 sax@>=0.6.0, sax@^1.2.1, sax@^1.2.4, sax@~1.2.4:
   version "1.2.4"
@@ -13322,9 +13324,9 @@ timsort@^0.3.0:
   integrity sha1-QFQRqOfmM5/mTbmiNN4R3DHgK9Q=
 
 tlds@^1.187.0:
-  version "1.203.1"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/tlds/-/tlds-1.203.1.tgz#4dc9b02f53de3315bc98b80665e13de3edfc1dfc"
-  integrity sha1-TcmwL1PeMxW8mLgGZeE94+38Hfw=
+  version "1.207.0"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/tlds/-/tlds-1.207.0.tgz#459264e644cf63ddc0965fece3898913286b1afd"
+  integrity sha1-RZJk5kTPY93All/s44mJEyhrGv0=
 
 tmp@0.0.33, tmp@^0.0.33:
   version "0.0.33"
@@ -13727,9 +13729,9 @@ typedarray@^0.0.6:
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
 typescript@^3.0.0:
-  version "3.7.2"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
-  integrity sha1-J+SJuV+lkJRF6f717kjYFpetGPs=
+  version "3.7.3"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/typescript/-/typescript-3.7.3.tgz#b36840668a16458a7025b9eabfad11b66ab85c69"
+  integrity sha1-s2hAZooWRYpwJbnqv60Rtmq4XGk=
 
 uglify-js@3.4.x:
   version "3.4.10"
@@ -13953,7 +13955,7 @@ url-regex@^4.1.1:
     ip-regex "^1.0.1"
     tlds "^1.187.0"
 
-url@^0.10.3:
+url@0.10.3:
   version "0.10.3"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/url/-/url-0.10.3.tgz#021e4d9c7705f21bbf37d03ceb58767402774c64"
   integrity sha1-Ah5NnHcF8hu/N9A861h2dAJ3TGQ=
@@ -14017,6 +14019,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=
+
+uuid@3.3.2:
+  version "3.3.2"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
+  integrity sha1-G0r0lV6zB3xQHCOHL8ZROBFYcTE=
 
 uuid@^2.0.1:
   version "2.0.3"
@@ -14444,10 +14451,10 @@ wix-tpa-style-loader@1.0.13:
     loader-utils "^1.1.0"
     postcss-extract-styles "^1.1.1"
 
-wnpm-ci@8.0.104:
-  version "8.0.104"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/wnpm-ci/-/wnpm-ci-8.0.104.tgz#4cef78f8f2cfc26c58661f81a92f20a47516935b"
-  integrity sha1-TO94+PLPwmxYZh+BqS8gpHUWk1s=
+wnpm-ci@8.0.110:
+  version "8.0.110"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/wnpm-ci/-/wnpm-ci-8.0.110.tgz#a494d41159287cb36f99d56fd21c2bc50c06cba6"
+  integrity sha1-pJTUEVkofLNvmdVv0hwrxQwGy6Y=
   dependencies:
     execa "^2.0.3"
     fs-extra "^8.1.0"
@@ -14590,6 +14597,14 @@ xml-name-validator@^3.0.0:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/xml-name-validator/-/xml-name-validator-3.0.0.tgz#6ae73e06de4d8c6e47f9fb181f78d648ad457c6a"
   integrity sha1-auc+Bt5NjG5H+fsYH3jWSK1FfGo=
 
+xml2js@0.4.19:
+  version "0.4.19"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/xml2js/-/xml2js-0.4.19.tgz#686c20f213209e94abf0d1bcf1efaa291c7827a7"
+  integrity sha1-aGwg8hMgnpSr8NG88e+qKRx4J6c=
+  dependencies:
+    sax ">=0.6.0"
+    xmlbuilder "~9.0.1"
+
 xml2js@^0.4.16, xml2js@^0.4.19:
   version "0.4.22"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/xml2js/-/xml2js-0.4.22.tgz#4fa2d846ec803237de86f30aa9b5f70b6600de02"
@@ -14603,6 +14618,11 @@ xmlbuilder@~11.0.0:
   version "11.0.1"
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/xmlbuilder/-/xmlbuilder-11.0.1.tgz#be9bae1c8a046e76b31127726347d0ad7002beb3"
   integrity sha1-vpuuHIoEbnazESdyY0fQrXACvrM=
+
+xmlbuilder@~9.0.1:
+  version "9.0.7"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/xmlbuilder/-/xmlbuilder-9.0.7.tgz#132ee63d2ec5565c557e20f4c22df9aca686b10d"
+  integrity sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=
 
 xmlchars@^2.1.1:
   version "2.2.0"
@@ -14744,16 +14764,16 @@ yn@^2.0.0:
   resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yn/-/yn-2.0.0.tgz#e5adabc8acf408f6385fc76495684c88e6af689a"
   integrity sha1-5a2ryKz0CPY4X8dklWhMiOavaJo=
 
-yoshi-common@4.22.0:
-  version "4.22.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-common/-/yoshi-common-4.22.0.tgz#c677c8acaf01fa311987691ada795ffa075e16c1"
-  integrity sha1-xnfIrK8B+jEZh2ka2nlf+gdeFsE=
+yoshi-common@4.22.2:
+  version "4.22.2"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-common/-/yoshi-common-4.22.2.tgz#906726b2527bfa36bfea33d4f2bd6048229c4886"
+  integrity sha1-kGcmslJ7+ja/6jPU8r1gSCKcSIY=
   dependencies:
     "@stylable/core" "1.3.1"
     "@stylable/node" "1.3.1"
     "@stylable/webpack-plugin" "1.3.1"
     "@svgr/webpack" "4.3.3"
-    autoprefixer "9.7.2"
+    autoprefixer "9.7.3"
     babel-loader "8.0.6"
     build-url "1.3.3"
     case-sensitive-paths-webpack-plugin "2.2.0"
@@ -14781,7 +14801,7 @@ yoshi-common@4.22.0:
     lodash "4.17.15"
     mini-css-extract-plugin "0.5.0"
     optimize-css-assets-webpack-plugin "5.0.3"
-    petri-specs "1.3.151"
+    petri-specs "1.3.158"
     postcss-rtl "1.5.0"
     raw-loader "1.0.0"
     react-dev-utils "7.0.5"
@@ -14829,25 +14849,25 @@ yoshi-config@4.22.0:
     lodash "4.17.15"
     read-pkg "5.2.0"
 
-yoshi-flow-app@4.22.0:
-  version "4.22.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-app/-/yoshi-flow-app-4.22.0.tgz#eca5584a7fa1c648c3146d46be429ad9cf2599da"
-  integrity sha1-7KVYSn+hxkjDFG1GvkKa2c8lmdo=
+yoshi-flow-app@4.22.2:
+  version "4.22.2"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-app/-/yoshi-flow-app-4.22.2.tgz#3084f31148e4d4c9c1c5873d370b42c18db02177"
+  integrity sha1-MITzEUjk1MnBxYc9NwtCwY2wIXc=
   dependencies:
-    arg "4.1.1"
+    arg "4.1.2"
     bfj "6.1.2"
     chalk "2.4.2"
     fs-extra "8.1.0"
     lodash "4.17.15"
-    yoshi-common "4.22.0"
+    yoshi-common "4.22.2"
     yoshi-config "4.22.0"
-    yoshi-flow-legacy "4.22.0"
+    yoshi-flow-legacy "4.22.2"
     yoshi-helpers "4.22.0"
 
-yoshi-flow-legacy@4.22.0:
-  version "4.22.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-legacy/-/yoshi-flow-legacy-4.22.0.tgz#3e9036944d1bf341e17dffc88e846f91b9eca5a7"
-  integrity sha1-PpA2lE0b80Hhff/IjoRvkbnspac=
+yoshi-flow-legacy@4.22.2:
+  version "4.22.2"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-legacy/-/yoshi-flow-legacy-4.22.2.tgz#55e870240a4485c2328eca259f6db60c9cc9a02a"
+  integrity sha1-VehwJApEhcIyjsoln222DJzJoCo=
   dependencies:
     "@babel/code-frame" "7.5.5"
     "@babel/core" "7.7.4"
@@ -14867,7 +14887,7 @@ yoshi-flow-legacy@4.22.0:
     commander "2.20.3"
     cross-spawn "6.0.5"
     dargs "6.1.0"
-    depkeeper "1.0.290"
+    depkeeper "1.0.297"
     detect-port "1.3.0"
     envinfo "5.12.1"
     eslint "5.16.0"
@@ -14877,9 +14897,9 @@ yoshi-flow-legacy@4.22.0:
     eslint-plugin-jest "22.21.0"
     eslint-plugin-jsx-a11y "6.2.3"
     eslint-plugin-prettier "3.1.1"
-    eslint-plugin-react "7.16.0"
+    eslint-plugin-react "7.17.0"
     eslint-plugin-react-hooks "^1.6.0"
-    eslint-plugin-wix-style-react "1.0.290"
+    eslint-plugin-wix-style-react "1.0.296"
     execa "1.0.0"
     express "4.17.1"
     find-pkg "2.0.0"
@@ -14931,19 +14951,19 @@ yoshi-flow-legacy@4.22.0:
     webpack "4.41.2"
     webpack-dev-middleware "3.7.2"
     webpack-hot-client "4.1.2"
-    wnpm-ci "8.0.104"
+    wnpm-ci "8.0.110"
     word-wrap "1.2.3"
     xmldoc "1.1.2"
-    yoshi-common "4.22.0"
+    yoshi-common "4.22.2"
     yoshi-config "4.22.0"
     yoshi-helpers "4.22.0"
-    yoshi-runtime "1.0.353"
+    yoshi-runtime "1.0.360"
     yoshi-server-tools "4.22.0"
 
-yoshi-flow-monorepo@4.22.0:
-  version "4.22.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-monorepo/-/yoshi-flow-monorepo-4.22.0.tgz#bf7618b5edea12ec0bf54c40399046616d1c9baa"
-  integrity sha1-v3YYte3qEuwL9UxAOZBGYW0cm6o=
+yoshi-flow-monorepo@4.22.3:
+  version "4.22.3"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-flow-monorepo/-/yoshi-flow-monorepo-4.22.3.tgz#381a9ebd05fbe8087e31efbb8e77c4f583f59376"
+  integrity sha1-OBqevQX76Ah+Me+7jnfE9YP1k3Y=
   dependencies:
     arg "^4.1.1"
     bfj "6.1.2"
@@ -14953,10 +14973,10 @@ yoshi-flow-monorepo@4.22.0:
     globby "^10.0.1"
     import-cwd "^3.0.0"
     lodash "^4.17.15"
-    wnpm-ci "8.0.104"
-    yoshi-common "4.22.0"
+    wnpm-ci "8.0.110"
+    yoshi-common "4.22.2"
     yoshi-config "4.22.0"
-    yoshi-flow-legacy "4.22.0"
+    yoshi-flow-legacy "4.22.2"
     yoshi-helpers "4.22.0"
 
 yoshi-helpers@4.22.0:
@@ -14979,10 +14999,10 @@ yoshi-helpers@4.22.0:
     xmldoc "1.1.2"
     yoshi-config "4.22.0"
 
-yoshi-runtime@1.0.353:
-  version "1.0.353"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-runtime/-/yoshi-runtime-1.0.353.tgz#07907df0c8a9a626a6907077ff60df48a8f2d8cc"
-  integrity sha1-B5B98MippiamkHB3/2DfSKjy2Mw=
+yoshi-runtime@1.0.360:
+  version "1.0.360"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi-runtime/-/yoshi-runtime-1.0.360.tgz#875db81ac25bd37f755779b4a726266a3445eabb"
+  integrity sha1-h124GsJb0391V3m0pyYmajRF6rs=
   dependencies:
     css-modules-require-hook "^4.2.3"
     generic-names "~1.0.2"
@@ -14997,17 +15017,17 @@ yoshi-server-tools@4.22.0:
     yoshi-config "4.22.0"
 
 yoshi@^4.0.0:
-  version "4.22.1"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi/-/yoshi-4.22.1.tgz#f35c4b9bf99f128922f8840e6e7692344c2de49d"
-  integrity sha1-81xLm/mfEoki+IQObnaSNEwt5J0=
+  version "4.22.3"
+  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/yoshi/-/yoshi-4.22.3.tgz#ed12159de252f715532ac4a7d23d7919b5b94866"
+  integrity sha1-7RIVneJS9xVTKsSn0j15GbW5SGY=
   dependencies:
     "@babel/core" "7.7.4"
     "@stylable/webpack-plugin" "1.3.1"
-    yoshi-common "4.22.0"
+    yoshi-common "4.22.2"
     yoshi-config "4.22.0"
-    yoshi-flow-app "4.22.0"
-    yoshi-flow-legacy "4.22.0"
-    yoshi-flow-monorepo "4.22.0"
+    yoshi-flow-app "4.22.2"
+    yoshi-flow-legacy "4.22.2"
+    yoshi-flow-monorepo "4.22.3"
     yoshi-helpers "4.22.0"
 
 zip-stream@^2.1.2:
