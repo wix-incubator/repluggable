@@ -36,6 +36,7 @@ import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
+import { hot } from './hot'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -814,7 +815,10 @@ miss: ${memoizedWithMissHit.miss}
             lazyShells,
             readyAPIs,
             shellInstallers,
-            utils
+            utils,
+            hmr: {
+                hot
+            }
         }
     }
 }

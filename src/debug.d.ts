@@ -17,10 +17,15 @@ export interface RepluggableAppDebugInfo {
     readyAPIs: Set<AnySlotKey>
     shellInstallers: WeakMap<PrivateShell, string[]>
     utils: RepluggableDebugUtils
+    hmr: RepluggableHMR
 }
 
 export interface RepluggableDebugUtils {
     apis: () => Array[APIDebugInfo]
+}
+
+export interface RepluggableHMR {
+    hot: (sourceModule: any, entryPoints: EntryPoint[]) => EntryPoint[]
 }
 
 export interface APIDebugInfo {
