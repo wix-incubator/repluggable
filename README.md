@@ -4,7 +4,7 @@ Repluggable implements micro-frontends in a React+Redux app. Functionality of a 
 
 Navigate: [How-to](#How-to) | [Architecture](#Architecture)
 
-# Getting started
+# Getting started 
 
 All code in this README is in TypeScript.
 
