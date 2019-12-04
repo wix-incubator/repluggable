@@ -158,6 +158,10 @@ function createShell(host: AppHost): PrivateShell {
             const slot: any = {}
             return slot
         },
+        declareCustomSlot() {
+            const slot: any = {}
+            return slot
+        },
         setLifecycleState: _.noop,
         setDependencyAPIs: _.noop,
         canUseAPIs(): boolean {
