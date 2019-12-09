@@ -21,6 +21,10 @@ function getOrAddModuleEntry(moduleId: string, lastKnownEntryPoints: EntryPoint[
 }
 
 export const hot = (sourceModule: any, entryPoints: EntryPoint[]): EntryPoint[] => {
+    if (!sourceModule.hot) {
+        return entryPoints // not a dev environment
+    }
+
     const shortModuleId = sourceModule.id.split('/').pop()
     console.log(
         `----- HMR[${shortModuleId}] > ENTER`,
