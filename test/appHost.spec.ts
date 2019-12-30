@@ -72,6 +72,10 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
 }
 
 describe('App Host', () => {
+    beforeEach(() => {
+        spyOn(ConsoleHostLogger, 'log')
+    })
+
     it('should create an app host', () => {
         const host = createAppHost([])
         expect(host).toBeInstanceOf(Object)
@@ -79,7 +83,6 @@ describe('App Host', () => {
 
     describe('AppHost Options', () => {
         it('should use ConsoleHostLogger by default', () => {
-            spyOn(ConsoleHostLogger, 'log')
             const host = createAppHost([])
             expect(host.log).toBe(ConsoleHostLogger)
         })
