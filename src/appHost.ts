@@ -421,10 +421,7 @@ miss: ${memoizedWithMissHit.miss}
 
         const validateEntryPointAPIs = (entryPoint: AnyEntryPoint, visited: Set<AnyEntryPoint>) => {
             if (visited.has(entryPoint)) {
-                console.debug(
-                    'Circular API dependency found',
-                    [...visited, entryPoint].map(x => x.name)
-                )
+                host.log.log('debug', `Circular API dependency found: ${[...visited, entryPoint].map(x => x.name).join(' -> ')}`)
                 throw new Error(`Circular API dependency found`)
             }
 
