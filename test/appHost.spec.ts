@@ -347,6 +347,101 @@ describe('App Host', () => {
         })
     })
 
+    describe('Shell extension slots', () => {
+        it('should allow contribution', async () => {
+            const host = createAppHost([])
+            interface SlotItem {
+                value: string
+            }
+            interface MockAPIA {
+                contributeItem(fromShell: Shell, item: SlotItem): void
+            }
+            const slotKey: SlotKey<SlotItem> = {
+                name: 'MOCK_SLOT'
+            }
+            const MockAPIA: SlotKey<MockAPIA> = {
+                name: 'MOCK_API_A'
+            }
+            const contributedItemA = { value: 'A' }
+            const contributedItemB = { value: 'B' }
+            const entryPointA: EntryPoint = {
+                name: 'MOCK_A',
+                declareAPIs() {
+                    return [MockAPIA]
+                },
+                attach(shell) {
+                    shell.declareSlot(slotKey)
+                    shell.contributeAPI(MockAPIA, () => ({
+                        contributeItem(fromShell, item) {
+                            shell.getSlot(slotKey).contribute(fromShell, item)
+                        }
+                    }))
+                },
+                extend(shell) {
+                    shell.getAPI(MockAPIA).contributeItem(shell, contributedItemA)
+                }
+            }
+
+            const entryPointB: EntryPoint = {
+                name: 'MOCK_B',
+                getDependencyAPIs() {
+                    return [MockAPIA]
+                },
+                extend(shell) {
+                    shell.getAPI(MockAPIA).contributeItem(shell, contributedItemB)
+                }
+            }
+            await host.addShells([entryPointA, entryPointB])
+
+            const getItems = () =>
+                host
+                    .getSlot(slotKey)
+                    .getItems()
+                    .map(({ contribution }) => contribution)
+
+            expect(getItems()).toEqual([contributedItemA, contributedItemB])
+
+            await host.removeShells(['MOCK_B'])
+            expect(getItems()).toEqual([contributedItemA])
+
+            await host.addShells([entryPointB])
+            expect(getItems()).toEqual([contributedItemA, contributedItemB])
+        })
+
+        it('should not allow direct access to slots from other shells', async () => {
+            const host = createAppHost([])
+            interface SlotItem {
+                value: string
+            }
+            interface MockAPIA {
+                contributeItem(fromShell: Shell, item: SlotItem): void
+            }
+            const slotKey: SlotKey<SlotItem> = {
+                name: 'MOCK_SLOT'
+            }
+            const MockAPIA: SlotKey<MockAPIA> = {
+                name: 'MOCK_API_A'
+            }
+            const entryPointA: EntryPoint = {
+                name: 'MOCK_A',
+                declareAPIs() {
+                    return [MockAPIA]
+                },
+                attach(shell) {
+                    shell.declareSlot(slotKey)
+                }
+            }
+            const entryPointB: EntryPoint = {
+                name: 'MOCK_B',
+                extend(shell) {
+                    const errorString = `Shell '${entryPointB.name}' is trying to get slot '${slotKey.name}' that is owned by '${entryPointA.name}'`
+                    expect(() => shell.getSlot(slotKey)).toThrowError(errorString)
+                }
+            }
+            await host.addShells([entryPointA])
+        })
+    })
+
     describe('Host State', () => {
         it('should have a store with initial state', () => {
             const host = createAppHost([])

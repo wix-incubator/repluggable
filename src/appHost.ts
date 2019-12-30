@@ -666,7 +666,18 @@ miss: ${memoizedWithMissHit.miss}
             name: entryPoint.name,
             entryPoint,
 
-            getSlot: host.getSlot,
+            getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
+                const slot = host.getSlot(key)
+                const { declaringShell } = slot
+                if (!declaringShell || declaringShell !== shell) {
+                    throw new Error(
+                        `Shell '${shell.name}' is trying to get slot '${key.name}' that is owned by '${
+                            declaringShell ? declaringShell.name : 'Host'
+                        }'`
+                    )
+                }
+                return slot
+            },
             getAllSlotKeys: host.getAllSlotKeys,
             getAllEntryPoints: host.getAllEntryPoints,
             hasShell: host.hasShell,
