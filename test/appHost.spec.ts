@@ -202,9 +202,9 @@ describe('App Host', () => {
             }
         ],
         ({ testCase, dependencyAPI, providerPackage }) => {
-            describe(`Dependecy entry point installation (${testCase})`, () => {
+            describe(`Dependency entry point installation (${testCase})`, () => {
                 it('should not install dependent entry point until dependency is installed', async () => {
-                    const { host, dependentPackage: dependentPackage } = createHostWithDependantPackages(dependencyAPI)
+                    const { host, dependentPackage } = createHostWithDependantPackages(dependencyAPI)
 
                     expect(host.hasShell(dependentPackage[0].name)).toBe(false)
 
@@ -214,9 +214,7 @@ describe('App Host', () => {
                 })
 
                 it('should install all dependent entry points chain when dependencies are installed from entry point', async () => {
-                    const { host, dependentPackage, deeplyDependentPackage: deeplyDependentPackage } = createHostWithDependantPackages(
-                        dependencyAPI
-                    )
+                    const { host, dependentPackage, deeplyDependentPackage } = createHostWithDependantPackages(dependencyAPI)
 
                     expect(host.hasShell(dependentPackage[0].name)).toBe(false)
                     expect(host.hasShell(dependentPackage[1].name)).toBe(false)
@@ -230,9 +228,7 @@ describe('App Host', () => {
                 })
 
                 it('should install all dependent entry points chain when dependencies are installed outside of entry point', async () => {
-                    const { host, dependentPackage, deeplyDependentPackage, helperShell: helperShell } = createHostWithDependantPackages(
-                        dependencyAPI
-                    )
+                    const { host, dependentPackage, deeplyDependentPackage, helperShell } = createHostWithDependantPackages(dependencyAPI)
 
                     expect(host.hasShell(dependentPackage[0].name)).toBe(false)
                     expect(host.hasShell(dependentPackage[1].name)).toBe(false)

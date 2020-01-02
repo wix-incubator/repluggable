@@ -29,7 +29,6 @@ import {
     CustomExtensionSlotHandler,
     CustomExtensionSlot
 } from './API'
-import { getPerformanceDebug } from './debugInfo'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
@@ -38,8 +37,8 @@ import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import { createThrottledStore, ThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
-import { hot } from './hot'
 import { Graph, Tarjan } from './tarjanGraph'
+import { setupDebugInfo } from './repluggableAppDebug'
 
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
@@ -66,12 +65,30 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
     }, {})
 }
 
+interface UnreadyEntryPointsStore {
+    get(): EntryPoint[]
+    set(entryPoints: EntryPoint[]): void
+}
+
+const createUnreadyEntryPointsStore = (): UnreadyEntryPointsStore => {
+    let entryPoints: EntryPoint[] = []
+
+    return {
+        get() {
+            return entryPoints
+        },
+        set(newEntryPoints: EntryPoint[]) {
+            entryPoints = newEntryPoints
+        }
+    }
+}
+
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: ThrottledStore | null = null
     let currentShell: PrivateShell | null = null
     let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
-    let unReadyEntryPoints: EntryPoint[] = []
+    const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
     const layers: APILayer[] = options.layers || []
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
@@ -108,7 +125,25 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         options
     }
 
-    setupDebugInfo()
+    setupDebugInfo({
+        host,
+        readyAPIs,
+        uniqueShellNames,
+        extensionSlots,
+        addedShells,
+        shellInstallers,
+        lazyShells,
+
+        performance: {
+            options,
+            trace,
+            memoizedArr
+        },
+
+        getUnreadyEntryPoints: unReadyEntryPointsStore.get,
+        getOwnSlotKey,
+        getAPI
+    })
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
     declareSlot<ReducersMapObjectContributor>(stateSlotKey)
@@ -205,7 +240,10 @@ miss: ${memoizedWithMissHit.miss}
             return
         }
         const highestLevelDependency: Dependency = _.chain(entryPoint.getDependencyAPIs())
-            .map(apiKey => ({ layer: apiKey.layer ? getLayerByName(apiKey.layer) : undefined, apiKey }))
+            .map(apiKey => ({
+                layer: apiKey.layer ? getLayerByName(apiKey.layer) : undefined,
+                apiKey
+            }))
             .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
             .value()
         const currentLayer = getLayerByName(entryPoint.layer)
@@ -226,7 +264,7 @@ miss: ${memoizedWithMissHit.miss}
 
         const entryPoints = _.flatten(entryPointsOrPackages)
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
-        const allEntryPoints = existingEntryPoints.concat(unReadyEntryPoints, entryPoints)
+        const allEntryPoints = existingEntryPoints.concat(unReadyEntryPointsStore.get(), entryPoints)
 
         if (!options.disableLayersValidation) {
             validateLayers(entryPoints)
@@ -254,7 +292,7 @@ miss: ${memoizedWithMissHit.miss}
             return _.isEmpty(_.find(dependencies, key => !readyAPIs.has(getOwnSlotKey(key))))
         })
 
-        unReadyEntryPoints = _.union(_.difference(unReadyEntryPoints, readyEntryPoints), currentUnReadyEntryPoints)
+        unReadyEntryPointsStore.set(_.union(_.difference(unReadyEntryPointsStore.get(), readyEntryPoints), currentUnReadyEntryPoints))
         if (store && _.isEmpty(readyEntryPoints)) {
             return
         }
@@ -297,7 +335,7 @@ miss: ${memoizedWithMissHit.miss}
         } finally {
             canInstallReadyEntryPoints = true
         }
-        executeInstallShell(unReadyEntryPoints)
+        executeInstallShell(unReadyEntryPointsStore.get())
     }
 
     function executeShellsChangedCallbacks() {
@@ -549,7 +587,7 @@ miss: ${memoizedWithMissHit.miss}
         const dependencyAPIs = _.invoke(shell.entryPoint, 'getDependencyAPIs')
 
         if (_.some(dependencyAPIs, isAPIMissing)) {
-            unReadyEntryPoints.push(shell.entryPoint)
+            unReadyEntryPointsStore.get().push(shell.entryPoint)
             executeUninstallShells([shell.name])
         }
     }
@@ -732,9 +770,9 @@ miss: ${memoizedWithMissHit.miss}
                 readyAPIs.add(key)
 
                 if (canInstallReadyEntryPoints) {
-                    const shellNames = _.map(unReadyEntryPoints, 'name')
-                    executeInstallShell(unReadyEntryPoints)
-                    setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPoints, 'name')))
+                    const shellNames = _.map(unReadyEntryPointsStore.get(), 'name')
+                    executeInstallShell(unReadyEntryPointsStore.get())
+                    setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPointsStore.get(), 'name')))
                 }
 
                 return monitoredAPI
@@ -782,37 +820,5 @@ miss: ${memoizedWithMissHit.miss}
 
     function normalizeApiName(name: string) {
         return name.charAt(0).toLowerCase() + name.substring(1).replace(new RegExp(' ', 'g'), '')
-    }
-
-    function setupDebugInfo() {
-        const utils = {
-            apis: () => {
-                return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
-                    return {
-                        key: apiKey,
-                        impl: () => getAPI(apiKey)
-                    }
-                })
-            },
-            unReadyEntryPoints: () => unReadyEntryPoints,
-            findAPI: (name: string) => {
-                return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
-            },
-            performance: getPerformanceDebug(options, trace, memoizedArr)
-        }
-
-        window.repluggableAppDebug = {
-            host,
-            uniqueShellNames,
-            extensionSlots,
-            addedShells,
-            lazyShells,
-            readyAPIs,
-            shellInstallers,
-            utils,
-            hmr: {
-                hot
-            }
-        }
     }
 }

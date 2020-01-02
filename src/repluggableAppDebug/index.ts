@@ -1,0 +1,1 @@
+export { setupDebugInfo } from './repluggableAppDebug'
