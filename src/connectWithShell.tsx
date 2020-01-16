@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell } from './API'
+import { Shell, AnyFunction } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -20,19 +20,25 @@ type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) 
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
+type Mandatory<T> = { [K in keyof T]-?: T[K] }
 
-const reduxConnectOptions: ReduxConnectOptions = {
+const reduxConnectOptions: ReduxConnectOptions & Pick<Mandatory<ReduxConnectOptions>, 'areStatePropsEqual' | 'areOwnPropsEqual'> = {
     context: StoreContext,
     pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
 }
 
+function wrapWithShouldUpdate<F extends AnyFunction>(shouldUpdate: Maybe<(shell: Shell) => boolean>, func: F, shell: Shell): F {
+    return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell) ? true : func(...args))) as F
+}
+
 function wrapWithShellContext<S, OP, SP, DP>(
     component: React.ComponentType<OP & SP & DP>,
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
-    boundShell: Shell
+    boundShell: Shell,
+    options: ConnectWithShellOptions = {}
 ) {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
         public connectedComponent: React.ComponentType<OP>
@@ -60,7 +66,21 @@ function wrapWithShellContext<S, OP, SP, DP>(
                 this.mapStateToProps,
                 this.mapDispatchToProps,
                 undefined,
-                reduxConnectOptions
+                options.shouldComponentUpdate
+                    ? {
+                          ...reduxConnectOptions,
+                          areStatePropsEqual: wrapWithShouldUpdate(
+                              options.shouldComponentUpdate,
+                              reduxConnectOptions.areStatePropsEqual,
+                              boundShell
+                          ),
+                          areOwnPropsEqual: wrapWithShouldUpdate(
+                              options.shouldComponentUpdate,
+                              reduxConnectOptions.areOwnPropsEqual,
+                              boundShell
+                          )
+                      }
+                    : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
         }
 
@@ -94,6 +114,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
 
 export interface ConnectWithShellOptions {
     readonly allowOutOfEntryPoint?: boolean
+    shouldComponentUpdate?(shell: Shell): boolean
 }
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
@@ -118,6 +139,6 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
 
     return (component: React.ComponentType<OP & SP & DP>) => {
         validateLifecycle(component)
-        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell)
+        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
     }
 }
