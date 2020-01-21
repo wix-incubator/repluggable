@@ -10,7 +10,8 @@
     "email": "responsive-feds@wix.com"
   },
   "publishConfig": {
-    "registry": "http://npm.dev.wixpress.com/"
+    "registry": "http://npm.dev.wixpress.com/",
+    "versionBumpStrategy": "patch"
   },
   "files": [
     "__tests__",
@@ -23,7 +24,6 @@
     "build": "yoshi build",
     "test": "yoshi test --coverage",
     "posttest": "yoshi lint",
-    "release": "yoshi release",
     "test:performance": "perfer"
   },
   "dependencies": {
