@@ -33,7 +33,7 @@ export const Foo : EntryPoint = {
 }
 ```
 
-Usually, pluggable package will be separate npm project, which exports an array of entry points. But it is not required: entry points can also be part of the main app.
+Usually, a pluggable package will be a separate npm project, which exports an array of entry points. But it is not required: entry points can also be part of the main app.
 
 ## Bootstrapping main application
 
