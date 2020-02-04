@@ -190,7 +190,10 @@ describe('interceptEntryPoints', () => {
         const interceptor = createTestInterceptor(spy, 'I1', { interceptAttach: true, interceptExtend: true })
         const intercepted = interceptEntryPoints(entryPoints, interceptor)
 
-        createAppHost(intercepted)
+        createAppHost(intercepted, {
+            monitoring: {},
+            checkCircularDependencies: true
+        })
 
         // getDependencyAPIs appears to be called multiple times
         expect(_.uniq(takeLog(spy))).toEqual([
