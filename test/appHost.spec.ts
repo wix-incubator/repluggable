@@ -18,6 +18,11 @@ import { ConsoleHostLogger } from '../src/loggers'
 import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
 import { addMockShell } from '../testKit'
 
+const testHostOptions: AppHostOptions = {
+    monitoring: { disableMonitoring: true },
+    checkCircularDependencies: true
+}
+
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     const MockAPI2: SlotKey<{}> = { name: 'Mock-API-2' }
     const dependentPackage: EntryPoint[] = [
@@ -64,7 +69,7 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     }
 
     return {
-        host: createAppHost([dependentPackage, deeplyDependentPackage, helperEntryPoint]),
+        host: createAppHost([dependentPackage, deeplyDependentPackage, helperEntryPoint], testHostOptions),
         dependentPackage,
         deeplyDependentPackage,
         helperShell: getHelperShell()
@@ -77,13 +82,13 @@ describe('App Host', () => {
     })
 
     it('should create an app host', () => {
-        const host = createAppHost([])
+        const host = createAppHost([], testHostOptions)
         expect(host).toBeInstanceOf(Object)
     })
 
     describe('AppHost Options', () => {
         it('should use ConsoleHostLogger by default', () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(host.log).toBe(ConsoleHostLogger)
         })
         it('should use custom host logger if specified', () => {
@@ -102,7 +107,8 @@ describe('App Host', () => {
             }
             const options: AppHostOptions = {
                 logger,
-                monitoring: {}
+                monitoring: {},
+                checkCircularDependencies: true
             }
 
             const host = createAppHost([], options)
@@ -112,41 +118,50 @@ describe('App Host', () => {
     })
 
     describe('Packages Installation', () => {
+        it('should NOT throw on circular dependency if check is disabled in host options', () => {
+            const circularPackages = createDirectCircularEntryPoints()
+            const hostOptionsWithDisabledCircularCheck: AppHostOptions = {
+                monitoring: {},
+                checkCircularDependencies: undefined
+            }
+            expect(() => createAppHost(circularPackages, hostOptionsWithDisabledCircularCheck)).not.toThrow()
+        })
+
         it('should throw on direct circular API dependency (private keys)', () => {
             const circularPackages = createDirectCircularEntryPoints()
-            expect(() => createAppHost(circularPackages)).toThrowError()
+            expect(() => createAppHost(circularPackages, testHostOptions)).toThrowError()
         })
 
         it('should throw on direct circular API dependency (public keys)', () => {
             const circularPackages = createDirectCircularEntryPoints(true)
-            expect(() => createAppHost(circularPackages)).toThrowError()
+            expect(() => createAppHost(circularPackages, testHostOptions)).toThrowError()
         })
         it('should throw on circular API dependency (private keys)', () => {
             const circularPackages = createCircularEntryPoints()
-            expect(() => createAppHost(circularPackages)).toThrowError()
+            expect(() => createAppHost(circularPackages, testHostOptions)).toThrowError()
         })
 
         it('should throw on circular API dependency (public keys)', () => {
             const circularPackages = createCircularEntryPoints(true)
-            expect(() => createAppHost(circularPackages)).toThrowError()
+            expect(() => createAppHost(circularPackages, testHostOptions)).toThrowError()
         })
 
         it('should throw when dynamically adding a shell with circular dependency', () => {
             const circularPackages = createCircularEntryPoints(true)
             const nonCircular = circularPackages.slice(0, 3)
             const circularEP = _.last(circularPackages) as EntryPoint
-            const host = createAppHost(nonCircular)
+            const host = createAppHost(nonCircular, testHostOptions)
 
             expect(() => host.addShells([circularEP])).toThrow()
         })
 
         it('should install initial packages', () => {
-            const host = createAppHost([mockPackage])
+            const host = createAppHost([mockPackage], testHostOptions)
             expect(host.hasShell(mockPackage.name)).toBe(true)
         })
 
         it('should install packages after initial installations', async () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(host.hasShell(mockPackage.name)).toBe(false)
 
             await host.addShells([mockPackage])
@@ -155,7 +170,7 @@ describe('App Host', () => {
         })
 
         it('should uninstall shell', async () => {
-            const host = createAppHost([mockPackage])
+            const host = createAppHost([mockPackage], testHostOptions)
 
             await host.removeShells([mockPackage.name])
 
@@ -163,12 +178,12 @@ describe('App Host', () => {
         })
 
         it('should not install multiple shells with the same name', () => {
-            expect(() => createAppHost([mockPackage, _.pick(mockPackage, 'name')])).toThrow()
+            expect(() => createAppHost([mockPackage, _.pick(mockPackage, 'name')], testHostOptions)).toThrow()
         })
 
         it('should install lazy shells', () => {
             const lazyEntryPoint = makeLazyEntryPoint(mockPackage.name, async () => mockPackage)
-            const host = createAppHost([lazyEntryPoint])
+            const host = createAppHost([lazyEntryPoint], testHostOptions)
             expect(host.hasShell(lazyEntryPoint.name)).toBe(true)
         })
     })
@@ -249,19 +264,19 @@ describe('App Host', () => {
 
     describe('Host extension slots', () => {
         it('should have a state extension slot', () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(host.getSlot(stateSlotKey)).toBeTruthy()
         })
 
         it('should have a main view extension slot', () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(host.getSlot(mainViewSlotKey)).toBeTruthy()
         })
 
         it('should retrieve all slot keys', () => {
             const sortSlotKeys = (slotKeys: AnySlotKey[]) => _.sortBy(slotKeys, 'name')
 
-            const host = createAppHost([mockPackage])
+            const host = createAppHost([mockPackage], testHostOptions)
 
             const actual = sortSlotKeys(host.getAllSlotKeys())
             const expected = sortSlotKeys([AppHostAPI, mainViewSlotKey, stateSlotKey, MockAPI])
@@ -271,7 +286,7 @@ describe('App Host', () => {
 
         describe('private API slot key', () => {
             it('should equal itself', () => {
-                const host = createAppHost([mockPackage])
+                const host = createAppHost([mockPackage], testHostOptions)
 
                 const API = host.getAPI(MockAPI)
 
@@ -279,7 +294,7 @@ describe('App Host', () => {
             })
 
             it('should not equal another key with same name', () => {
-                const host = createAppHost([mockPackage])
+                const host = createAppHost([mockPackage], testHostOptions)
                 const fakeKey: SlotKey<MockAPI> = { name: MockAPI.name }
 
                 expect(() => {
@@ -288,7 +303,7 @@ describe('App Host', () => {
             })
 
             it('should not equal another key with same name that claims it is public', () => {
-                const host = createAppHost([mockPackage])
+                const host = createAppHost([mockPackage], testHostOptions)
                 const fakeKey1: SlotKey<MockAPI> = {
                     name: MockAPI.name,
                     public: true
@@ -310,7 +325,7 @@ describe('App Host', () => {
 
         describe('public API slot key', () => {
             it('should equal itself', () => {
-                const host = createAppHost([mockPackageWithPublicAPI])
+                const host = createAppHost([mockPackageWithPublicAPI], testHostOptions)
 
                 const API = host.getAPI(MockPublicAPI)
 
@@ -318,7 +333,7 @@ describe('App Host', () => {
             })
 
             it('should equal another key with same name that claims it is public', () => {
-                const host = createAppHost([mockPackageWithPublicAPI])
+                const host = createAppHost([mockPackageWithPublicAPI], testHostOptions)
                 const anotherKey: SlotKey<MockAPI> = {
                     name: MockPublicAPI.name,
                     public: true
@@ -330,7 +345,7 @@ describe('App Host', () => {
             })
 
             it('should not equal another key with same name than does not claim it is public', () => {
-                const host = createAppHost([mockPackageWithPublicAPI])
+                const host = createAppHost([mockPackageWithPublicAPI], testHostOptions)
                 const anotherKey1: SlotKey<MockAPI> = {
                     name: MockPublicAPI.name
                 }
@@ -352,7 +367,7 @@ describe('App Host', () => {
 
     describe('Shell extension slots', () => {
         it('should allow contribution', async () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             interface SlotItem {
                 value: string
             }
@@ -412,7 +427,7 @@ describe('App Host', () => {
         })
 
         it('should not allow direct access to slots from other shells', async () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             interface SlotItem {
                 value: string
             }
@@ -447,7 +462,7 @@ describe('App Host', () => {
 
     describe('Host State', () => {
         it('should have a store with initial state', () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(host.getStore().getState()).toEqual({
                 $installedShells: {
                     installedShells: {
@@ -460,12 +475,12 @@ describe('App Host', () => {
 
     describe('Entry Point Contributions', () => {
         it('should contribute API', () => {
-            const host = createAppHost([mockPackage])
+            const host = createAppHost([mockPackage], testHostOptions)
             expect(host.getAPI(MockAPI)).toBeTruthy()
         })
 
         it('should contribute API after initial installations', async () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
             expect(() => host.getAPI(MockAPI)).toThrow()
 
             await host.addShells([mockPackage])
@@ -475,7 +490,7 @@ describe('App Host', () => {
         it('should contribute state', async () => {
             const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name, mockShellStateKey], null)
 
-            const appHost = createAppHost([])
+            const appHost = createAppHost([], testHostOptions)
             expect(getMockShellState(appHost)).toBeNull()
 
             await appHost.addShells([mockPackage])
@@ -483,7 +498,7 @@ describe('App Host', () => {
         })
 
         it('should memoize functions upon demand', () => {
-            const host = createAppHost([mockPackage])
+            const host = createAppHost([mockPackage], testHostOptions)
             const getObj = () => host.getAPI(MockAPI).getNewObject()
             expect(getObj()).not.toBe(getObj())
 
@@ -509,7 +524,7 @@ describe('App Host', () => {
         })
 
         it('should not clear memoized functions if not needed', () => {
-            const host = createAppHost([])
+            const host = createAppHost([], testHostOptions)
 
             interface NewAPI {
                 getNewObject(): object
@@ -543,7 +558,7 @@ describe('App Host', () => {
                     shell.getAPI(MockAPI).stubTrue()
                 }
             }
-            const appHost = createAppHost([mockPackage])
+            const appHost = createAppHost([mockPackage], testHostOptions)
             expect(() => appHost.addShells([entryPointThatCallsAPI])).not.toThrow()
         })
 
@@ -554,7 +569,7 @@ describe('App Host', () => {
                     shell.getAPI(MockAPI).stubTrue()
                 }
             }
-            const appHost = createAppHost([mockPackage])
+            const appHost = createAppHost([mockPackage], testHostOptions)
             expect(() => appHost.addShells([entryPointThatCallsAPI])).toThrow()
         })
 
@@ -573,7 +588,7 @@ describe('App Host', () => {
                     done()
                 }
             }
-            createAppHost([entryPointWithState])
+            createAppHost([entryPointWithState], testHostOptions)
         })
 
         it('should be able to uninstall own installed packages', async () => {
@@ -585,8 +600,8 @@ describe('App Host', () => {
                     shell.removeShells([mockPackage.name])
                 }
             }
-            createAppHost([packageThatInstallsAPackage])
-            expect(() => createAppHost([packageThatInstallsAPackage])).not.toThrow()
+            createAppHost([packageThatInstallsAPackage], testHostOptions)
+            expect(() => createAppHost([packageThatInstallsAPackage], testHostOptions)).not.toThrow()
         })
 
         it('should not be able to uninstall not own installed packages', () => {
@@ -596,7 +611,7 @@ describe('App Host', () => {
                     shell.removeShells([mockPackage.name])
                 }
             }
-            expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage])).toThrow()
+            expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage], testHostOptions)).toThrow()
         })
     })
 
@@ -650,7 +665,7 @@ describe('App Host', () => {
         ]
 
         it('should be able to reload entry points', async () => {
-            const appHost = createAppHost(hmrTestPackage)
+            const appHost = createAppHost(hmrTestPackage, testHostOptions)
 
             await appHost.removeShells(['LOW_LEVEL_API_ENTRY_POINT'])
             await appHost.addShells([hmrTestPackage[0]])
