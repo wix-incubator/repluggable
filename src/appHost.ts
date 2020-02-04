@@ -417,57 +417,37 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
-        const apiToEP = buildApiToEntryPoint(entryPoints)
-
-        const validateEntryPointAPIs = (entryPoint: AnyEntryPoint, visited: Set<AnyEntryPoint>) => {
-            if (visited.has(entryPoint)) {
-                host.log.log('debug', `Circular API dependency found: ${[...visited, entryPoint].map(x => x.name).join(' -> ')}`)
-                throw new Error(`Circular API dependency found`)
-            }
-
-            visited.add(entryPoint)
-            dependentAPIs(entryPoint).forEach(apiKey => {
-                const apiEntryPoint = apiToEP(apiKey)
-                apiEntryPoint && validateEntryPointAPIs(apiEntryPoint, new Set(visited))
+        const dependentGraph: { [key: string]: string[] } = {}
+        entryPoints.forEach(x => {
+            const declaredApis = declaredAPIs(x)
+            const dependencies = dependentAPIs(x).map(child => child.name)
+            declaredApis.forEach(d => {
+                dependentGraph[d.name] = dependencies
             })
-        }
-
-        entryPoints.forEach(entryPoint => {
-            const visited = new Set<AnyEntryPoint>()
-            validateEntryPointAPIs(entryPoint, visited)
         })
-    }
 
-    function buildApiToEntryPoint(entryPoints: AnyEntryPoint[]): (apiKey: AnySlotKey) => AnyEntryPoint {
-        const privateKeyToEP = new Map<AnySlotKey, AnyEntryPoint>()
-        const publicKeyNameToEP = new Map<string, AnyEntryPoint>()
-
-        entryPoints.forEach(entryPoint => {
-            declaredAPIs(entryPoint).forEach((apiKey: AnySlotKey) => {
-                if (apiKey.public === true) {
-                    publicKeyNameToEP.set(apiKey.name, entryPoint)
-                } else {
-                    privateKeyToEP.set(apiKey, entryPoint)
+        function getCycle() {
+            let queue = Object.keys(dependentGraph).map(node => [node])
+            while (queue.length) {
+                const batch = []
+                for (const path of queue) {
+                    const parents = dependentGraph[path[0]] || []
+                    for (const node of parents) {
+                        if (node === path[path.length - 1]) {
+                            return [node, ...path]
+                        }
+                        batch.push([node, ...path])
+                    }
                 }
-            })
-        })
-
-        return (apiKey: AnySlotKey): AnyEntryPoint => {
-            if (apiKey.public === true) {
-                return publicKeyNameToEP.get(apiKey.name) as AnyEntryPoint
+                queue = batch
             }
-            return privateKeyToEP.get(apiKey) as AnyEntryPoint
-        }
-    }
-
-    function loadLazyShell(name: string): Promise<EntryPoint> {
-        const factory = lazyShells.get(name)
-
-        if (factory) {
-            return factory()
         }
 
-        throw new Error(`Shell '${name}' could not be found.`)
+        const circle = getCycle()
+        if (circle) {
+            host.log.log('debug', `Circular API dependency found: ${circle.join(' -> ')}`)
+            throw new Error(`Circular API dependency found`)
+        }
     }
 
     function buildStore(): Store {
