@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { AppHostOptions, Trace, StatisticsMemoization } from './API'
+import { AppHostOptions, Trace, StatisticsMemoization } from '../API'
 
 export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], memoized: StatisticsMemoization[]) {
     const getMemoizedTable = () => {
