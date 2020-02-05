@@ -19,8 +19,7 @@ import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
 import { addMockShell } from '../testKit'
 
 const testHostOptions: AppHostOptions = {
-    monitoring: { disableMonitoring: true },
-    checkCircularDependencies: true
+    monitoring: { disableMonitoring: true }
 }
 
 const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
@@ -107,8 +106,7 @@ describe('App Host', () => {
             }
             const options: AppHostOptions = {
                 logger,
-                monitoring: {},
-                checkCircularDependencies: true
+                monitoring: {}
             }
 
             const host = createAppHost([], options)
@@ -122,7 +120,7 @@ describe('App Host', () => {
             const circularPackages = createDirectCircularEntryPoints()
             const hostOptionsWithDisabledCircularCheck: AppHostOptions = {
                 monitoring: {},
-                checkCircularDependencies: undefined
+                disableCheckCircularDependencies: true
             }
             expect(() => createAppHost(circularPackages, hostOptionsWithDisabledCircularCheck)).not.toThrow()
         })

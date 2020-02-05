@@ -270,7 +270,7 @@ miss: ${memoizedWithMissHit.miss}
             validateLayers(entryPoints)
         }
         validateUniqueShellNames(entryPoints)
-        options.checkCircularDependencies && validateCircularDependency(allEntryPoints)
+        !options.disableCheckCircularDependencies && validateCircularDependency(allEntryPoints)
 
         const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
             LazyEntryPointDescriptor[],

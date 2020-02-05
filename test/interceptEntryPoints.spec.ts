@@ -191,8 +191,7 @@ describe('interceptEntryPoints', () => {
         const intercepted = interceptEntryPoints(entryPoints, interceptor)
 
         createAppHost(intercepted, {
-            monitoring: {},
-            checkCircularDependencies: true
+            monitoring: {}
         })
 
         // getDependencyAPIs appears to be called multiple times

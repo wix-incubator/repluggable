@@ -121,7 +121,7 @@ export interface AppHostOptions {
     readonly monitoring: MonitoringOptions
     readonly layers?: APILayer[]
     readonly disableLayersValidation?: boolean
-    readonly checkCircularDependencies?: boolean
+    readonly disableCheckCircularDependencies?: boolean
 }
 
 export interface MemoizeMissHit {
