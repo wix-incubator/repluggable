@@ -1,4 +1,8 @@
-// Based on https://gist.github.com/chadhutchins/1440602
+/*
+    Based on:
+    https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+    https://gist.github.com/chadhutchins/1440602
+*/
 
 export class Graph {
     private readonly map = new Map<string, Vertex>()
@@ -27,21 +31,9 @@ class Vertex {
     constructor(public name: string) {}
 }
 
-class VertexStack {
-    public vertices: Vertex[] = []
-    contains(vertex: Vertex) {
-        for (const v of this.vertices) {
-            if (v.name === vertex.name) {
-                return true
-            }
-        }
-        return false
-    }
-}
-
 export class Tarjan {
     private index = 0
-    private readonly stack = new VertexStack()
+    private readonly stack: Vertex[] = []
     private readonly scc: Vertex[][] = []
     constructor(private readonly graph: Graph) {}
 
@@ -58,14 +50,14 @@ export class Tarjan {
         vertex.index = this.index
         vertex.lowLink = this.index
         this.index = this.index + 1
-        this.stack.vertices.push(vertex)
+        this.stack.push(vertex)
 
         for (const w of vertex.connections) {
             const v = vertex
             if (w.index < 0) {
                 this.strongConnect(w)
                 v.lowLink = Math.min(v.lowLink, w.lowLink)
-            } else if (this.stack.contains(w)) {
+            } else if (this.stack.some(x => x.name === w.name)) {
                 v.lowLink = Math.min(v.lowLink, w.index)
             }
         }
@@ -73,9 +65,9 @@ export class Tarjan {
         if (vertex.lowLink === vertex.index) {
             const vertices = []
             let w = null
-            if (this.stack.vertices.length > 0) {
+            if (this.stack.length > 0) {
                 do {
-                    w = this.stack.vertices.pop()
+                    w = this.stack.pop()
                     w && vertices.push(w)
                 } while (vertex.name !== w?.name)
             }
