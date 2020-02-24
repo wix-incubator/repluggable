@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, FunctionComponent } from 'react'
 import { connect, Options as ReduxConnectOptions, Provider } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell, AppHost } from './API'
 import { ErrorBoundary } from './errorBoundary'

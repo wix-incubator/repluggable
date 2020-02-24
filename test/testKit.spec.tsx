@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { EntryPoint, EntryPointOrPackage, SlotKey } from '../src/API'
+import { EntryPoint, EntryPointOrPackage, AnySlotKey, SlotKey } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
 import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage, createAppHostWithPacts, PactAPI } from '../testKit'
 

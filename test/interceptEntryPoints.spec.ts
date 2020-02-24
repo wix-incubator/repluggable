@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { EntryPoint, EntryPointInterceptor } from '../src/API'
 import { interceptEntryPoints, interceptEntryPointsMap } from '../src/interceptEntryPoints'
-import { createAppHost } from '../testKit'
+import { mockPackage, createAppHost } from '../testKit'
 
 type LogSpy = jest.Mock<void, string[]>
 
