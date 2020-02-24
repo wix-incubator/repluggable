@@ -1,10 +1,6 @@
 import _ from 'lodash'
-import React, { FunctionComponent } from 'react'
-import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
-import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer, withConsoleErrors } from '../testKit'
-import { ReactWrapper, mount, render } from 'enzyme'
-import { Provider } from 'react-redux'
-import { AnyAction, createStore } from 'redux'
+import React from 'react'
+import { createAppHost, addMockShell, renderInHost, withConsoleErrors } from '../testKit'
 import { ErrorBoundary } from '../src'
 
 describe('ErrorBoundary', () => {
