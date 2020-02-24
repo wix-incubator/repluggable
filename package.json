@@ -4,6 +4,7 @@
   "license": "MIT",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "main": "dist/src/index.js",
+  "module": "dist/es/src/index.js",
   "unpkg": true,
   "author": {
     "name": "Responsive FEDs",
