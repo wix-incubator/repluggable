@@ -162,6 +162,7 @@ describe('interceptAnyObject', () => {
         const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 10)
 
         const nestedPropValue = intercepted.objectProp.nestedProp
+        intercepted.objectProp.nestedFunc()
 
         const log = takeLog(spy)
         expect(log).toEqual(['BEFORE:objectProp.nestedFunc()', 'objectProp.nestedFunc', 'AFTER:objectProp.nestedFunc(undefined)'])
