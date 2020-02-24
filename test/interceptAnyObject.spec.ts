@@ -7,12 +7,6 @@ function takeLog(spy: LogSpy): string[] {
     return _.flatten(spy.mock.calls)
 }
 
-function takeLogAndClear(spy: LogSpy): string[] {
-    const result = takeLog(spy)
-    spy.mockClear()
-    return result
-}
-
 interface StringDict {
     [key: string]: string
 }
@@ -168,7 +162,6 @@ describe('interceptAnyObject', () => {
         const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 10)
 
         const nestedPropValue = intercepted.objectProp.nestedProp
-        const nestedFuncRetVal = intercepted.objectProp.nestedFunc()
 
         const log = takeLog(spy)
         expect(log).toEqual(['BEFORE:objectProp.nestedFunc()', 'objectProp.nestedFunc', 'AFTER:objectProp.nestedFunc(undefined)'])

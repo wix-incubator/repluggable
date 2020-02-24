@@ -186,7 +186,6 @@ describe('SlotRenderer', () => {
 
         const slot = shell.declareSlot(slotKey)
 
-        const onWillUnmount = jest.fn()
         const onDidMount = jest.fn()
 
         let isCompAEnabled = true
@@ -221,7 +220,6 @@ describe('SlotRenderer', () => {
 
         if (!root) {
             fail('could not render extension slot')
-            return
         }
 
         isCompAEnabled = false

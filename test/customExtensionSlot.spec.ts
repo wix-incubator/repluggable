@@ -33,13 +33,13 @@ describe('Custom Extension Slot', () => {
     })
 
     it('can be declared', () => {
-        const host = createAppHost([testEntryPoint])
+        createAppHost([testEntryPoint])
 
         expect(slotUnderTest).toBeDefined()
     })
 
     it('can be retrieved by key', async () => {
-        const host = createAppHost([testEntryPoint])
+        createAppHost([testEntryPoint])
 
         expect(ownerShell).toBeDefined()
         expect(ownerShell && ownerShell.getSlot(slotKey)).toBeDefined()
@@ -58,7 +58,7 @@ describe('Custom Extension Slot', () => {
     })
 
     it('invokes callback on discard', () => {
-        const host = createAppHost([testEntryPoint])
+        createAppHost([testEntryPoint])
         const predicate = (item: ExtensionItem<TestItem>) => true
 
         slotUnderTest.discardBy(predicate)
