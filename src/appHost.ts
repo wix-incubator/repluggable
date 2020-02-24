@@ -85,8 +85,6 @@ const createUnreadyEntryPointsStore = (): UnreadyEntryPointsStore => {
 
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: ThrottledStore | null = null
-    let currentShell: PrivateShell | null = null
-    let lastInstallLazyEntryPointNames: string[] = []
     let canInstallReadyEntryPoints: boolean = true
     const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
     const layers: APILayer[] = options.layers || []
@@ -222,10 +220,6 @@ miss: ${memoizedWithMissHit.miss}
         return memoizedWithMissHit
     }
 
-    function getAPILayer(apiKey: AnySlotKey): APILayer | undefined {
-        return APILayers.get(apiKey)
-    }
-
     function getLayerByName(layerName: string): APILayer {
         const layer = _.find(layers, { name: layerName })
         if (!layer) {
@@ -285,8 +279,6 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function executeInstallShell(entryPoints: EntryPoint[]): void {
-        lastInstallLazyEntryPointNames = []
-
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
             const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
             return _.isEmpty(_.find(dependencies, key => !readyAPIs.has(getOwnSlotKey(key))))
@@ -549,7 +541,6 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `${phase} : ${shell.entryPoint.name}`)
 
         try {
-            currentShell = shell
             action(shell)
         } catch (err) {
             host.log.log('error', 'AppHost.shellFailed', {
@@ -559,8 +550,6 @@ miss: ${memoizedWithMissHit.miss}
                 error: err
             })
             throw err
-        } finally {
-            currentShell = null
         }
     }
 
