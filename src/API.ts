@@ -122,6 +122,7 @@ export interface AppHostOptions {
     readonly layers?: APILayer[]
     readonly disableLayersValidation?: boolean
     readonly disableCheckCircularDependencies?: boolean
+    readonly enableStickyErrorBoundaries?: boolean
 }
 
 export interface MemoizeMissHit {
@@ -175,6 +176,7 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
+    getHostOptions(): AppHostOptions
 }
 
 export interface EntryPointsInfo {

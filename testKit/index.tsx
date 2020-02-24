@@ -186,6 +186,7 @@ function createShell(host: AppHost): PrivateShell {
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
         memoize: _.identity,
+        getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint)
     }
 }

@@ -103,7 +103,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
         <ShellContext.Consumer>
             {shell => {
                 return (
-                    <ErrorBoundary shell={boundShell}>
+                    <ErrorBoundary shell={boundShell} componentName={options.componentName}>
                         {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
@@ -113,6 +113,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
 }
 
 export interface ConnectWithShellOptions {
+    readonly componentName?: string
     readonly allowOutOfEntryPoint?: boolean
     shouldComponentUpdate?(shell: Shell): boolean
 }
