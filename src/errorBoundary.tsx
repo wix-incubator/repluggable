@@ -106,7 +106,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         const { shell } = this.props
 
         if (!this.state || !this.state.unsubscribe) {
-            const unsubscribe = shell.getStore().subscribe(() => this.throttledResetError())
+            const unsubscribe = shell.getStore().subscribe(() => {
+                this.throttledResetError()
+            })
             this.setState({ unsubscribe })
         }
     }

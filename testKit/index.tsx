@@ -10,6 +10,7 @@ import { emptyLoggerOptions } from './emptyLoggerOptions'
 export { AppHost } from '../src/index'
 export { connectWithShell } from '../src/connectWithShell'
 export { SlotRenderer } from '../src/renderSlotComponents'
+export { withConsoleErrors } from './withConsoleErrors'
 export * from './mockPackage'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
