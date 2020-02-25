@@ -54,11 +54,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         const { shell, componentName } = this.props
         const { enableStickyErrorBoundaries } = getHostOptions(shell)
 
-        shell.log.error('ErrorBoundary.componentDidCatch', {
-            componentName,
-            errorMessage: error.message,
-            stackTrace: error.stack
-        })
+        shell.log.error('ErrorBoundary.componentDidCatch', error, { componentName })
 
         if (!enableStickyErrorBoundaries) {
             this.attemptToRecoverOnNextState()

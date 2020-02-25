@@ -44,10 +44,10 @@ describe('ShellLogger', () => {
         shellLogger.error('M4')
 
         expect(hostLogger.log).toHaveBeenCalledTimes(4)
-        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', { $ep: 'ep-1' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', { $ep: 'ep-1' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', { $ep: 'ep-1' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', { $ep: 'ep-1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', undefined, { $ep: 'ep-1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', undefined, { $ep: 'ep-1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', undefined, { $ep: 'ep-1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', undefined, { $ep: 'ep-1' })
     })
 
     it('should log simple message with key-value pairs', () => {
@@ -56,13 +56,13 @@ describe('ShellLogger', () => {
         shellLogger.debug('M1', { k1: 'v1' })
         shellLogger.info('M2', { k2: 'v2' })
         shellLogger.warning('M3', { k3: 'v3' })
-        shellLogger.error('M4', { k4: 'v4' })
+        shellLogger.error('M4', undefined, { k4: 'v4' })
 
         expect(hostLogger.log).toHaveBeenCalledTimes(4)
-        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', { $ep: 'ep-1', k1: 'v1' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', { $ep: 'ep-1', k2: 'v2' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', { $ep: 'ep-1', k3: 'v3' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', { $ep: 'ep-1', k4: 'v4' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', undefined, { $ep: 'ep-1', k1: 'v1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', undefined, { $ep: 'ep-1', k2: 'v2' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', undefined, { $ep: 'ep-1', k3: 'v3' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', undefined, { $ep: 'ep-1', k4: 'v4' })
     })
 
     it('should include entry point tags in key-value pairs', () => {
@@ -71,13 +71,13 @@ describe('ShellLogger', () => {
         shellLogger.debug('M1', { k1: 'v1' })
         shellLogger.info('M2', { k2: 'v2' })
         shellLogger.warning('M3', { k3: 'v3' })
-        shellLogger.error('M4', { k4: 'v4' })
+        shellLogger.error('M4', undefined, { k4: 'v4' })
 
         expect(hostLogger.log).toHaveBeenCalledTimes(4)
-        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', { $ep: 'ep-1', k1: 'v1', t1: 'T1', t2: 'T2' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', { $ep: 'ep-1', k2: 'v2', t1: 'T1', t2: 'T2' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', { $ep: 'ep-1', k3: 'v3', t1: 'T1', t2: 'T2' })
-        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', { $ep: 'ep-1', k4: 'v4', t1: 'T1', t2: 'T2' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'debug', 'M1', undefined, { $ep: 'ep-1', k1: 'v1', t1: 'T1', t2: 'T2' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'info', 'M2', undefined, { $ep: 'ep-1', k2: 'v2', t1: 'T1', t2: 'T2' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(3, 'warning', 'M3', undefined, { $ep: 'ep-1', k3: 'v3', t1: 'T1', t2: 'T2' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(4, 'error', 'M4', undefined, { $ep: 'ep-1', k4: 'v4', t1: 'T1', t2: 'T2' })
     })
 
     it('should begin span', () => {
@@ -98,8 +98,8 @@ describe('ShellLogger', () => {
         })
 
         expect(hostLogger.log).toHaveBeenCalledTimes(3)
-        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'span', 'M1', { $ep: 'ep-1', k1: 'v1', t1: 'T1' }, 'begin')
-        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'debug', 'this-is-monitored-code', { $ep: 'ep-1', t1: 'T1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'span', 'M1', undefined, { $ep: 'ep-1', k1: 'v1', t1: 'T1' }, 'begin')
+        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'debug', 'this-is-monitored-code', undefined, { $ep: 'ep-1', t1: 'T1' })
         expect(hostLogger.log).toHaveBeenNthCalledWith(
             3,
             'span',
@@ -126,8 +126,8 @@ describe('ShellLogger', () => {
 
         expect(returnValue).toBe(123)
         expect(hostLogger.log).toHaveBeenCalledTimes(3)
-        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'span', 'M1', { $ep: 'ep-1', k1: 'v1', t1: 'T1' }, 'begin')
-        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'debug', 'this-is-monitored-code', { $ep: 'ep-1', t1: 'T1' })
+        expect(hostLogger.log).toHaveBeenNthCalledWith(1, 'span', 'M1', undefined, { $ep: 'ep-1', k1: 'v1', t1: 'T1' }, 'begin')
+        expect(hostLogger.log).toHaveBeenNthCalledWith(2, 'debug', 'this-is-monitored-code', undefined, { $ep: 'ep-1', t1: 'T1' })
         expect(hostLogger.log).toHaveBeenNthCalledWith(
             3,
             'span',

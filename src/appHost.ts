@@ -543,7 +543,7 @@ miss: ${memoizedWithMissHit.miss}
         try {
             action(shell)
         } catch (err) {
-            host.log.log('error', 'AppHost.shellFailed', {
+            host.log.log('error', 'AppHost.shellFailed', err, {
                 shell: shell.name,
                 phase,
                 message: `Shell '${shell.name}' FAILED ${phase} phase`,
