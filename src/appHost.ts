@@ -797,9 +797,12 @@ miss: ${memoizedWithMissHit.miss}
             memoize(func, resolver) {
                 return memoize(func, resolver)
             },
+
             getBoundaryAspects(): ShellBoundaryAspect[] {
                 return boundaryAspects
             },
+
+            getHostOptions: () => host.options,
 
             log: createShellLogger(host, entryPoint)
         }

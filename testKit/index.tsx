@@ -10,6 +10,7 @@ import { emptyLoggerOptions } from './emptyLoggerOptions'
 export { AppHost } from '../src/index'
 export { connectWithShell } from '../src/connectWithShell'
 export { SlotRenderer } from '../src/renderSlotComponents'
+export { withConsoleErrors } from './withConsoleErrors'
 export * from './mockPackage'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
@@ -186,6 +187,7 @@ function createShell(host: AppHost): PrivateShell {
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
         memoize: _.identity,
+        getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint)
     }
 }
