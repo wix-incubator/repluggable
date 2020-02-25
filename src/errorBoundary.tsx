@@ -61,7 +61,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         })
 
         if (!enableStickyErrorBoundaries) {
-            this.subscribeToStore()
+            this.attemptToRecoverOnNextState()
         }
     }
 
@@ -90,11 +90,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
 
     public componentWillUnmount() {
-        this.unsubscribeFromStore()
+        this.cancelAttemptToRecover()
     }
 
     private resetError() {
-        this.unsubscribeFromStore()
+        this.cancelAttemptToRecover()
         this.setState({
             hasError: false,
             errorMessage: null,
@@ -102,7 +102,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         })
     }
 
-    private subscribeToStore() {
+    private attemptToRecoverOnNextState() {
         const { shell } = this.props
 
         if (!this.state || !this.state.unsubscribe) {
@@ -113,7 +113,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         }
     }
 
-    private unsubscribeFromStore() {
+    private cancelAttemptToRecover() {
         if (this.state && this.state.unsubscribe) {
             this.state.unsubscribe()
         }
