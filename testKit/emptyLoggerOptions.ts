@@ -10,5 +10,7 @@ export const emptyLoggerOptions: AppHostOptions = {
             end() {}
         }))
     },
-    monitoring: {}
+    monitoring: {
+        disableMonitoring: true
+    }
 }
