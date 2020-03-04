@@ -75,5 +75,24 @@
     "features": {
       "slackChannel": "responsive-ci"
     }
+  },
+  "yoshi": {
+    "hmr": true,
+    "exports": "repluggable",
+    "entry": {
+      "repluggable": "index"
+    },
+    "externals": {
+      "react": "React",
+      "react-dom": "ReactDOM",
+      "lodash": "_",
+      "react-redux": "ReactRedux",
+      "redux": "Redux"
+    },
+    "servers": {
+      "cdn": {
+        "port": 3201
+      }
+    }
   }
 }
