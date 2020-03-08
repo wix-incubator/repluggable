@@ -4,6 +4,7 @@
   "license": "MIT",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "main": "dist/src/index.js",
+  "module": "dist/es/src/index.js",
   "unpkg": true,
   "author": {
     "name": "Responsive FEDs",
@@ -34,17 +35,17 @@
     "redux": "^4.0.0"
   },
   "devDependencies": {
-    "@types/enzyme": "^3.10.0",
-    "@types/jest": "^24.0.0",
+    "@types/enzyme": "^3.0.0",
+    "@types/jest": "^25.0.0",
     "@types/lodash": "^4.0.0",
     "@types/react": "^16.0.0",
     "@types/react-redux": "^7.0.0",
-    "@wix/perfer": "latest",
-    "enzyme": "^3.10.0",
+    "@wix/perfer": "^1.0.0",
+    "enzyme": "^3.0.0",
     "enzyme-adapter-react-16": "^1.0.0",
-    "husky": "^3.0.0",
+    "husky": "^4.0.0",
     "jest-yoshi-preset": "^4.0.0",
-    "lint-staged": "^9.0.0",
+    "lint-staged": "^10.0.0",
     "typescript": "^3.0.0",
     "yoshi": "^4.0.0"
   },
@@ -55,8 +56,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "yoshi lint --fix true",
-      "git add"
+      "yoshi lint --fix true"
     ]
   },
   "jest": {
@@ -74,6 +74,25 @@
     },
     "features": {
       "slackChannel": "responsive-ci"
+    }
+  },
+  "yoshi": {
+    "hmr": true,
+    "exports": "repluggable",
+    "entry": {
+      "repluggable": "index"
+    },
+    "externals": {
+      "react": "React",
+      "react-dom": "ReactDOM",
+      "lodash": "_",
+      "react-redux": "ReactRedux",
+      "redux": "Redux"
+    },
+    "servers": {
+      "cdn": {
+        "port": 3201
+      }
     }
   }
 }

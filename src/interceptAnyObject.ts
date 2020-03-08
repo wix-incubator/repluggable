@@ -32,7 +32,3 @@ export function interceptAnyObject<T extends AnyObject>(
 
     return result
 }
-
-function isConstructor(func: Function) {
-    return func.prototype && func.prototype.constructor === func
-}

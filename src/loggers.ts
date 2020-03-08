@@ -1,17 +1,21 @@
 import { HostLogger, LogSeverity, ShellLogger, EntryPoint, AppHost, ShellLoggerSpan, EntryPointTags } from './API'
 
-const noopLoggerSpan: ShellLoggerSpan = {
-    end() {}
+const consoleLoggerSpan: ShellLoggerSpan = {
+    end(success, error, keyValuePairs) {
+        if (error) {
+            console.error(error, keyValuePairs)
+        }
+    }
 }
 
 export const ConsoleHostLogger: HostLogger = {
-    spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan {
-        return noopLoggerSpan
+    spanRoot(messageId: string, error?: Error, keyValuePairs?: Object): ShellLoggerSpan {
+        return consoleLoggerSpan
     },
-    spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan {
-        return noopLoggerSpan
+    spanChild(messageId: string, error?: Error, keyValuePairs?: Object): ShellLoggerSpan {
+        return consoleLoggerSpan
     },
-    log(severity: LogSeverity, id: string, keyValuePairs?: Object): void {
+    log(severity: LogSeverity, id: string, error?: Error, keyValuePairs?: Object): void {
         const consoleFunc = getConsoleOutputFunc(severity)
         consoleFunc(id, keyValuePairs)
     }
@@ -30,22 +34,22 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
 
     return {
         log(severity: LogSeverity, id: string, keyValuePairs?: Object): void {
-            host.log.log(severity, id, withEntryPointTags(keyValuePairs))
+            host.log.log(severity, id, undefined, withEntryPointTags(keyValuePairs))
         },
         debug(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('debug', messageId, withEntryPointTags(keyValuePairs))
+            host.log.log('debug', messageId, undefined, withEntryPointTags(keyValuePairs))
         },
         info(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('info', messageId, withEntryPointTags(keyValuePairs))
+            host.log.log('info', messageId, undefined, withEntryPointTags(keyValuePairs))
         },
         warning(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('warning', messageId, withEntryPointTags(keyValuePairs))
+            host.log.log('warning', messageId, undefined, withEntryPointTags(keyValuePairs))
         },
-        error(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('error', messageId, withEntryPointTags(keyValuePairs))
+        error(messageId: string, error?: Error, keyValuePairs?: Object): void {
+            host.log.log('error', messageId, error, withEntryPointTags(keyValuePairs))
         },
-        critical(messageId: string, keyValuePairs?: Object): void {
-            host.log.log('critical', messageId, withEntryPointTags(keyValuePairs))
+        critical(messageId: string, error?: Error, keyValuePairs?: Object): void {
+            host.log.log('critical', messageId, error, withEntryPointTags(keyValuePairs))
         },
         spanChild,
         spanRoot,

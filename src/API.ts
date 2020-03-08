@@ -122,6 +122,7 @@ export interface AppHostOptions {
     readonly layers?: APILayer[]
     readonly disableLayersValidation?: boolean
     readonly disableCheckCircularDependencies?: boolean
+    readonly enableStickyErrorBoundaries?: boolean
 }
 
 export interface MemoizeMissHit {
@@ -175,6 +176,7 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
+    getHostOptions(): AppHostOptions
 }
 
 export interface EntryPointsInfo {
@@ -197,7 +199,7 @@ export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'cr
 export type LogSpanFlag = 'begin' | 'end' //TODO:deprecated-kept-for-backward-compat
 
 export interface HostLogger {
-    log(severity: LogSeverity, id: string, keyValuePairs?: Object): void
+    log(severity: LogSeverity, id: string, error?: Error, keyValuePairs?: Object): void
     spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
 }
@@ -206,8 +208,8 @@ export interface ShellLogger extends HostLogger {
     debug(messageId: string, keyValuePairs?: Object): void
     info(messageId: string, keyValuePairs?: Object): void
     warning(messageId: string, keyValuePairs?: Object): void
-    error(messageId: string, keyValuePairs?: Object): void
-    critical(messageId: string, keyValuePairs?: Object): void
+    error(messageId: string, error?: Error, keyValuePairs?: Object): void
+    critical(messageId: string, error?: Error, keyValuePairs?: Object): void
     spanChild(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     spanRoot(messageId: string, keyValuePairs?: Object): ShellLoggerSpan
     monitor<T>(messageId: string, keyValuePairs: Object, monitoredCode: () => T): T
