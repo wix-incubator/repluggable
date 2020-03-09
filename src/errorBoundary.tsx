@@ -82,7 +82,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             return null
         }
 
-        return this.props.children
+        return this.props.children || null
     }
 
     public componentWillUnmount() {
