@@ -244,7 +244,9 @@ miss: ${memoizedWithMissHit.miss}
 
         if (highestLevelDependency && highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
             throw new Error(
-                `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${highestLevelDependency.apiKey.name} of layer ${highestLevelDependency.layer.name}`
+                `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${slotKeyToName(
+                    highestLevelDependency.apiKey
+                )} of layer ${highestLevelDependency.layer.name}`
             )
         }
     }
@@ -370,16 +372,21 @@ miss: ${memoizedWithMissHit.miss}
         return newSlot
     }
 
+    function slotKeyToName<T>(key: SlotKey<T>): string {
+        return _.isUndefined(key.version) ? key.name : `${key.name}(v${key.version})`
+    }
+
     function registerSlotOrThrow<TItem, TSlot extends AnyExtensionSlot>(key: SlotKey<TItem>, factory: () => TSlot): TSlot {
-        if (!extensionSlots.has(key) && !slotKeysByName.has(key.name)) {
+        const slotName = slotKeyToName(key)
+        if (!extensionSlots.has(key) && !slotKeysByName.has(slotName)) {
             const newSlot = factory()
 
             extensionSlots.set(key, newSlot)
-            slotKeysByName.set(key.name, key)
+            slotKeysByName.set(slotName, key)
 
             return newSlot
         }
-        throw new Error(`Extension slot with key '${key.name}' already exists.`)
+        throw new Error(`Extension slot with key '${slotName}' already exists.`)
     }
 
     function getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
@@ -389,7 +396,7 @@ miss: ${memoizedWithMissHit.miss}
         if (anySlot) {
             return anySlot as ExtensionSlot<TItem>
         }
-        throw new Error(`Extension slot with key '${key.name}' doesn't exist.`)
+        throw new Error(`Extension slot with key '${slotKeyToName(key)}' doesn't exist.`)
     }
 
     function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
@@ -427,7 +434,7 @@ miss: ${memoizedWithMissHit.miss}
 
     function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
         if (key.public === true) {
-            const ownKey = slotKeysByName.get(key.name)
+            const ownKey = slotKeysByName.get(slotKeyToName(key))
             if (ownKey && ownKey.public) {
                 return ownKey as SlotKey<T>
             }
@@ -451,8 +458,8 @@ miss: ${memoizedWithMissHit.miss}
         const graph = new Graph()
         entryPoints.forEach(x => {
             const declaredApis = declaredAPIs(x)
-            const dependencies = dependentAPIs(x).map(child => child.name)
-            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(d.name, y)))
+            const dependencies = dependentAPIs(x).map(child => slotKeyToName(child))
+            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(slotKeyToName(d), y)))
         })
 
         const tarjan = new Tarjan(graph)
@@ -460,7 +467,7 @@ miss: ${memoizedWithMissHit.miss}
 
         for (const scc of sccs) {
             if (scc.length > 1) {
-                host.log.log('debug', `Circular API dependency found: ${scc.map(x => x.name).join(' -> ')}`)
+                host.log.log('debug', `Circular API dependency found: ${scc.map(x => slotKeyToName(x)).join(' -> ')}`)
                 throw new Error(`Circular API dependency found`)
             }
         }
@@ -586,9 +593,9 @@ miss: ${memoizedWithMissHit.miss}
 
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
-        slotKeysByName.delete(ownKey.name)
+        slotKeysByName.delete(slotKeyToName(ownKey))
 
-        host.log.log('debug', `-- Removed slot keys: ${ownKey.name} --`)
+        host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
     function executeUninstallShells(names: string[]): void {
@@ -661,7 +668,7 @@ miss: ${memoizedWithMissHit.miss}
                 const { declaringShell } = slot
                 if (!declaringShell || declaringShell !== shell) {
                     throw new Error(
-                        `Shell '${shell.name}' is trying to get slot '${key.name}' that is owned by '${
+                        `Shell '${shell.name}' is trying to get slot '${slotKeyToName(key)}' that is owned by '${
                             declaringShell ? declaringShell.name : 'Host'
                         }'`
                     )
@@ -730,27 +737,37 @@ miss: ${memoizedWithMissHit.miss}
                     return host.getAPI(key)
                 }
                 throw new Error(
-                    `API '${key.name}' is not declared as dependency by entry point '${entryPoint.name}' (forgot to return it from getDependencyAPIs?)`
+                    `API '${slotKeyToName(key)}' is not declared as dependency by entry point '${
+                        entryPoint.name
+                    }' (forgot to return it from getDependencyAPIs?)`
                 )
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
-                host.log.log('debug', `Contributing API ${key.name}.`)
+                host.log.log('debug', `Contributing API ${slotKeyToName(key)}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
-                    throw new Error(`Entry point '${entryPoint.name}' is trying to contribute API '${key.name}' which it didn't declare`)
+                    throw new Error(
+                        `Entry point '${entryPoint.name}' is trying to contribute API '${slotKeyToName(key)}' which it didn't declare`
+                    )
                 }
 
                 if (!options.disableLayersValidation && (entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
                     throw new Error(
-                        `Cannot contribute API ${key.name} of layer ${key.layer || '<BLANK>'} from entry point ${
+                        `Cannot contribute API ${slotKeyToName(key)} of layer ${key.layer || '<BLANK>'} from entry point ${
                             entryPoint.name
                         } of layer ${entryPoint.layer || '<BLANK>'}`
                     )
                 }
 
                 const api = factory()
-                const monitoredAPI = monitorAPI(shell, options, normalizeApiName(key.name), api /*, trace, memoizedArr*/, apiOptions)
+                const monitoredAPI = monitorAPI(
+                    shell,
+                    options,
+                    normalizeApiName(slotKeyToName(key)),
+                    api /*, trace, memoizedArr*/,
+                    apiOptions
+                )
                 const apiSlot = declareSlot<TAPI>(key)
 
                 APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)

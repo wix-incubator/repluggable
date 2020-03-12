@@ -784,4 +784,39 @@ describe('App Host', () => {
             )
         })
     })
+
+    describe('API version', () => {
+        it('should provide API of matching version', async () => {
+            const MockAPIv0: SlotKey<{ f1(): void }> = { name: 'Mock-API' }
+            const MockAPIv2: SlotKey<{ f2(): void }> = { name: 'Mock-API', version: 2 }
+            const host = createAppHost([])
+            const entryPoint: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT',
+                declareAPIs: () => [MockAPIv0, MockAPIv2],
+                attach(shell) {
+                    shell.contributeAPI(MockAPIv0, () => ({ f1() {} }))
+                    shell.contributeAPI(MockAPIv2, () => ({ f2() {} }))
+                }
+            }
+            await host.addShells([entryPoint])
+
+            expect(host.getAPI(MockAPIv0).f1).toBeDefined()
+            expect((host.getAPI(MockAPIv0) as any).f2).not.toBeDefined()
+
+            expect(host.getAPI(MockAPIv2).f2).toBeDefined()
+            expect((host.getAPI(MockAPIv2) as any).f1).not.toBeDefined()
+
+            const SecondMockAPIv2: SlotKey<{ f2(): void }> = { name: 'Mock-API', version: 2 }
+            expect(() => {
+                addMockShell(host, {
+                    declareAPIs: () => [SecondMockAPIv2],
+                    attach(shell) {
+                        shell.contributeAPI(SecondMockAPIv2, () => ({ f2() {} }))
+                    }
+                })
+            }).toThrowError(
+                new RegExp(`Error: Extension slot with key '${SecondMockAPIv2.name}\\\(v${SecondMockAPIv2.version}\\\)' already exists`)
+            )
+        })
+    })
 })

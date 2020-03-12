@@ -20,12 +20,13 @@ export interface LazyEntryPointDescriptor {
 
 export interface AnySlotKey {
     readonly name: string
-    readonly public?: boolean
+    readonly public?: boolean // TODO: Move to new interface - APIKey
 }
 
 export interface SlotKey<T> extends AnySlotKey {
     readonly empty?: T // holds no value, only triggers type-checking of T
-    readonly layer?: string
+    readonly layer?: string // TODO: Move to new interface - APIKey
+    readonly version?: number // TODO: Move to new interface - APIKey
 }
 
 export interface EntryPoint {
@@ -155,6 +156,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     wasInitializationCompleted(): boolean
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem>
+    // TODO: Fix contributeAPI factory type not to resort to lowest common
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
