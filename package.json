@@ -73,7 +73,7 @@
       ]
     },
     "features": {
-      "slackChannel": "responsive-ci"
+      "slackChannel": "editorx-ci"
     }
   },
   "yoshi": {
