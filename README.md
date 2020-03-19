@@ -1,6 +1,13 @@
-# Welcome to repluggable
+# Welcome to Repluggable
 
-Repluggable implements micro-frontends in a React+Redux app. Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends those already loaded by contributing new functionality into them. Pieces of UI contributed by a package can be rendered anywhere, not being limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page.
+Repluggable is TypeScript library for implementing inversion of control in front-end applications.
+* Write once - inject everywhere you need
+* Create well-defined contracts
+* Migrate, extend and replace modules pain-free
+
+Repluggable implements micro-frontends in a React+Redux app. Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends those already loaded by contributing new functionality into them. Pieces of UI contributed by a package can be rendered anywhere, not being limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other ONLY by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page.
+
+Since all communication between modules is trough contracts defined by APIs, the modules have only runtime dependencies!
 
 Navigate: [How-to](#How-to) | [Architecture](#Architecture)
 
@@ -159,18 +166,24 @@ import { EntryPoint } from 'repluggable'
 
 const FooEntryPoint: EntryPoint = {
 
-    // required: specify name of the entry point
+    // required: specify unique name of the entry point
     name: 'FOO',
 
     // optional
     getDependencyAPIs() {
         return [ 
             // DO list required API keys 
-            // DO list components form other packages,
-            //    which are in use by your components
-            BarAPI, BazInputBox
+            BarAPI
         ]
-    }
+    },
+
+    // optional
+    declareAPIs() {
+        // DO list API keys that will be contributed 
+        return [
+            FooAPI
+        ]
+    },
 
     // optional
     attach(shell: Shell) {
@@ -198,7 +211,7 @@ const FooEntryPoint: EntryPoint = {
 
 The `EntryPoint` interface consists of:
 - declarations: `name`, `getDependencies()`
-- lifecycle hooks: `attach()`, `extend()`, `uninstall()`
+- lifecycle hooks: `attach()`, `extend()`, `detach()`
 
 The lifecycle hooks receive an `Shell` object, which represents the `AppHost` for this specific entry point.
 
@@ -253,19 +266,19 @@ To create an API, perform these steps:
    }
    ```
 
-1. Contribute your API from an entry point `install` function:
+1. Contribute your API from an entry point `attach` function:
     ```TypeScript
     import { FooAPI, createFooAPI } from './fooApi'
 
     const FooEntryPoint: EntryPoint = {
 
-        ...
+        // ...
 
         attach(shell: Shell) {
             shell.contributeAPI(FooAPI, () => createFooAPI(shell))
         }
 
-        ...
+        // ...
 
     }
     ```
@@ -288,13 +301,13 @@ To contribute the reducers, perform these steps:
     ```TypeScript
     // state managed by bazReducer
     export interface BazState {
-        ...
+        // ...
         xyzzy: number // for example
     }
 
     // state managed by quxReducer
     export interface QuxState {
-        ...
+        // ...
     }
     ```
 
@@ -314,14 +327,14 @@ To contribute the reducers, perform these steps:
         state: BazState = { /* initial values */ }, 
         action: Action)
     {
-         ...
+        // ...
     }
 
     function quxReducer(
         state: QuxState = { /* initial values */ }, 
         action: Action)
     {
-         ...
+        // ...
     }
     ```
 
@@ -392,7 +405,7 @@ The usage of `connectWithShell()` is demonstrated in the example below. Suppose 
 
 ```jsx
 (props) => (
-    <div classname="foo">
+    <div className="foo">
         <div>
             <label>XYZZY</label>
             <input 
@@ -431,10 +444,10 @@ In order to implement such component, follow these steps:
     ```
 
 1. Write the stateless function component. Note that its props type is specified as `FooStateProps & FooDispatchProps`:
-    ```TypeScript
+    ```tsx
     const FooSfc: React.SFC<FooStateProps & FooDispatchProps> = 
         (props) => (
-            <div classname="foo">
+            <div className="foo">
                 ...
             </div>        
         )
@@ -443,7 +456,7 @@ In order to implement such component, follow these steps:
 1. Write the connected container using `connectWithShell`. The latter differs from `connect` in that it passes `Shell` as the first parameter to `mapStateToProps` and `mapDispatchToProps`. The new parameter is followed by the regular parameters passed by `connect`. Example:
 
     ```TypeScript
-    export const Foo = connectWithShell(
+    export const createFoo = (boundShell: Shell) => connectWithShell(
         // mapStateToProps
         // - shell: represents the associated entry point
         // - the rest are regular parameters of mapStateToProps 
@@ -469,16 +482,126 @@ In order to implement such component, follow these steps:
                     shell.getAPI(BarAPI).createNewBar()  
                 }
             }
-        }
+        },
+        boundShell
     )(FooSfc)
     ```
 
     The `Shell` parameter is extracted from React context `EntryPointContext`, which represents current package boundary for the component. 
 
 
-### Exporting React components
+### Using React components
 
-TBD (advanced topic)
+Since all communication between modules is trough API there are exactly 2 ways to use components
+
+A. Contribution into another API that will take care of the rendering
+
+B. Expose on a public API
+
+### Option A - Contribution of React component into other module
+
+In order to contribute a component we need to prepare a [slot](#extension-slots) which the component is going to be contributed into, and expose an API function for other packages to call.
+
+`MainViewAPI.ts`
+```TypeScript
+import { ReactComponentContributor, Shell, SlotKey } from 'repluggable'
+
+// What is contributed into this slot
+export interface ContributedComponent {
+  component: ReactComponentContributor;
+}
+
+export const componentsSlotKey: SlotKey<ContributedComponent> = {
+  name: 'contributedComponent',
+}
+
+export const createMainViewAPI = (shell: Shell) => {
+    const componentsSlot = shell.declareSlot(componentsSlotKey)
+
+    return {
+        contributeComponent(fromShell: Shell, contribution: ContributedComponent) {
+            componentsSlot.contribute(fromShell, contribution)
+        }
+    }
+}
+```
+
+`MainViewPackage.tsx`
+```tsx
+import { SlotRenderer, EntryPoint } from 'repluggable'
+export const MainViewEntryPoint: EntryPoint = {
+    name: 'MAIN_VIEW',
+
+    declareAPIs() {
+        return [MainViewAPI]
+    },
+
+    attach() {
+        shell.contributeAPI(MainViewAPI, () => createMainViewAPI(shell))
+    },
+
+    extend(shell) {
+        shell.contributeMainView(shell, () => <SlotRenderer slot={shell.getSlot(componentsSlotKey)}/>)
+    }
+}
+```
+
+Then we can add component from any other entry point, while MainView agnostically rendering whatever is contributed into it's slot.
+For connecting components see [connectWithShell](#creating-react-components)
+
+`MyButtonPackage.tsx`
+```tsx
+export const MyButtonEntryPoint: EntryPoint = {
+    name: 'MY_BUTTON',
+
+    getDependencyAPIs() {
+        return [MainViewAPI]
+    },
+
+    extend(shell) {
+        const MyButton = createMyConnectedButton(shell)
+        shell.getAPI(MainViewAPI).contributeComponent(shell, {
+            component: () => <MyButton />
+        })
+    }
+}
+```
+
+### Option B - Expose components on a public API
+For connecting components see [connectWithShell](#creating-react-components)
+
+`FooAPI.ts`
+```TypeScript
+export const createFooAPI = (shell: Shell) => {
+    const MyButton = createConnectedButton(shell)
+
+    // Expose MyButton as part of the contract provided by FooAPI
+    return { MyButton }
+}
+
+```
+
+Assume we want to use `MyButton` in a component we are contributing to an API called `BarAPI`
+
+
+*See [Contribution of React component into other module](#contribution-of-react-component-into-other-module) on how to prepare a slot for the component contribution in `BarAPI`.
+
+
+`ButtonConsumerPackage.tsx`
+```tsx
+    getDependencyAPIs() {
+        return [BarAPI, FooAPI]
+    },
+    extend(shell) {
+        shell.getAPI(BarAPI).contributeComponent(shell, {
+            component: () => {
+                // Get the component implementation exposed on FooAPI
+                const { MyButton } = shell.getAPI(FooAPI)
+                return <div><MyButton /></div>
+            }
+        })
+    },
+```
 
 ## Testing a package
 
@@ -486,7 +609,7 @@ TBD
 
 # Architecture
 
-`repluggable` allows composition of a React+Redux application entirely from a list of pluggable packages. 
+`Repluggable` allows composition of a React+Redux application entirely from a list of pluggable packages. 
 
 A package is a box of lego pieces such as UI, state, and logic. When a package is plugged in, it contributes its pieces by connecting them to other pieces added earlier. In this way, the entire application is built up from connected pieces, much like a lego.   
 
