@@ -1,7 +1,5 @@
-import { AnySlotKey, AppHost } from '.'
-import { LazyEntryPointFactory, PrivateShell } from './API'
-import { AnyExtensionSlot } from './extensionSlot'
-import { EntryPoint } from '../API'
+import { EntryPoint, AppHost, AnySlotKey, LazyEntryPointFactory, PrivateShell } from '../API'
+import { AnyExtensionSlot } from '../extensionSlot'
 
 declare global {
     interface Window {
