@@ -75,6 +75,12 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
     }
 }
 
+interface EntryPointStateSnapshot {
+    canUseStore: boolean
+    canUseAPIs: boolean
+    wasInitializationCompleted: boolean
+}
+
 describe('App Host', () => {
     beforeEach(() => {
         spyOn(ConsoleHostLogger, 'log')
@@ -183,6 +189,155 @@ describe('App Host', () => {
             const lazyEntryPoint = makeLazyEntryPoint(mockPackage.name, async () => mockPackage)
             const host = createAppHost([lazyEntryPoint], testHostOptions)
             expect(host.hasShell(lazyEntryPoint.name)).toBe(true)
+        })
+    })
+
+    describe('EntryPoint lifecycle state', () => {
+        const takeEntryPointStateSnapshot = (shell: Shell): EntryPointStateSnapshot => {
+            return {
+                canUseStore: shell.canUseStore(),
+                canUseAPIs: shell.canUseAPIs(),
+                wasInitializationCompleted: shell.wasInitializationCompleted()
+            }
+        }
+
+        it('should be incomplete during appHost initialization', () => {
+            let stateInAttach: EntryPointStateSnapshot | undefined
+            let stateInExtend: EntryPointStateSnapshot | undefined
+
+            const entryPoint: EntryPoint = {
+                name: 'TEST_EP',
+                attach(shell) {
+                    stateInAttach = takeEntryPointStateSnapshot(shell)
+                },
+                extend(shell) {
+                    stateInExtend = takeEntryPointStateSnapshot(shell)
+                }
+            }
+
+            createAppHost([entryPoint], testHostOptions)
+
+            expect(stateInAttach).toMatchObject({
+                wasInitializationCompleted: false,
+                canUseAPIs: false,
+                canUseStore: false
+            })
+            expect(stateInExtend).toMatchObject({
+                wasInitializationCompleted: false,
+                canUseAPIs: true,
+                canUseStore: true
+            })
+        })
+
+        it('should be complete after appHost initialization', () => {
+            let shell: Shell | undefined
+
+            const entryPoint: EntryPoint = {
+                name: 'TEST_EP',
+                attach(_shell) {
+                    shell = _shell
+                }
+            }
+
+            createAppHost([entryPoint], testHostOptions)
+            const stateAfter = shell && takeEntryPointStateSnapshot(shell)
+
+            expect(stateAfter).toMatchObject({
+                wasInitializationCompleted: true,
+                canUseAPIs: true,
+                canUseStore: true
+            })
+        })
+
+        it('should be incomplete during lifecycle of added entry point', () => {
+            let stateInAttach: EntryPointStateSnapshot | undefined
+            let stateInExtend: EntryPointStateSnapshot | undefined
+
+            const host = createAppHost([], testHostOptions)
+            addMockShell(host, {
+                attach(shell) {
+                    stateInAttach = takeEntryPointStateSnapshot(shell)
+                },
+                extend(shell) {
+                    stateInExtend = takeEntryPointStateSnapshot(shell)
+                }
+            })
+
+            expect(stateInAttach).toMatchObject({
+                wasInitializationCompleted: false,
+                canUseAPIs: false,
+                canUseStore: false
+            })
+            expect(stateInExtend).toMatchObject({
+                wasInitializationCompleted: false,
+                canUseAPIs: true,
+                canUseStore: true
+            })
+        })
+
+        it('should be complete after lifecycle of added entry point', () => {
+            const host = createAppHost([], testHostOptions)
+
+            const shell = addMockShell(host)
+
+            const stateAfter = takeEntryPointStateSnapshot(shell)
+            expect(stateAfter).toMatchObject({
+                wasInitializationCompleted: true,
+                canUseAPIs: true,
+                canUseStore: true
+            })
+        })
+
+        it('should be incomplete during execution of late initializer', () => {
+            let state: EntryPointStateSnapshot | undefined
+
+            const host = createAppHost([], testHostOptions)
+            const shell = addMockShell(host)
+            expect(shell.wasInitializationCompleted()).toBe(true)
+
+            shell.runLateInitializer(() => {
+                state = takeEntryPointStateSnapshot(shell)
+            })
+
+            expect(state).toMatchObject({
+                canUseStore: true,
+                canUseAPIs: true,
+                wasInitializationCompleted: false
+            })
+        })
+
+        it('should be complete after execution of late initializer', () => {
+            const host = createAppHost([], testHostOptions)
+            const shell = addMockShell(host)
+            expect(shell.wasInitializationCompleted()).toBe(true)
+
+            shell.runLateInitializer(() => {})
+
+            const stateAfter = takeEntryPointStateSnapshot(shell)
+            expect(stateAfter).toMatchObject({
+                canUseStore: true,
+                canUseAPIs: true,
+                wasInitializationCompleted: true
+            })
+        })
+
+        it('should be complete after execution of late initializer that throws', () => {
+            const host = createAppHost([], testHostOptions)
+            const shell = addMockShell(host)
+            expect(shell.wasInitializationCompleted()).toBe(true)
+
+            expect(() => {
+                shell.runLateInitializer(() => {
+                    throw new Error('TEST-ERROR')
+                })
+            }).toThrow('TEST-ERROR')
+
+            const stateAfter = takeEntryPointStateSnapshot(shell)
+            expect(stateAfter).toMatchObject({
+                canUseStore: true,
+                canUseAPIs: true,
+                wasInitializationCompleted: true
+            })
         })
     })
 

@@ -174,6 +174,9 @@ function createShell(host: AppHost): PrivateShell {
         wasInitializationCompleted(): boolean {
             return true
         },
+        runLateInitializer<T>(initializer: () => T) {
+            return initializer()
+        },
         contributeAPI<TAPI>(): TAPI {
             const API: any = {}
             return API
