@@ -2,7 +2,7 @@
 
 Repluggable is a library that's implementing inversion of control for front end applications and makes development of medium or high-complexity projects much easier. Currently Repluggable implements micro-frontends in a React+Redux app, with plans to make it framework-independent in the future.
 
-Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends the already loaded ones by contributing new functionality into them. Sections of UI, contributed by a certain package, can be rendered anywhere and are not limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page. Check out the [architecture](#Architecture) section of the docs to learn more about the logic behind Repluggable.
+Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends the already loaded ones by contributing new functionality into them. Sections of UI, contributed by a certain package, can be rendered anywhere and are not limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page. Check out the [architecture](#Architecture) section of the docs to learn more about the design decisions behind Repluggable.
 
 Quick docs links: [How-to](#How-to) | [Architecture and core concepts](#Architecture)
 
@@ -384,7 +384,7 @@ To contribute the reducers, perform these steps:
 
 When creating a React component, we strongly recommend to follow the React-Redux pattern, and separate your component into a stateless render and a `connect` container.
 
-In `repluggable`, components often need to consume APIs. Although APIs can be obtained through `Shell` when passed to lifecycle hooks in your entry point, propagating them down component hierarchy would be cumbersome.  
+In `repluggable`, components often need to consume APIs. Although APIs can be obtained through `Shell`, when it is passed to lifecycle hooks in your entry point, propagating them down the component hierarchy would be cumbersome.  
 
 A more elegant solution is to use `connectWithShell()` function instead of the regular `connect()`. This provides the connector with the ability to obtain APIs.
 
@@ -578,9 +578,9 @@ Such association provides several aspects to the children:
 
   - state scoping (the `state` in `mapStateToProps`, and `getState()` in thunks): returned state object is scoped to reducers contributed by the entry point.  
 
-> TODO: verify that getState() in thunks is actually scoped
+  > TODO: verify that getState() in thunks is actually scoped
 
-- when rendering an extension slot of contributed React components: each component is rendered within the context of the entry point it was contributed by.
+  - when rendering an extension slot of contributed React components: each component is rendered within the context of the entry point it was contributed by.
 
 ## Progressive loading
 
