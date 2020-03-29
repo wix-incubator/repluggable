@@ -46,12 +46,16 @@ export interface EntryPointOrPackagesMap {
     [name: string]: EntryPointOrPackage
 }
 
+export interface Contribution {
+    unsubscribe(): void
+}
+
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean
 export interface ExtensionSlot<T> {
     readonly name: string
     readonly host: AppHost
     readonly declaringShell?: Shell
-    contribute(shell: Shell, item: T, condition?: ContributionPredicate): void
+    contribute(shell: Shell, item: T, condition?: ContributionPredicate): Contribution
     getItems(forceAll?: boolean): ExtensionItem<T>[]
     getSingleItem(): ExtensionItem<T>
     getItemByName(name: string): ExtensionItem<T>

@@ -7,7 +7,8 @@ import {
     Shell,
     SlotKey,
     CustomExtensionSlot,
-    CustomExtensionSlotHandler
+    CustomExtensionSlotHandler,
+    Contribution
 } from './API'
 import _ from 'lodash'
 
@@ -32,13 +33,21 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
         discardBy
     }
 
-    function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
-        items.push({
+    function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): Contribution {
+        const contribution = {
             shell: fromShell,
             contribution: item,
             condition: condition || alwaysTrue,
             uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
-        })
+        }
+
+        items.push(contribution)
+
+        return {
+            unsubscribe: () => {
+                items = items.filter(i => i !== contribution)
+            }
+        }
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
