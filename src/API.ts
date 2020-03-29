@@ -158,6 +158,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     canUseAPIs(): boolean
     canUseStore(): boolean
     wasInitializationCompleted(): boolean
+    runLateInitializer<T>(initializer: () => T): T
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem>
     // TODO: Fix contributeAPI factory type not to resort to lowest common

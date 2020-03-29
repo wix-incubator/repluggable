@@ -712,6 +712,16 @@ miss: ${memoizedWithMissHit.miss}
                 return wasInitCompleted
             },
 
+            runLateInitializer<T>(initializer: () => T): T {
+                const saveWasInitCompleted = wasInitCompleted
+                try {
+                    wasInitCompleted = false
+                    return initializer()
+                } finally {
+                    wasInitCompleted = saveWasInitCompleted
+                }
+            },
+
             addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void> {
                 const shellNamesToBeinstalled = _.flatten(entryPointsOrPackages).map(x => x.name)
                 const shellNamesInstalledByCurrentEntryPoint = shellInstallers.get(shell) || []
