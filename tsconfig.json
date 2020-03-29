@@ -16,7 +16,6 @@
     "downlevelIteration": true,
     "allowUnreachableCode": false,
     "forceConsistentCasingInFileNames": true,
-    "removeComments": true,
     "noFallthroughCasesInSwitch": true
   },
   "include": [
