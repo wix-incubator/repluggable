@@ -255,25 +255,27 @@ describe('SlotRenderer', () => {
 
             const nativeComponentPure: FunctionComponent<MyStateValue> = props => <div className="native-component">{props.num}</div>
 
-            const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue>(
-                (shell, state) => ({
-                    num: state.test.num
-                }),
-                undefined,
-                mockShell
-            )(nativeComponentPure)
+            mockShell.runLateInitializer(() => {
+                const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue>(
+                    (shell, state) => ({
+                        num: state.test.num
+                    }),
+                    undefined,
+                    mockShell
+                )(nativeComponentPure)
 
-            const { root } = renderInHost(
-                <ForeignComponent>
-                    <NativeComponent />
-                </ForeignComponent>,
-                host
-            )
+                const { root } = renderInHost(
+                    <ForeignComponent>
+                        <NativeComponent />
+                    </ForeignComponent>,
+                    host
+                )
 
-            const rootWrapper = root as ReactWrapper
-            const hostComponent = rootWrapper.find('div.native-component')
+                const rootWrapper = root as ReactWrapper
+                const hostComponent = rootWrapper.find('div.native-component')
 
-            expect(hostComponent.text()).toBe(`${NATIVE_STORE_INITIAL_NUM}`)
+                expect(hostComponent.text()).toBe(`${NATIVE_STORE_INITIAL_NUM}`)
+            })
         })
 
         it('should keep bound mapDispatchToProps', async () => {
@@ -319,37 +321,39 @@ describe('SlotRenderer', () => {
                 )
             }
 
-            const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue, { changeState(): void }>(
-                (shell, state) => {
-                    return {
-                        num: state.test.num
-                    }
-                },
-                (shell: Shell, dispatch: any) => {
-                    return {
-                        changeState: () => {
-                            dispatch({ num: NATIVE_STORE_NEW_NUM, type: CHANGE_NUM })
+            mockShell.runLateInitializer(() => {
+                const NativeComponent = connectWithShell<MyStoreState, {}, MyStateValue, { changeState(): void }>(
+                    (shell, state) => {
+                        return {
+                            num: state.test.num
                         }
-                    }
-                },
-                mockShell
-            )(nativeComponentPure)
+                    },
+                    (shell: Shell, dispatch: any) => {
+                        return {
+                            changeState: () => {
+                                dispatch({ num: NATIVE_STORE_NEW_NUM, type: CHANGE_NUM })
+                            }
+                        }
+                    },
+                    mockShell
+                )(nativeComponentPure)
 
-            const { root } = renderInHost(
-                <ForeignComponent>
-                    <NativeComponent />
-                </ForeignComponent>,
-                host
-            )
+                const { root } = renderInHost(
+                    <ForeignComponent>
+                        <NativeComponent />
+                    </ForeignComponent>,
+                    host
+                )
 
-            const rootWrapper = root as ReactWrapper
-            const component = rootWrapper.find('div.native-component')
+                const rootWrapper = root as ReactWrapper
+                const component = rootWrapper.find('div.native-component')
 
-            _.attempt(component.prop('onClick') as () => {})
-            host.getStore().flush()
-            component.update()
+                _.attempt(component.prop('onClick') as () => {})
+                host.getStore().flush()
+                component.update()
 
-            expect(component.text()).toBe(`${NATIVE_STORE_NEW_NUM}`)
+                expect(component.text()).toBe(`${NATIVE_STORE_NEW_NUM}`)
+            })
         })
     })
 })
