@@ -59,6 +59,14 @@ describe('connectWithShell', () => {
         expect(comp && comp.text()).toBe(mockPackage.name)
     })
 
+    it('should throw when invoked outside of lifecycle', () => {
+        const { shell } = createMocks(mockPackage)
+
+        const PureComp = () => <div />
+
+        expect(() => connectWithShell(undefined, undefined, shell)(PureComp)).toThrowError()
+    })
+
     it('should optimize props comparison', () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
