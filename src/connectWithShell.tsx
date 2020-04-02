@@ -133,7 +133,8 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
                 'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
                 'If you really have to create this component type dynamically, ' +
                 'either pass {allowOutOfEntryPoint:true} in options, or use shell.runLateInitializer().'
-            throw new Error(errorText)
+            //TODO: replace with throw after a grace period
+            boundShell.log.warning(errorText)
         }
     }
 

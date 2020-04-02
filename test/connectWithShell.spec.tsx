@@ -39,7 +39,7 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapStateToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = shell.runLateInitializer(() => connectWithShell(mapStateToProps, undefined, shell)(PureComp))
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -52,19 +52,11 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapDispatchToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = shell.runLateInitializer(() => connectWithShell(undefined, mapDispatchToProps, shell)(PureComp))
+        const ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell)(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
         expect(comp && comp.text()).toBe(mockPackage.name)
-    })
-
-    it('should throw when invoked outside of lifecycle', () => {
-        const { shell } = createMocks(mockPackage)
-
-        const PureComp = () => <div />
-
-        expect(() => connectWithShell(undefined, undefined, shell)(PureComp)).toThrowError()
     })
 
     it('should optimize props comparison', () => {
@@ -100,7 +92,7 @@ describe('connectWithShell', () => {
             return <div onClick={func}>{JSON.stringify(obj)}</div>
         }
 
-        const ConnectedComp = shell.runLateInitializer(() => connectWithShell(mapStateToProps, undefined, shell)(PureComp))
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
 
@@ -158,9 +150,7 @@ describe('connectWithShell', () => {
             return <div onClick={func}>{JSON.stringify(obj)}</div>
         }
 
-        const ConnectedComp = shell.runLateInitializer(() =>
-            connectWithShell(mapStateToProps, undefined, shell, { shouldComponentUpdate: () => false })(PureComp)
-        )
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { shouldComponentUpdate: () => false })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
 
@@ -193,7 +183,7 @@ describe('connectWithShell', () => {
             valueFromState: getValueFromState(state)
         })
 
-        const ConnectedWithState = shell.runLateInitializer(() => connectWithShell(mapStateToProps, undefined, shell)(PureCompNeedsState))
+        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell)(PureCompNeedsState)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -223,9 +213,7 @@ describe('connectWithShell', () => {
             value: getValueFromState(state)
         })
 
-        const ConnectedWithState = getBoundShell().runLateInitializer(() =>
-            connectWithShell(mapStateToProps, undefined, getBoundShell())(PureComp)
-        )
+        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, getBoundShell())(PureComp)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -269,45 +257,39 @@ describe('connectWithShell', () => {
             value: getValueFromState(state)
         })
 
-        const ConnectedUnboundComp = shell.runLateInitializer(() => connectWithShell(mapStateToProps, undefined, shell)(PureComp))
+        const ConnectedUnboundComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
-        shell.runLateInitializer(() => {
-            const ConnectedUnboundCompWithChildren = connectWithShell<
-                MockPackageState,
-                PureCompWithChildrenOwnProps,
-                PureCompWithChildrenStateProps
-            >(
-                mapStateToProps,
-                undefined,
-                shell
-            )(PureCompWithChildren)
+        const ConnectedUnboundCompWithChildren = connectWithShell<
+            MockPackageState,
+            PureCompWithChildrenOwnProps,
+            PureCompWithChildrenStateProps
+        >(
+            mapStateToProps,
+            undefined,
+            shell
+        )(PureCompWithChildren)
 
-            getBoundShell().runLateInitializer(() => {
-                const ConnectedBoundCompWithChildren = connectWithShell<
-                    MockPackageState,
-                    PureCompWithChildrenOwnProps,
-                    PureCompWithChildrenStateProps
-                >(
-                    mapStateToProps,
-                    undefined,
-                    getBoundShell()
-                )(PureCompWithChildren)
+        const ConnectedBoundCompWithChildren = connectWithShell<
+            MockPackageState,
+            PureCompWithChildrenOwnProps,
+            PureCompWithChildrenStateProps
+        >(
+            mapStateToProps,
+            undefined,
+            getBoundShell()
+        )(PureCompWithChildren)
 
-                const { parentWrapper: withConnectedState } = renderInShellContext(
-                    <ConnectedUnboundCompWithChildren id="A">
-                        <ConnectedBoundCompWithChildren id="B">
-                            <ConnectedUnboundComp />
-                        </ConnectedBoundCompWithChildren>
-                    </ConnectedUnboundCompWithChildren>
-                )
+        const { parentWrapper: withConnectedState } = renderInShellContext(
+            <ConnectedUnboundCompWithChildren id="A">
+                <ConnectedBoundCompWithChildren id="B">
+                    <ConnectedUnboundComp />
+                </ConnectedBoundCompWithChildren>
+            </ConnectedUnboundCompWithChildren>
+        )
 
-                expect(withConnectedState && withConnectedState.find('div#A').prop('data-value')).toBe(
-                    getValueFromState(getMockShellState(host))
-                )
-                expect(withConnectedState && withConnectedState.find('div#B').prop('data-value')).toBe(boundShellState.mockValue)
-                expect(withConnectedState && withConnectedState.text()).toBe(getValueFromState(getMockShellState(host)))
-            })
-        })
+        expect(withConnectedState && withConnectedState.find('div#A').prop('data-value')).toBe(getValueFromState(getMockShellState(host)))
+        expect(withConnectedState && withConnectedState.find('div#B').prop('data-value')).toBe(boundShellState.mockValue)
+        expect(withConnectedState && withConnectedState.text()).toBe(getValueFromState(getMockShellState(host)))
     })
 
     it('should render contributed boundary aspect', () => {
@@ -319,19 +301,16 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
-        shell.runLateInitializer(() => {
-            const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        // act
+        const result = renderInHost(<ConnectedComp />, host, shell)
 
-            // act
-            const result = renderInHost(<ConnectedComp />, host, shell)
-
-            // assert
-            const rootWrapper = result.root as ReactWrapper
-            expect(rootWrapper.find('div.TEST-ASPECT').length).toBe(1)
-            expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
-            expect(rootWrapper.exists('div.TEST-ASPECT div.TEST-PURE-COMP')).toBe(true)
-        })
+        // assert
+        const rootWrapper = result.root as ReactWrapper
+        expect(rootWrapper.find('div.TEST-ASPECT').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
+        expect(rootWrapper.exists('div.TEST-ASPECT div.TEST-PURE-COMP')).toBe(true)
     })
 
     it('should render multiple contributed boundary aspects', () => {
@@ -345,22 +324,19 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
-        shell.runLateInitializer(() => {
-            const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        // act
 
-            // act
+        const result = renderInHost(<ConnectedComp />, host, shell)
 
-            const result = renderInHost(<ConnectedComp />, host, shell)
+        // assert
 
-            // assert
-
-            const rootWrapper = result.root as ReactWrapper
-            expect(rootWrapper.find('div.TEST-ASPECT-A').length).toBe(1)
-            expect(rootWrapper.find('div.TEST-ASPECT-B').length).toBe(1)
-            expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
-            expect(rootWrapper.exists('div.TEST-ASPECT-A div.TEST-ASPECT-B div.TEST-PURE-COMP')).toBe(true)
-        })
+        const rootWrapper = result.root as ReactWrapper
+        expect(rootWrapper.find('div.TEST-ASPECT-A').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-ASPECT-B').length).toBe(1)
+        expect(rootWrapper.find('div.TEST-PURE-COMP').length).toBe(1)
+        expect(rootWrapper.exists('div.TEST-ASPECT-A div.TEST-ASPECT-B div.TEST-PURE-COMP')).toBe(true)
     })
 
     it('should handle boundary aspect contexts', () => {
@@ -381,21 +357,18 @@ describe('connectWithShell', () => {
         const PureComp: FunctionComponent<{}> = () => (
             <TestAspectContext.Consumer>{aspect => <div className="TEST-PURE-COMP">{aspect.theNumber}</div>}</TestAspectContext.Consumer>
         )
+        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
 
-        shell.runLateInitializer(() => {
-            const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        // act
 
-            // act
+        const result = renderInHost(<ConnectedComp />, host, shell)
 
-            const result = renderInHost(<ConnectedComp />, host, shell)
+        // assert
 
-            // assert
+        const rootWrapper = result.root as ReactWrapper
+        const pureCompQuery = rootWrapper.find('div.TEST-ASPECT div.TEST-PURE-COMP')
 
-            const rootWrapper = result.root as ReactWrapper
-            const pureCompQuery = rootWrapper.find('div.TEST-ASPECT div.TEST-PURE-COMP')
-
-            expect(pureCompQuery.length).toBe(1)
-            expect(pureCompQuery.first().text()).toBe('123')
-        })
+        expect(pureCompQuery.length).toBe(1)
+        expect(pureCompQuery.first().text()).toBe('123')
     })
 })
