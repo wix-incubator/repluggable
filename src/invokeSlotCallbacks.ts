@@ -11,6 +11,7 @@ export function invokeSlotCallbacks<T extends any[]>(slot: ExtensionSlot<(...arg
                 console.error(e)
             }
         })
+        return
     }
     slotItems.forEach(slotItem => {
         const messageId = `${slot.host}-${slot.name}:${slotItem.shell.name}${slotItem.name && '-' + slotItem.name}`
