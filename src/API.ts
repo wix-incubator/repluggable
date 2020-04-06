@@ -172,6 +172,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
         func: T,
         resolver: FunctionWithSameArgs<T>
     ): ((...args: Parameters<T>) => ReturnType<T>) & Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>
+    clearCache(memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>): void
 }
 
 export interface PrivateShell extends Shell {
