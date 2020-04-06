@@ -492,10 +492,16 @@ miss: ${memoizedWithMissHit.miss}
 
     function flushMemoizedForState() {
         memoizedFunctions.forEach(({ f, shouldClear }) => {
-            if (f.cache && f.cache.clear && (shouldClear || _.stubTrue)()) {
-                f.cache.clear()
+            if ((shouldClear || _.stubTrue)()) {
+              clearCache(f);
             }
         })
+    }
+
+    function clearCache (memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>) {
+        if (memoizedFunction.cache && memoizedFunction.cache.clear) {
+            memoizedFunction.cache.clear()
+        }
     }
 
     function getPerShellReducersMapObject(): ShellsReducersMap {
@@ -824,6 +830,7 @@ miss: ${memoizedWithMissHit.miss}
             memoize(func, resolver) {
                 return memoize(func, resolver)
             },
+            clearCache,
 
             getBoundaryAspects(): ShellBoundaryAspect[] {
                 return boundaryAspects
