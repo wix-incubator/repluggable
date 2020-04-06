@@ -493,12 +493,12 @@ miss: ${memoizedWithMissHit.miss}
     function flushMemoizedForState() {
         memoizedFunctions.forEach(({ f, shouldClear }) => {
             if ((shouldClear || _.stubTrue)()) {
-              clearCache(f);
+              clearCache(f)
             }
         })
     }
 
-    function clearCache (memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>) {
+    function clearCache(memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>) {
         if (memoizedFunction.cache && memoizedFunction.cache.clear) {
             memoizedFunction.cache.clear()
         }
