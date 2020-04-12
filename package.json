@@ -15,10 +15,7 @@
     "versionBumpStrategy": "patch"
   },
   "files": [
-    "__tests__",
-    "src",
-    "dist",
-    "testKit"
+    "*"
   ],
   "scripts": {
     "start": "yoshi start --no-server",
