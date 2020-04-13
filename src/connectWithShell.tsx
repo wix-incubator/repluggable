@@ -49,14 +49,14 @@ function wrapWithShellContext<S, OP, SP, DP>(
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
-                      return this.props.shell.log.monitor('connectWithShell.mapStateToProps', {}, () =>
+                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps ${this.props.shell.name}`, {}, () =>
                           mapStateToProps(this.props.shell, this.props.shell.getStore<S>().getState(), ownProps)
                       )
                   }
                 : (_.stubObject as Returns<SP>)
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => {
-                      return this.props.shell.log.monitor('connectWithShell.mapDispatchToProps', {}, () =>
+                      return this.props.shell.log.monitor(`connectWithShell.mapDispatchToProps ${this.props.shell.name}`, {}, () =>
                           mapDispatchToProps(this.props.shell, dispatch, ownProps)
                       )
                   }
