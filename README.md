@@ -167,9 +167,7 @@ const FooEntryPoint: EntryPoint = {
     getDependencyAPIs() {
         return [
             // DO list required API keys
-            // DO list components form other packages,
-            //    which are in use by your components
-            BarAPI, BazInputBox
+            BarAPI
         ]
     }
 
