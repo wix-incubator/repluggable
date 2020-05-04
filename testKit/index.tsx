@@ -37,21 +37,26 @@ export const getPackagesDependencies = (
     allPackages: EntryPointOrPackage[],
     requiredPackages: EntryPointOrPackage[]
 ): EntryPointOrPackage[] => {
-    const tree = new Map<AnySlotKey, EntryPoint | undefined>()
+    const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
+    const loadedEntryPoints = new Set<string>()
 
     forEachDeclaredAPI(allPackages, (dependency, entryPoint) => {
-        tree.set(dependency, entryPoint)
+        apiToEntryPoint.set(dependency.name, entryPoint)
     })
 
     const packagesList: EntryPointOrPackage[] = []
     const entryPointsQueue: EntryPoint[] = _.flatten(requiredPackages)
 
     while (entryPointsQueue.length) {
-        const currEntryPoint = entryPointsQueue.shift() as EntryPoint
+        const currEntryPoint = entryPointsQueue.shift()
+        if (!currEntryPoint || loadedEntryPoints.has(currEntryPoint.name)) {
+            continue
+        }
+        loadedEntryPoints.add(currEntryPoint.name)
         packagesList.push(currEntryPoint)
         const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
-        const dependecyEntryPoints = dependencies.map(API => tree.get(API))
-        entryPointsQueue.push(..._.compact(dependecyEntryPoints))
+        const dependencyEntryPoints = dependencies.map(API => apiToEntryPoint.get(API.name))
+        entryPointsQueue.push(..._.compact(dependencyEntryPoints))
     }
 
     return _.uniq(packagesList)
