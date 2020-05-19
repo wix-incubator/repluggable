@@ -20,7 +20,7 @@
   "scripts": {
     "start": "yoshi start --no-server",
     "build": "yoshi build",
-    "test": "yoshi test --coverage",
+    "test": "jest --coverage",
     "posttest": "yoshi lint",
     "test:performance": "perfer"
   },
@@ -41,8 +41,9 @@
     "enzyme": "^3.0.0",
     "enzyme-adapter-react-16": "^1.0.0",
     "husky": "^4.0.0",
-    "jest-yoshi-preset": "^4.0.0",
+    "jest": "^26.0.0",
     "lint-staged": "^10.0.0",
+    "ts-jest": "^26.0.0",
     "typescript": "^3.0.0",
     "yoshi": "^4.0.0"
   },
@@ -57,7 +58,15 @@
     ]
   },
   "jest": {
-    "preset": "jest-yoshi-preset"
+    "testMatch": [
+      "<rootDir>/**/*.spec.ts?(x)"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/__tests__/spec-setup.js"
+    ],
+    "transform": {
+      "\\.tsx?$": "ts-jest"
+    }
   },
   "perfer": {
     "bundleSize": {
