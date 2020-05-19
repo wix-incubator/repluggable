@@ -38,22 +38,10 @@
     "@types/react-redux": "^7.0.0",
     "enzyme": "^3.0.0",
     "enzyme-adapter-react-16": "^1.0.0",
-    "husky": "^4.0.0",
     "jest": "^26.0.0",
-    "lint-staged": "^10.0.0",
     "ts-jest": "^26.0.0",
     "typescript": "^3.0.0",
     "yoshi": "^4.0.0"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "yoshi lint --fix true"
-    ]
   },
   "jest": {
     "testMatch": [

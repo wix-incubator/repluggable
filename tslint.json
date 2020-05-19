@@ -1,14 +1,148 @@
 {
-  "extends": "tslint-config-yoshi",
+  "extends": [
+    "tslint-react",
+    "tslint-react-hooks",
+    "tslint-consistent-codestyle",
+    "tslint-eslint-rules",
+    "tslint-config-prettier"
+  ],
+  "rulesDirectory": [
+    "tslint-react",
+    "tslint-microsoft-contrib",
+    "tslint-plugin-prettier",
+    "tslint-no-unused-expression-chai"
+  ],
   "rules": {
-    "switch-default": false,
-    "use-default-type-parameter": false,
+    "adjacent-overload-signatures": true,
+    "array-type": [
+      true,
+      "array"
+    ],
+    "await-promise": true,
+    "ban": [
+      true,
+      {
+        "message": "no-focused-test",
+        "name": "fdescribe"
+      },
+      {
+        "message": "no-focused-test",
+        "name": "fit"
+      },
+      {
+        "message": "no-focused-test",
+        "name": [
+          "describe",
+          "only"
+        ]
+      },
+      {
+        "message": "no-focused-test",
+        "name": [
+          "it",
+          "only"
+        ]
+      },
+      {
+        "message": "no-focused-test",
+        "name": [
+          "test",
+          "only"
+        ]
+      }
+    ],
+    "ban-comma-operator": true,
+    "callable-types": true,
+    "curly": true,
+    "deprecation": true,
+    "encoding": true,
+    "interface-over-type-literal": true,
+    "jsx-boolean-value": false,
+    "jsx-key": true,
+    "jsx-no-bind": true,
+    "jsx-no-lambda": false,
+    "jsx-no-string-ref": true,
+    "jsx-self-close": false,
+    "no-accessor-recursion": true,
+    "no-angle-bracket-type-assertion": true,
+    "no-arg": true,
+    "no-banned-terms": true,
+    "no-boolean-literal-compare": false,
+    "no-collapsible-if": true,
+    "no-conditional-assignment": true,
+    "no-constant-condition": true,
+    "no-construct": true,
+    "no-control-regex": true,
+    "no-duplicate-case": true,
+    "no-duplicate-imports": true,
+    "no-duplicate-super": true,
+    "no-dynamic-delete": true,
+    "no-empty-character-class": true,
+    "no-eval": true,
+    "no-ex-assign": true,
+    "no-extra-boolean-cast": true,
+    "no-extra-semi": true,
     "no-floating-promises": false,
-    "prettier": [true, {
-      "printWidth": 140,
-      "tabWidth": 4,
-      "semi": false,
-      "singleQuote": true
-    }]
+    "no-for-in-array": true,
+    "no-inner-declarations": true,
+    "no-invalid-regexp": true,
+    "no-invalid-template-strings": true,
+    "no-invalid-this": false,
+    "no-irregular-whitespace": true,
+    "no-misused-new": true,
+    "no-namespace": true,
+    "no-non-null-assertion": true,
+    "no-reference": true,
+    "no-reference-import": true,
+    "no-regex-spaces": true,
+    "no-return-await": true,
+    "no-return-undefined": true,
+    "no-shadowed-variable": true,
+    "no-sparse-arrays": true,
+    "no-static-this": true,
+    "no-string-literal": true,
+    "no-string-throw": true,
+    "no-switch-case-fall-through": true,
+    "no-unexpected-multiline": true,
+    "no-unnecessary-else": true,
+    "no-unnecessary-initializer": true,
+    "no-unnecessary-qualifier": true,
+    "no-unsafe-finally": true,
+    "no-unused-expression-chai": [
+      true,
+      "allow-fast-null-checks"
+    ],
+    "no-var-keyword": true,
+    "no-with-statement": true,
+    "object-literal-shorthand": true,
+    "prefer-const": true,
+    "prefer-const-enum": true,
+    "prefer-for-of": true,
+    "prefer-method-signature": true,
+    "prefer-object-spread": true,
+    "prefer-readonly": true,
+    "prefer-while": true,
+    "prettier": [
+      true,
+      {
+        "printWidth": 140,
+        "semi": false,
+        "singleQuote": true,
+        "tabWidth": 4
+      }
+    ],
+    "radix": true,
+    "react-hooks-nesting": true,
+    "restrict-plus-operands": true,
+    "switch-default": false,
+    "switch-final-break": true,
+    "ter-no-proto": true,
+    "ter-no-script-url": true,
+    "ter-no-self-compare": true,
+    "triple-equals": true,
+    "type-literal-delimiter": true,
+    "use-default-type-parameter": false,
+    "use-isnan": true,
+    "valid-typeof": true
   }
 }
