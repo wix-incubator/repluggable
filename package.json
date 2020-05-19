@@ -19,7 +19,10 @@
   ],
   "scripts": {
     "start": "yoshi start --no-server",
-    "build": "yoshi build",
+    "prebuild": "rm -rf dist",
+    "build": "yarn build-cjs && yarn build-es && yoshi build",
+    "build-cjs": "tsc --outDir dist --module commonjs",
+    "build-es": "tsc --outDir dist/es --module esNext",
     "test": "jest --coverage",
     "posttest": "tslint --project . --format 'stylish'"
   },
