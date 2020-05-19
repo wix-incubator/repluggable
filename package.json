@@ -21,8 +21,7 @@
     "start": "yoshi start --no-server",
     "build": "yoshi build",
     "test": "jest --coverage",
-    "posttest": "yoshi lint",
-    "test:performance": "perfer"
+    "posttest": "tslint --project . --format 'stylish'"
   },
   "dependencies": {
     "lodash": "^4.0.0",
@@ -37,7 +36,6 @@
     "@types/lodash": "^4.0.0",
     "@types/react": "^16.0.0",
     "@types/react-redux": "^7.0.0",
-    "@wix/perfer": "^1.0.0",
     "enzyme": "^3.0.0",
     "enzyme-adapter-react-16": "^1.0.0",
     "husky": "^4.0.0",
@@ -66,20 +64,6 @@
     ],
     "transform": {
       "\\.tsx?$": "ts-jest"
-    }
-  },
-  "perfer": {
-    "bundleSize": {
-      "files": [
-        "./dist/statics/repluggable.bundle.js",
-        {
-          "glob": "./dist/statics/repluggable.bundle.js",
-          "maxSize": "15kb"
-        }
-      ]
-    },
-    "features": {
-      "slackChannel": "editorx-important"
     }
   },
   "yoshi": {
