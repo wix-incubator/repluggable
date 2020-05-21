@@ -50,7 +50,8 @@
     "ts-jest": "^26.0.0",
     "typescript": "^3.0.0",
     "webpack": "^4.0.0",
-    "webpack-cli": "^3.0.0"
+    "webpack-cli": "^3.0.0",
+    "yoshi": "^4.0.0"
   },
   "husky": {
     "hooks": {
