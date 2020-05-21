@@ -18,7 +18,7 @@
     "*"
   ],
   "scripts": {
-    "start": "yoshi start --no-server",
+    "start": "webpack-dev-server --config webpack.dev.config.js",
     "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-bundle-dev && yarn build-bundle-prod",
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
@@ -53,7 +53,7 @@
     "typescript": "^3.0.0",
     "webpack": "^4.0.0",
     "webpack-cli": "^3.0.0",
-    "yoshi": "^4.0.0"
+    "webpack-dev-server": "^3.0.0"
   },
   "husky": {
     "hooks": {

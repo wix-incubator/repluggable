@@ -95,4 +95,9 @@ module.exports = isDev => ({
     'react-redux': 'ReactRedux',
     redux: 'Redux',
   },
+  devServer: {
+    contentBase: join(DIST_DIR),
+    compress: true,
+    port: 3201
+  },
 });
