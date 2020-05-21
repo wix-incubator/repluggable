@@ -1,7 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
-const ModuleNotFoundPlugin = require('react-dev-utils/ModuleNotFoundPlugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const join = (...dirs) => path.join(process.cwd(), ...dirs);
@@ -57,7 +56,6 @@ module.exports = {
     splitChunks: false,
   },
   plugins: [
-    new ModuleNotFoundPlugin(process.cwd()),
     new CaseSensitivePathsPlugin(),
     new webpack.LoaderOptionsPlugin({
       minimize: true,
