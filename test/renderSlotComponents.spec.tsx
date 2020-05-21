@@ -17,13 +17,7 @@ class CompC extends React.Component<{ onDidMount(): void }> {
     }
 }
 
-const getCompId = (wrapper: ReactWrapper | null, index: number) =>
-    wrapper
-        ? wrapper
-              .find('.mock-comp')
-              .at(index)
-              .prop('id')
-        : ''
+const getCompId = (wrapper: ReactWrapper | null, index: number) => (wrapper ? wrapper.find('.mock-comp').at(index).prop('id') : '')
 
 describe('SlotRenderer', () => {
     it('should render slot items', () => {
@@ -229,7 +223,7 @@ describe('SlotRenderer', () => {
         expect(onDidMount).toHaveBeenCalledTimes(1)
     })
 
-    describe('Bound Props', function() {
+    describe('Bound Props', function () {
         const NATIVE_STORE_INITIAL_NUM = 1
         const FOREIGN_STORE_INITIAL_NUM = 2
         const NATIVE_STORE_NEW_NUM = 3

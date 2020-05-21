@@ -87,12 +87,7 @@ describe('ErrorBoundary', () => {
         expect(root?.exists('.test-comp')).toBe(false)
         expect(root?.exists('.component-error')).toBe(true)
         expect(root?.find('.component-error').text()).toContain(`error in ${shell.name} / test_comp`)
-        expect(
-            root
-                ?.find('.component-error')
-                .find('button')
-                .text()
-        ).toBe('reset')
+        expect(root?.find('.component-error').find('button').text()).toBe('reset')
     })
 
     it('should keep sticky error after change in store', () => {
@@ -118,12 +113,7 @@ describe('ErrorBoundary', () => {
         expect(root?.exists('.test-comp')).toBe(false)
         expect(root?.exists('.component-error')).toBe(true)
         expect(root?.find('.component-error').text()).toContain(`error in ${shell.name} / test_comp`)
-        expect(
-            root
-                ?.find('.component-error')
-                .find('button')
-                .text()
-        ).toBe('reset')
+        expect(root?.find('.component-error').find('button').text()).toBe('reset')
     })
 
     it('should reset sticky error on reset button click', () => {

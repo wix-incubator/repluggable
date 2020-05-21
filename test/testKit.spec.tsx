@@ -60,11 +60,7 @@ const allPackages: PackagesMap = {
 
 describe('App Host TestKit', () => {
     it('should get packages dependencies', () => {
-        const toResult = (packages: EntryPointOrPackage[]) =>
-            _(packages)
-                .flatten()
-                .sortBy('name')
-                .value()
+        const toResult = (packages: EntryPointOrPackage[]) => _(packages).flatten().sortBy('name').value()
         const getDependencies = (packages: EntryPointOrPackage[]) => toResult(getPackagesDependencies(_.values(allPackages), packages))
         const { A, B, C, D, F } = allPackages
 

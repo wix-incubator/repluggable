@@ -102,10 +102,7 @@ export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = cr
 
     return {
         root,
-        DOMNode: parentWrapper
-            .children()
-            .first()
-            .getDOMNode() as HTMLElement,
+        DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
         parentWrapper,
         host
     }
