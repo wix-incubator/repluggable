@@ -20,6 +20,10 @@ module.exports = (debug, local) => ({
     pathinfo: debug,
     filename: `[name].bundle${debug ? '' : '.min'}.js`,
     hotUpdateMainFilename: 'updates/[hash].hot-update.json',
+    umdNamedDefine: true,
+    library: 'repluggable',
+    libraryTarget: 'umd',
+    globalObject: "(typeof self !== 'undefined' ? self : this)",
   },
   resolve: {
     modules: ['node_modules', path.join(process.cwd(), SRC_DIR)],
