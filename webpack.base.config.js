@@ -1,68 +1,70 @@
 const path = require('path');
-const webpack = require('webpack');
+
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
+const ForkTSCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-
-const join = (...dirs) => path.join(process.cwd(), ...dirs);
-
-const terserOptions = {
-  parallel: true,
-  cache: true,
-  sourceMap: true,
-  terserOptions: {
-    output: {
-      ascii_only: true,
-    },
-    keep_fnames: false,
-  },
-};
+const webpack = require('webpack');
 
 const SRC_DIR = 'src';
-const DIST_DIR = 'dist';
-const STATICS_DIR = 'statics';
+const BUILD_DIR = 'dist';
+const TSCONFIG_FILE = 'tsconfig.json';
+const STATICS_DIR = path.join(BUILD_DIR, 'statics');
 
-module.exports = isDev => ({
-  context: join(SRC_DIR),
-  name: undefined,
-  mode: 'production',
+module.exports = (debug, local) => ({
+  context: path.join(process.cwd(), SRC_DIR),
+  name: 'client',
+  mode: local ? 'development' : 'production',
   output: {
-    path: join(DIST_DIR, STATICS_DIR),
+    path: path.join(process.cwd(), STATICS_DIR),
     publicPath: 'http://localhost:3201/',
-    pathinfo: isDev,
-    filename: `[name].bundle${isDev ? '' : '.min'}.js`,
-    chunkFilename: `[name].chunk${isDev ? '' : '.min'}.js`,
+    pathinfo: debug,
+    filename: `[name].bundle${debug ? '' : '.min'}.js`,
     hotUpdateMainFilename: 'updates/[hash].hot-update.json',
-    hotUpdateChunkFilename: 'updates/[id].[hash].hot-update.js',
-    jsonpFunction: 'webpackJsonp__wix_repluggable',
-    chunkCallbackName: 'webpackWorker__wix_repluggable',
-    umdNamedDefine: true,
-    library: 'repluggable',
-    libraryTarget: 'umd',
-    globalObject: "(typeof self !== 'undefined' ? self : this)",
   },
   resolve: {
-    modules: ['node_modules', join(SRC_DIR)],
-    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.svelte', '.json'],
-    mainFields: ['svelte', 'browser', 'module', 'main'],
+    modules: ['node_modules', path.join(process.cwd(), SRC_DIR)],
+    extensions: ['.js', '.ts', '.tsx', '.json'],
+    mainFields: ['browser', 'module', 'main'],
     alias: {},
   },
   resolveLoader: {
-    modules: [join('node_modules'), 'node_modules'],
+    modules: ['node_modules'],
   },
   optimization: {
-    minimize: !isDev,
-    concatenateModules: true,
-    minimizer: [new TerserPlugin(terserOptions)],
-    splitChunks: false,
+    minimize: !debug,
+    concatenateModules: !local,
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        cache: true,
+        sourceMap: true,
+        terserOptions: {
+          output: {
+            ascii_only: true,
+          },
+          keep_fnames: false,
+        },
+      }),
+    ],
   },
   plugins: [
     new CaseSensitivePathsPlugin(),
     new webpack.LoaderOptionsPlugin({
-      minimize: !isDev,
+      minimize: !debug,
     }),
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+    ...(debug
+      ? [
+          new ForkTSCheckerWebpackPlugin({
+            tsconfig: path.join(process.cwd(), TSCONFIG_FILE),
+            async: false,
+            silent: true,
+            checkSyntacticErrors: true,
+          }),
+        ]
+      : []),
+    ...(local ? [new webpack.HotModuleReplacementPlugin()] : []),
   ],
-  devtool: false,
+  devtool: local ? 'cheap-module-eval-source-map' : false,
   module: {
     strictExportPresence: true,
     rules: [
@@ -73,10 +75,7 @@ module.exports = isDev => ({
             loader: 'ts-loader',
             options: {
               happyPackMode: true,
-              compilerOptions: Object.assign({
-                module: 'esnext',
-                moduleResolution: 'node',
-              }),
+              compilerOptions: { module: 'esnext', moduleResolution: 'node' },
             },
           },
         ],
@@ -96,8 +95,14 @@ module.exports = isDev => ({
     redux: 'Redux',
   },
   devServer: {
-    contentBase: join(DIST_DIR),
+    contentBase: path.join(process.cwd(), STATICS_DIR),
     compress: true,
-    port: 3201
+    port: 3201,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers':
+        'X-Requested-With, content-type, Authorization',
+    },
   },
 });
