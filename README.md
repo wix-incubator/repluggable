@@ -608,3 +608,7 @@ Since APIs are contributed though entry points, their availability depends on th
 - An entry point was added, but then some of its required APIs became unavailable: the entry point will be removed together with all of its contributions, and put on hold. It will be added once again as soon as all required APIs are available.
 
 Such approach guarantees that code dependent on an API from another package will not run unless that API is available.
+
+## Licenses
+
+3-rd party licenses are listed in [docs/3rd-party-licenses.md](docs/3rd-party-licenses.md)
