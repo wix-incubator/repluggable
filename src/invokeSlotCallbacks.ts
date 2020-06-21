@@ -11,9 +11,10 @@ export function invokeSlotCallbacks<T extends any[]>(slot: ExtensionSlot<(...arg
                 console.error(e)
             }
         })
+    } else {
+        slotItems.forEach(slotItem => {
+            const messageId = `${slot.host}-${slot.name}:${slotItem.shell.name}${slotItem.name && '-' + slotItem.name}`
+            slotItem.shell.log.monitor(messageId, {}, () => slotItem.contribution(...args))
+        })
     }
-    slotItems.forEach(slotItem => {
-        const messageId = `${slot.host}-${slot.name}:${slotItem.shell.name}${slotItem.name && '-' + slotItem.name}`
-        slotItem.shell.log.monitor(messageId, {}, () => slotItem.contribution(...args))
-    })
 }
