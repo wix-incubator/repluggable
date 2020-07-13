@@ -59,9 +59,10 @@ export function setupDebugInfo({
             const dependencies = _.invoke(unreadyEntryPoint, 'getDependencyAPIs')
 
             const unreadyDependencies = _.filter(dependencies, key => !readyAPIs.has(getOwnSlotKey(key)))
-
+            
             if (!_.isEmpty(unreadyDependencies)) {
-                console.log(`There are unready dependencies for ${name}: ${_.join(unreadyDependencies, '')}`)
+                const unreadyDependenciesNames = _(unreadyDependencies).map('name').join(',')
+                console.log(`There are unready dependencies for ${name}: ${unreadyDependenciesNames}`)
             }
         },
         findAPI: (name: string) => {
