@@ -1,5 +1,6 @@
 export {
     EntryPointOrPackage,
+    EntryPointOrPackagesMap,
     EntryPoint,
     AppHost,
     AppHostOptions,
