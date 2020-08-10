@@ -1,3 +1,7 @@
+<p align="center">
+  <img class="logo" src="./media/repluggable-logo.svg" height="280">
+</p>
+
 # Repluggable
 
 Repluggable is a library that's implementing inversion of control for front end applications and makes development of medium or high-complexity projects much easier. Currently Repluggable implements micro-frontends in a React+Redux app, with plans to make it framework-independent in the future.
