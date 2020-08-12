@@ -21,7 +21,7 @@ function getOrAddModuleEntry(moduleId: string, lastKnownEntryPoints: EntryPoint[
 }
 
 export const hot = (sourceModule: any, entryPoints: EntryPoint[]): EntryPoint[] => {
-    if (!sourceModule.hot) {
+    if (!sourceModule.hot || sourceModule.hot) {
         return entryPoints // not a dev environment
     }
 
