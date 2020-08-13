@@ -20,7 +20,8 @@ export interface RepluggableAppDebugInfo {
 }
 
 export interface RepluggableDebugUtils {
-    apis(): APIDebugInfo[]
+    apis: Record<string, unknown>
+    getApis(): APIDebugInfo[]
     unReadyEntryPoints(): EntryPoint[]
     whyEntryPointUnready(name: string): void
     findAPI(name: string): APIDebugInfo[]

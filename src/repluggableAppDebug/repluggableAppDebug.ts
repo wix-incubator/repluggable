@@ -1,9 +1,9 @@
-import { getPerformanceDebug } from './performanceDebugInfo'
-import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
 import _ from 'lodash'
-import { hot } from '../hot'
+import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
 import { AppHostServicesProvider } from '../appHostServices'
 import { AnyExtensionSlot } from '../extensionSlot'
+import { hot } from '../hot'
+import { getPerformanceDebug } from './performanceDebugInfo'
 
 interface PerformanceDebugParams {
     options: AppHost['options']
@@ -40,14 +40,38 @@ export function setupDebugInfo({
     shellInstallers,
     performance: { options, trace, memoizedArr }
 }: SetupDebugInfoParams) {
+    let apisAccessObject: Record<string, any> | undefined
+    let apisAccessObjectSize: number
+
     const utils = {
-        apis: () => {
+        getApis: () => {
             return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
                 return {
                     key: apiKey,
                     impl: () => getAPI(apiKey)
                 }
             })
+        },
+        get apis() {
+            // We need to use cache object otherwise chrome devtools doesn't enable autocomplete
+            if (apisAccessObject && apisAccessObjectSize !== readyAPIs.size) {
+                apisAccessObject = undefined
+            }
+            if (!apisAccessObject) {
+                apisAccessObjectSize = readyAPIs.size
+                apisAccessObject = Array.from(readyAPIs).reduce((res, key: SlotKey<unknown>) => {
+                    const layer = key.layer
+                    const name = _.camelCase(key.name) + (layer ? `_${_.camelCase(layer)}` : '')
+                    if (res.hasOwnProperty(name)) {
+                        console.log(`Duplicate service name after slugify:`, name)
+                    }
+                    return Object.defineProperty(res, name, {
+                        get: () => getAPI(key),
+                        enumerable: true
+                    })
+                }, {})
+            }
+            return apisAccessObject
         },
         unReadyEntryPoints: (): EntryPoint[] => getUnreadyEntryPoints(),
         whyEntryPointUnready: (name: string) => {
@@ -65,7 +89,7 @@ export function setupDebugInfo({
             }
         },
         findAPI: (name: string) => {
-            return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
+            return _.filter(utils.getApis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
