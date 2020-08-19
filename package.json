@@ -11,7 +11,7 @@
     "email": "responsive-feds@wix.com"
   },
   "publishConfig": {
-    "registry": "https://npmjs.org/registry",
+    "registry": "https://registry.npmjs.org",
     "versionBumpStrategy": "patch"
   },
   "files": [
