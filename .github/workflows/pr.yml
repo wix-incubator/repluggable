@@ -32,3 +32,11 @@ jobs:
         yarn
         yarn build
         yarn test
+
+    # Determine PR number
+    - name: publish_pre_release
+      run: |
+      echo "$GITHUB_EVENT_PATH"
+      export PR_ID=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+        echo "$PR_ID"
+
