@@ -22,7 +22,7 @@
     "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-bundle-dev && yarn build-bundle-prod",
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
-    "build-bundle-dev": "webpack --config webpack.dev.config.js",
+    "build-bundle-dev": "webpack --config webpack.dev.config.js --verbose",
     "build-bundle-prod": "webpack --config webpack.prod.config.js",
     "build-bundle": "node bundle",
     "test": "jest --coverage",
