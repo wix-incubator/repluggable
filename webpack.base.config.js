@@ -1,13 +1,11 @@
 const path = require('path');
 
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
-const ForkTSCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
 
 const SRC_DIR = 'src';
 const BUILD_DIR = 'dist';
-const TSCONFIG_FILE = 'tsconfig.json';
 const STATICS_DIR = path.join(BUILD_DIR, 'statics');
 
 module.exports = (debug, local) => ({
@@ -56,16 +54,6 @@ module.exports = (debug, local) => ({
     new webpack.LoaderOptionsPlugin({
       minimize: !debug,
     }),
-    ...(debug
-      ? [
-          new ForkTSCheckerWebpackPlugin({
-            tsconfig: path.join(process.cwd(), TSCONFIG_FILE),
-            async: false,
-            silent: true,
-            checkSyntacticErrors: true,
-          }),
-        ]
-      : []),
     ...(local ? [new webpack.HotModuleReplacementPlugin()] : []),
   ],
   devtool: local ? 'cheap-module-eval-source-map' : false,
@@ -78,7 +66,6 @@ module.exports = (debug, local) => ({
           {
             loader: 'ts-loader',
             options: {
-              happyPackMode: true,
               compilerOptions: { module: 'esnext', moduleResolution: 'node' },
             },
           },

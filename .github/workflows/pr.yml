@@ -21,14 +21,21 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+        registry-url: 'https://registry.npmjs.org'
 
     # Runs a single command using the runners shell
     - name: print_banner
       run: echo ----RUNNING PR CI WORKFLOW----
 
     # Runs a set of commands using the runners shell
-    - name: build_and_test
-      run: |
-        yarn,
-        yarn build,
-        yarn test
+    - name: install
+      run: yarn
+
+    - name: build
+      run: yarn build
+
+    - name: test
+      run: yarn test
