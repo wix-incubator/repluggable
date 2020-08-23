@@ -66,7 +66,6 @@ module.exports = (debug, local) => ({
           {
             loader: 'ts-loader',
             options: {
-              happyPackMode: true,
               compilerOptions: { module: 'esnext', moduleResolution: 'node' },
             },
           },
