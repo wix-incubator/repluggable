@@ -25,7 +25,7 @@
     "build-bundle-dev": "webpack --config webpack.dev.config.js",
     "build-bundle-prod": "webpack --config webpack.prod.config.js",
     "test": "jest --coverage",
-    "posttest": "tslint --project . --format 'stylish'"
+    "posttest": "tslint --project ."
   },
   "dependencies": {
     "lodash": "^4.17.20",
@@ -72,7 +72,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "tslint --project . --format 'stylish'"
+      "tslint --project ."
     ]
   }
 }

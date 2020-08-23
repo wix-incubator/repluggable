@@ -66,7 +66,7 @@ module.exports = (debug, local) => ({
           {
             loader: 'ts-loader',
             options: {
-              compilerOptions: { module: 'esnext', moduleResolution: 'node' },
+              compilerOptions: { module: 'esnext', moduleResolution: 'node', declaration: false, declarationMap: false, },
             },
           },
         ],
