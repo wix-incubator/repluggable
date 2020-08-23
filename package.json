@@ -24,7 +24,6 @@
     "build-es": "tsc --outDir dist/es --module esNext",
     "build-bundle-dev": "webpack --config webpack.dev.config.js --verbose",
     "build-bundle-prod": "webpack --config webpack.prod.config.js",
-    "build-bundle": "node bundle",
     "test": "jest --coverage",
     "posttest": "tslint --project . --format 'stylish'"
   },

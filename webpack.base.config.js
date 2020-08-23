@@ -6,7 +6,6 @@ const webpack = require('webpack');
 
 const SRC_DIR = 'src';
 const BUILD_DIR = 'dist';
-const TSCONFIG_FILE = 'tsconfig.json';
 const STATICS_DIR = path.join(BUILD_DIR, 'statics');
 
 module.exports = (debug, local) => ({
