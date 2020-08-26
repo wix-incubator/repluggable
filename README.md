@@ -166,7 +166,7 @@ import { EntryPoint } from 'repluggable'
 
 const FooEntryPoint: EntryPoint = {
 
-    // required: specify name of the entry point
+    // required: specify unique name of the entry point
     name: 'FOO',
 
     // optional
@@ -175,7 +175,15 @@ const FooEntryPoint: EntryPoint = {
             // DO list required API keys
             BarAPI
         ]
-    }
+    },
+
+    // optional
+    declareAPIs() {
+        // DO list API keys that will be contributed 
+        return [
+            FooAPI
+        ]
+    },
 
     // optional
     attach(shell: Shell) {
@@ -203,7 +211,7 @@ const FooEntryPoint: EntryPoint = {
 
 The `EntryPoint` interface consists of:
 - declarations: `name`, `getDependencies()`
-- lifecycle hooks: `attach()`, `extend()`, `uninstall()`
+- lifecycle hooks: `attach()`, `extend()`, `detach()`
 
 The lifecycle hooks receive a `Shell` object, which represents the `AppHost` for this specific entry point.
 
@@ -258,7 +266,7 @@ To create an API, perform these steps:
    }
    ```
 
-1. Contribute your API from an entry point `install` function:
+1. Contribute your API from an entry point `attach` function:
     ```TypeScript
     import { FooAPI, createFooAPI } from './fooApi'
 
@@ -396,7 +404,7 @@ The example below illustrates how `connectWithShell()` is used. Suppose we want 
 
 ```jsx
 (props) => (
-    <div classname="foo">
+    <div className="foo">
         <div>
             <label>XYZZY</label>
             <input
@@ -438,7 +446,7 @@ In order to implement such a component, follow these steps:
     ```TypeScript
     const FooSfc: React.SFC<FooStateProps & FooDispatchProps> =
         (props) => (
-            <div classname="foo">
+            <div className="foo">
                 ...
             </div>        
         )
@@ -447,7 +455,7 @@ In order to implement such a component, follow these steps:
 1. Write the connected container using `connectWithShell`. The latter differs from `connect` in that it passes `Shell` as the first parameter to `mapStateToProps` and `mapDispatchToProps`. The new parameter is followed by the regular parameters passed by `connect`. For example:
 
     ```TypeScript
-    export const Foo = connectWithShell(
+    export const createFoo = (boundShell: Shell) => connectWithShell(
         // mapStateToProps
         // - shell: represents the associated entry point
         // - the rest are regular parameters of mapStateToProps
@@ -473,7 +481,8 @@ In order to implement such a component, follow these steps:
                     shell.getAPI(BarAPI).createNewBar()  
                 }
             }
-        }
+        },
+        boundShell
     )(FooSfc)
     ```
 
