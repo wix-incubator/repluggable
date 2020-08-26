@@ -1,0 +1,25 @@
+name: Master Build
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [12.x]
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node_version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node_version }}
+    - name: install, build, and test
+      run: |
+        yarn
+        yarn build
+        yarn test
+      env:
+        CI: true
