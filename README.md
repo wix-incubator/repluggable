@@ -4,6 +4,8 @@
 
 # Repluggable
 
+![Master Build](https://github.com/wix/repluggable/workflows/Master%20Build/badge.svg)
+
 Repluggable is a library that's implementing inversion of control for front end applications and makes development of medium or high-complexity projects much easier. Currently Repluggable implements micro-frontends in a React+Redux app, with plans to make it framework-independent in the future.
 
 Functionality of a Repluggable app is composed incrementally from a list of pluggable packages. Every package extends the already loaded ones by contributing new functionality into them. Sections of UI, contributed by a certain package, can be rendered anywhere and are not limited to dedicated subtree of DOM. All packages privately manage their state in a modular Redux store, which plays the role of common event mechanism. Packages interact with each other by contributing and consuming APIs, which are objects that implement declared interfaces. Packages can be plugged in and out at runtime without the need to reload a page. Check out the [architecture](#Architecture) section of the docs to learn more about the design decisions behind Repluggable.
