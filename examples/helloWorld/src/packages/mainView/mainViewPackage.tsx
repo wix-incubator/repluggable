@@ -1,5 +1,5 @@
 import React from "react";
-import { EntryPoint } from '@wix/repluggable'
+import { EntryPoint } from 'repluggable'
 import { MainViewAPI, createMainViewAPI, componentsSlotKey } from './mainViewAPI'
 import { MainViewComponent } from './mainViewComponent'
 
