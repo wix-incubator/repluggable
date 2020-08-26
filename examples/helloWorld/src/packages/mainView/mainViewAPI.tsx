@@ -1,4 +1,4 @@
-import { ReactComponentContributor, Shell, SlotKey } from '@wix/repluggable';
+import { ReactComponentContributor, Shell, SlotKey } from 'repluggable';
 
 export interface MainViewAPI {
     contributeComponent(fromShell: Shell, contribution: ContributedComponent): void

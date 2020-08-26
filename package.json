@@ -71,7 +71,7 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "(src|test|testKit)/**/*.{ts,tsx}": [
       "tslint --project ."
     ]
   }

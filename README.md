@@ -25,14 +25,14 @@ $ npm install repluggable
 ```
 
 ## Create a new Repluggable project
-Run the following commands (Before opening source - change "@wix/repluggable" to "repluggable"):
+Run the following commands:
 ```
 create-react-app your-app-name --template typescript
 cd your-app-name
-yarn add @wix/repluggable
+yarn add repluggable
 rm src/App*
 rm src/logo*
-\cp -R node_modules/@wix/repluggable/examples/helloWorld/src/ ./src
+\cp -R node_modules/repluggable/examples/helloWorld/src/ ./src
 yarn start
 ```
 

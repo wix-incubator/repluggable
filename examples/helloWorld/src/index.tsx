@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
 
-import { createAppHost, AppMainView } from '@wix/repluggable';
+import { createAppHost, AppMainView } from 'repluggable';
 import { HelloWorldPackage } from './packages/helloWorld';
 import { MainViewPackage } from './packages/mainView';
 
