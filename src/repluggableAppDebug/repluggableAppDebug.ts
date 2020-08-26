@@ -3,6 +3,7 @@ import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, S
 import { AppHostServicesProvider } from '../appHostServices'
 import { AnyExtensionSlot } from '../extensionSlot'
 import { hot } from '../hot'
+import { getDuplicates } from '../utils/getDuplicates'
 import { getPerformanceDebug } from './performanceDebugInfo'
 
 interface PerformanceDebugParams {
@@ -19,17 +20,20 @@ interface SetupDebugInfoParams {
     addedShells: Map<string, PrivateShell>
     shellInstallers: WeakMap<PrivateShell, string[]>
     lazyShells: Map<string, LazyEntryPointFactory>
-
     performance: PerformanceDebugParams
+    getAPI: AppHost['getAPI']
+
+    getReadyAPIsVersion(): number
 
     getUnreadyEntryPoints(): EntryPoint[]
+
     getOwnSlotKey(key: SlotKey<any>): SlotKey<any>
-    getAPI: AppHost['getAPI']
 }
 
 export function setupDebugInfo({
     host,
     uniqueShellNames,
+    getReadyAPIsVersion,
     readyAPIs,
     getAPI,
     getOwnSlotKey,
@@ -41,7 +45,7 @@ export function setupDebugInfo({
     performance: { options, trace, memoizedArr }
 }: SetupDebugInfoParams) {
     let apisAccessObject: Record<string, any> | undefined
-    let apisAccessObjectSize: number
+    let apisAccessObjectVersion: number | undefined
 
     const utils = {
         getApis: () => {
@@ -54,22 +58,10 @@ export function setupDebugInfo({
         },
         get apis() {
             // We need to use cache object otherwise chrome devtools doesn't enable autocomplete
-            if (apisAccessObject && apisAccessObjectSize !== readyAPIs.size) {
-                apisAccessObject = undefined
-            }
-            if (!apisAccessObject) {
-                apisAccessObjectSize = readyAPIs.size
-                apisAccessObject = Array.from(readyAPIs).reduce((res, key: SlotKey<unknown>) => {
-                    const layer = key.layer
-                    const name = _.camelCase(key.name) + (layer ? `_${_.camelCase(layer)}` : '')
-                    if (res.hasOwnProperty(name)) {
-                        console.log(`Duplicate service name after slugify:`, name)
-                    }
-                    return Object.defineProperty(res, name, {
-                        get: () => getAPI(key),
-                        enumerable: true
-                    })
-                }, {})
+            const version = getReadyAPIsVersion()
+            if (!apisAccessObject || apisAccessObjectVersion !== version) {
+                apisAccessObjectVersion = version
+                apisAccessObject = getApisAccessObject(readyAPIs, getAPI)
             }
             return apisAccessObject
         },
@@ -107,4 +99,29 @@ export function setupDebugInfo({
             hot
         }
     }
+}
+
+function getApisAccessObject(readyAPIs: Set<SlotKey<unknown>>, getAPI: AppHost['getAPI']): Record<string, unknown> {
+    const slugApis = Array.from(readyAPIs).map((key: SlotKey<unknown>) => ({
+        slug: _.camelCase(key.name).replace('Api', 'API'),
+        layer: key.layer,
+        version: key.version,
+        get: () => getAPI(key)
+    }))
+
+    const duplicateNames = getDuplicates(slugApis.map(api => api.slug))
+
+    return slugApis.reduce((res, { slug, layer, version, get }) => {
+        const suffix = duplicateNames.has(slug) ? _([layer, version]).filter().camelCase() : ''
+        const propertyKey = slug + (suffix ? `_${suffix}` : '')
+
+        if (res.hasOwnProperty(propertyKey)) {
+            console.log(`Duplicate service name after slugify: ${propertyKey}`)
+            return res
+        }
+        return Object.defineProperty(res, propertyKey, {
+            get,
+            enumerable: true
+        })
+    }, {})
 }

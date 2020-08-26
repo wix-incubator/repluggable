@@ -91,6 +91,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
+    let readyAPIsVersion = 0 // for tracking changes in readyAPIs to clear cache for repluggableAppDebug.utils.apis
     const readyAPIs = new Set<AnySlotKey>()
 
     const uniqueShellNames = new Set<string>()
@@ -125,6 +126,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     setupDebugInfo({
         host,
+        getReadyAPIsVersion: () => readyAPIsVersion,
         readyAPIs,
         uniqueShellNames,
         extensionSlots,
@@ -596,7 +598,7 @@ miss: ${memoizedWithMissHit.miss}
 
     function discardSlotKey<T>(key: SlotKey<T>) {
         const ownKey = getOwnSlotKey(key)
-
+        readyAPIsVersion++
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(slotKeyToName(ownKey))
@@ -788,7 +790,7 @@ miss: ${memoizedWithMissHit.miss}
 
                 APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
                 apiSlot.contribute(shell, monitoredAPI)
-
+                readyAPIsVersion++
                 readyAPIs.add(key)
 
                 if (canInstallReadyEntryPoints) {
