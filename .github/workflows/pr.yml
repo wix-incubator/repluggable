@@ -31,7 +31,9 @@ jobs:
           
       - name: npm publish
         run: |
+          export PR_PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
+          echo PR Package Version is: [$PR_PACKAGE_VERSION]
           npm config set //registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN
-          npm publish
+          npm publish --tag "$PR_PACKAGE_VERSION"
         env:
           NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
