@@ -18,7 +18,8 @@ export {
     ShellLoggerSpan,
     HostLogger,
     LogSeverity,
-    APILayer
+    APILayer,
+    Contribution
 } from './API'
 
 export { AppMainView } from './appMainView'
