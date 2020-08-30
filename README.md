@@ -1,10 +1,11 @@
 <p align="center">
-  <img class="logo" src="./media/repluggable-logo.svg" height="280">
+  <img class="logo" src="https://raw.githubusercontent.com/wix/repluggable/master/media/repluggable-logo.svg" height="280">
 </p>
 
 # Repluggable
 
-![Master Build](https://github.com/wix/repluggable/workflows/Master%20Build/badge.svg)
+[![master build](https://github.com/wix/repluggable/workflows/Master%20Build/badge.svg)](https://github.com/wix/repluggable/actions?query=workflow%3A%22Master+Build%22)
+[![npm version](https://img.shields.io/npm/v/repluggable)](https://www.npmjs.com/package/repluggable)
 
 Repluggable is a library that's implementing inversion of control for front end applications and makes development of medium or high-complexity projects much easier. Currently Repluggable implements micro-frontends in a React+Redux app, with plans to make it framework-independent in the future.
 
