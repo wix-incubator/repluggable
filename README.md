@@ -111,9 +111,11 @@ The `index.ts` of the application must perform the following steps.
    ```TypeScript
    const host = createAppHost([
        foo,
-       bar,
        baz
    ])
+
+   // Later
+   void bar().then(p => host.addShells([p]))
    ```
 
 1. Render `AppMainView` component, passing it the host:
@@ -137,7 +139,6 @@ const packageThree = require('package-three')
 
 const host = createAppHost([
     packageOne,
-    packageTwo,
     packageThree
 ])
 
@@ -145,6 +146,9 @@ ReactDOM.render(
     <AppMainView host={host} />,
     document.getElementById('root')
 )
+
+// Sometime later
+void packageTwo().then(p => host.addShells([p]))
 ```
 
 ## Developing a pluggable package
