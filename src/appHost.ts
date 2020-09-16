@@ -580,23 +580,8 @@ miss: ${memoizedWithMissHit.miss}
         )
     }
 
-    function isAPIMissing(APIKey: AnySlotKey): boolean {
-        const ownKey = getOwnSlotKey(APIKey)
-        return !extensionSlots.has(ownKey)
-    }
-
-    function uninstallIfDependencyAPIsRemoved(shell: PrivateShell) {
-        const dependencyAPIs = _.invoke(shell.entryPoint, 'getDependencyAPIs')
-
-        if (_.some(dependencyAPIs, isAPIMissing)) {
-            unReadyEntryPointsStore.get().push(shell.entryPoint)
-            executeUninstallShells([shell.name])
-        }
-    }
-
     function discardSlotKey<T>(key: SlotKey<T>) {
         const ownKey = getOwnSlotKey(key)
-
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(slotKeyToName(ownKey))
@@ -604,28 +589,71 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
-    function executeUninstallShells(names: string[]): void {
-        host.log.log('debug', `-- Uninstalling ${names} --`)
+    function findDependantShells(declaringShell: PrivateShell): PrivateShell[] {
+        return _([...addedShells.entries()])
+            .flatMap(([name, shell]) => {
+                const dependencyAPIs = shell.entryPoint?.getDependencyAPIs?.() || []
+                const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
+                return isDependant ? [shell, ...findDependantShells(shell)] : []
+            })
+            .uniqBy('name')
+            .value()
+    }
 
-        invokeEntryPointPhase('detach', names.map(name => addedShells.get(name)) as PrivateShell[], f =>
-            _.invoke(f.entryPoint, 'detach', f)
-        )
+    function isShellBeingDependantOnInGroup(declaringShell: PrivateShell, shells: PrivateShell[]): boolean {
+        return !!shells.find(dependantShell => {
+            const dependencyAPIs = dependantShell.entryPoint?.getDependencyAPIs?.() || []
+            return dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
+        })
+    }
 
-        const slotKeysToDiscard = findContributedAPIs(names).concat(findDeclaredSlotKeys(names))
+    function executeDetachOnShellReadyForRemoval(shellsToBeDetached: PrivateShell[], originalRequestedRemovalNames: string[]) {
+        invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
+
+        const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
+
+        const slotKeysToDiscard = findContributedAPIs(detachedShellsNames).concat(findDeclaredSlotKeys(detachedShellsNames))
 
         extensionSlots.forEach(extensionSlot =>
-            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem => doesExtensionItemBelongToShells(extensionItem, names))
+            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem =>
+                doesExtensionItemBelongToShells(extensionItem, detachedShellsNames)
+            )
         )
 
-        names.forEach(name => {
+        detachedShellsNames.forEach(name => {
+            const isResultOfMissingDependency = !originalRequestedRemovalNames.includes(name)
+            if (isResultOfMissingDependency) {
+                const entryPoint = addedShells.get(name)?.entryPoint
+                entryPoint && unReadyEntryPointsStore.get().push(entryPoint)
+            }
             addedShells.delete(name)
             uniqueShellNames.delete(name)
         })
+
         slotKeysToDiscard.forEach(discardSlotKey)
 
-        host.log.log('debug', `Done uninstalling ${names}`)
+        host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
+    }
 
-        addedShells.forEach(uninstallIfDependencyAPIsRemoved)
+    function executeUninstallShells(names: string[]): void {
+        host.log.log('debug', `-- Uninstalling ${names} --`)
+
+        const shellsCandidatesToBeDetached = _(names)
+            .map(name => addedShells.get(name))
+            .compact()
+            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
+            .uniqBy('name')
+            .value()
+
+        let queue = shellsCandidatesToBeDetached
+        while (!_.isEmpty(queue)) {
+            const shellsToBeDetached = queue.filter(ep => !isShellBeingDependantOnInGroup(ep, queue))
+            if (_.isEmpty(shellsToBeDetached)) {
+                throw new Error(`Some shells could not detach: ${queue.map(({ name }) => name).join()}`)
+            }
+            executeDetachOnShellReadyForRemoval(shellsToBeDetached, names)
+            queue = _.differenceBy(queue, shellsToBeDetached, 'name')
+        }
     }
 
     function findContributedAPIs(shellNames: string[]) {

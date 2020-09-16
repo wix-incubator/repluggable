@@ -636,6 +636,38 @@ describe('App Host', () => {
             expect(host.getAPI(MockAPI)).toBeTruthy()
         })
 
+        it('should execute detach and attach sequence according to dependencies', async () => {
+            const MockAPI2: SlotKey<MockAPI> = { name: 'MOCK' }
+            const dependantEntryPoint: EntryPoint = {
+                name: 'EP1',
+                getDependencyAPIs: () => [MockAPI],
+                declareAPIs: () => [MockAPI2],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI2, () => shell.getAPI(MockAPI))
+                },
+                detach(shell) {
+                    shell.getAPI(MockAPI).stubTrue()
+                }
+            }
+            const dependantEntryPoint2: EntryPoint = {
+                name: 'EP2',
+                getDependencyAPIs: () => [MockAPI, MockAPI2],
+                detach(shell) {
+                    shell.getAPI(MockAPI).stubTrue()
+                    shell.getAPI(MockAPI2).stubTrue()
+                }
+            }
+            const host = createAppHost([dependantEntryPoint2, mockPackage, dependantEntryPoint], testHostOptions)
+            expect(() => host.removeShells([mockPackage.name])).not.toThrow()
+            expect(host.hasShell(mockPackage.name)).toBe(false)
+            expect(host.hasShell(dependantEntryPoint.name)).toBe(false)
+            expect(host.hasShell(dependantEntryPoint2.name)).toBe(false)
+
+            await host.addShells([mockPackage])
+            expect(host.hasShell(dependantEntryPoint.name)).toBe(true)
+            expect(host.hasShell(dependantEntryPoint2.name)).toBe(true)
+        })
+
         it('should contribute state', async () => {
             const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name, mockShellStateKey], null)
 
