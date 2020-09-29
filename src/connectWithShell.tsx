@@ -91,11 +91,23 @@ function wrapWithShellContext<S, OP, SP, DP>(
         }
     }
 
+    const ChildWithContext: React.FunctionComponent<any> = props => {
+        return (
+            <ShellContext.Provider value={props.originalShell}>
+                <>
+                    {React.Children.map(props.children, child =>
+                        child ? React.cloneElement(child, _.omit(props, ['children', 'originalShell'])) : child
+                    )}
+                </>
+            </ShellContext.Provider>
+        )
+    }
+
     const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
         props.children
             ? {
                   ...props,
-                  children: <ShellContext.Provider value={originalShell}>{props.children}</ShellContext.Provider>
+                  children: <ChildWithContext originalShell={originalShell}>{props.children}</ChildWithContext>
               }
             : props
 
