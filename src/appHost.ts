@@ -1,4 +1,4 @@
-import { combineReducers, ReducersMapObject, Store } from 'redux'
+import { AnyAction, combineReducers, ReducersMapObject, Store } from 'redux'
 import {
     AnyEntryPoint,
     AnySlotKey,
@@ -828,7 +828,9 @@ miss: ${memoizedWithMissHit.miss}
                 return monitoredAPI
             },
 
-            contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void {
+            contributeState<TState, TAction extends AnyAction = AnyAction>(
+                contributor: ReducersMapObjectContributor<TState, TAction>
+            ): void {
                 getSlot(stateSlotKey).contribute(shell, contributor)
             },
 
