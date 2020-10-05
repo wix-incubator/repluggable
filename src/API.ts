@@ -4,7 +4,10 @@ import { ThrottledStore } from './throttledStore'
 
 export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush'>
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
-export type ReducersMapObjectContributor<TState = {}> = () => Redux.ReducersMapObject<TState>
+export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
+    TState,
+    TAction
+>
 export type ContributionPredicate = () => boolean
 export interface EntryPointTags {
     [name: string]: string
@@ -381,7 +384,9 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @template TState
      * @param {ReducersMapObjectContributor<TState>} contributor
      */
-    contributeState<TState>(contributor: ReducersMapObjectContributor<TState>): void
+    contributeState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
+        contributor: ReducersMapObjectContributor<TState, TAction>
+    ): void
     /**
      * Contribute the main view (root) of the application
      * Intended to be used by a single {Shell} in an application
