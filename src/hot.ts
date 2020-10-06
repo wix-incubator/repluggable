@@ -25,6 +25,11 @@ export const hot = (sourceModule: any, entryPoints: EntryPoint[]): EntryPoint[] 
         return entryPoints // not a dev environment
     }
 
+    const urlParams = new URLSearchParams(window.location.search)
+    if (!urlParams.has('enableHMR')) {
+        return entryPoints
+    }
+
     const shortModuleId = sourceModule.id.split('/').pop()
     console.debug(
         `----- HMR[${shortModuleId}] > ENTER`,
