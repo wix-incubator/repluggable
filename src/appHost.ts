@@ -589,12 +589,21 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
-    function findDependantShells(declaringShell: PrivateShell): PrivateShell[] {
+    function findDependantShells(declaringShell: PrivateShell, dependantShells: Map<string, PrivateShell[]>): PrivateShell[] {
         return _([...addedShells.entries()])
             .flatMap(([name, shell]) => {
                 const dependencyAPIs = shell.entryPoint?.getDependencyAPIs?.() || []
                 const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
-                return isDependant ? [shell, ...findDependantShells(shell)] : []
+                if (isDependant) {
+                    const value = dependantShells.get(name)
+                    if (value) {
+                        return value
+                    }
+                    const eps = [shell, ...findDependantShells(shell, dependantShells)]
+                    dependantShells.set(name, eps)
+                    return eps
+                }
+                return []
             })
             .uniqBy('name')
             .value()
@@ -637,11 +646,11 @@ miss: ${memoizedWithMissHit.miss}
 
     function executeUninstallShells(names: string[]): void {
         host.log.log('debug', `-- Uninstalling ${names} --`)
-
+        const dependantShells = new Map<string, PrivateShell[]>()
         const shellsCandidatesToBeDetached = _(names)
             .map(name => addedShells.get(name))
             .compact()
-            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
+            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell, dependantShells)])
             .uniqBy('name')
             .value()
 
