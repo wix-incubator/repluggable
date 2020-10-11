@@ -2,6 +2,8 @@
   <img class="logo" src="https://raw.githubusercontent.com/wix/repluggable/master/media/repluggable-logo.svg" height="280">
 </p>
 
+[TEST PR]
+
 # Repluggable
 
 [![master build](https://github.com/wix/repluggable/workflows/Master%20Build/badge.svg)](https://github.com/wix/repluggable/actions?query=workflow%3A%22Master+Build%22)
