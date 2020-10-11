@@ -650,6 +650,7 @@ miss: ${memoizedWithMissHit.miss}
 
     function executeUninstallShells(names: string[]): void {
         host.log.log('debug', `-- Uninstalling ${names} --`)
+
         const shellsCandidatesToBeDetached = _(names)
             .map(name => addedShells.get(name))
             .compact()
