@@ -589,26 +589,29 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
-    function findDependantShells(shell: PrivateShell): PrivateShell[] {
+    function findDependantShells(entryShell: PrivateShell): PrivateShell[] {
         const cache = new Map<string, PrivateShell[]>()
 
         const _findDependantShells = (declaringShell: PrivateShell): PrivateShell[] =>
             _([...addedShells.entries()])
-                .flatMap(([name, s]) => {
+                .flatMap(([name, shell]) => {
                     const cachedValue = cache.get(name)
                     if (cachedValue) {
                         return cachedValue
                     }
-                    const dependencyAPIs = s.entryPoint?.getDependencyAPIs?.() || []
-                    const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
-                    const dependencies = isDependant ? [s, ..._findDependantShells(s)] : []
+                    const dependencyAPIs = shell.entryPoint?.getDependencyAPIs?.() || []
+                    const isDependant = dependencyAPIs.some(key => getAPIContributor(key)?.name === declaringShell.name)
+                    if (!isDependant) {
+                        return []
+                    }
+                    const dependencies = [shell, ..._findDependantShells(shell)]
                     cache.set(name, dependencies)
                     return dependencies
                 })
                 .uniqBy('name')
                 .value()
 
-        return _findDependantShells(shell)
+        return _findDependantShells(entryShell)
     }
 
     function isShellBeingDependantOnInGroup(declaringShell: PrivateShell, shells: PrivateShell[]): boolean {
