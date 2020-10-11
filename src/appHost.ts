@@ -591,21 +591,19 @@ miss: ${memoizedWithMissHit.miss}
 
     function findDependantShells(shell: PrivateShell): PrivateShell[] {
         const cache = new Map<string, PrivateShell[]>()
+
         const _findDependantShells = (declaringShell: PrivateShell): PrivateShell[] =>
             _([...addedShells.entries()])
                 .flatMap(([name, s]) => {
+                    const cachedValue = cache.get(name)
+                    if (cachedValue) {
+                        return cachedValue
+                    }
                     const dependencyAPIs = s.entryPoint?.getDependencyAPIs?.() || []
                     const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
-                    if (isDependant) {
-                        const value = cache.get(name)
-                        if (value) {
-                            return value
-                        }
-                        const eps = [s, ..._findDependantShells(s)]
-                        cache.set(name, eps)
-                        return eps
-                    }
-                    return []
+                    const dependencies = isDependant ? [s, ..._findDependantShells(s)] : []
+                    cache.set(name, dependencies)
+                    return dependencies
                 })
                 .uniqBy('name')
                 .value()
