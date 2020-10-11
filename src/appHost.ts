@@ -589,24 +589,28 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
-    function findDependantShells(declaringShell: PrivateShell, dependantShells: Map<string, PrivateShell[]>): PrivateShell[] {
-        return _([...addedShells.entries()])
-            .flatMap(([name, shell]) => {
-                const dependencyAPIs = shell.entryPoint?.getDependencyAPIs?.() || []
-                const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
-                if (isDependant) {
-                    const value = dependantShells.get(name)
-                    if (value) {
-                        return value
+    function findDependantShells(shell: PrivateShell): PrivateShell[] {
+        const cache = new Map<string, PrivateShell[]>()
+        const _findDependantShells = (declaringShell: PrivateShell): PrivateShell[] =>
+            _([...addedShells.entries()])
+                .flatMap(([name, s]) => {
+                    const dependencyAPIs = s.entryPoint?.getDependencyAPIs?.() || []
+                    const isDependant = dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
+                    if (isDependant) {
+                        const value = cache.get(name)
+                        if (value) {
+                            return value
+                        }
+                        const eps = [s, ..._findDependantShells(s)]
+                        cache.set(name, eps)
+                        return eps
                     }
-                    const eps = [shell, ...findDependantShells(shell, dependantShells)]
-                    dependantShells.set(name, eps)
-                    return eps
-                }
-                return []
-            })
-            .uniqBy('name')
-            .value()
+                    return []
+                })
+                .uniqBy('name')
+                .value()
+
+        return _findDependantShells(shell)
     }
 
     function isShellBeingDependantOnInGroup(declaringShell: PrivateShell, shells: PrivateShell[]): boolean {
@@ -646,11 +650,10 @@ miss: ${memoizedWithMissHit.miss}
 
     function executeUninstallShells(names: string[]): void {
         host.log.log('debug', `-- Uninstalling ${names} --`)
-        const dependantShells = new Map<string, PrivateShell[]>()
         const shellsCandidatesToBeDetached = _(names)
             .map(name => addedShells.get(name))
             .compact()
-            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell, dependantShells)])
+            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
             .uniqBy('name')
             .value()
 
