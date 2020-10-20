@@ -373,7 +373,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function slotKeyToName<T>(key: SlotKey<T>): string {
-        return _.isUndefined(key.version) ? key.name : `${key.name}(v${key.version})`
+        return key.version === undefined ? key.name : `${key.name}(v${key.version})`
     }
 
     function registerSlotOrThrow<TItem, TSlot extends AnyExtensionSlot>(key: SlotKey<TItem>, factory: () => TSlot): TSlot {

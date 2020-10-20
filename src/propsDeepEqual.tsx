@@ -3,12 +3,12 @@ import _ from 'lodash'
 export const propsDeepEqual = (propsA: any, propsB: any) => {
     const customizer: _.IsEqualCustomizer = (a, b, key, objectA) => {
         if (key === 'children' && objectA === propsA) {
-            if (_.isFunction(a) && _.isFunction(b)) {
+            if (typeof a === 'function' && typeof b === 'function') {
                 return false
             }
             return
         }
-        if (_.isFunction(a) && _.isFunction(b)) {
+        if (typeof a === 'function' && typeof b === 'function') {
             return true
         }
         return
