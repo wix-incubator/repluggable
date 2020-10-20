@@ -1,6 +1,6 @@
 import { EntryPoint } from './API'
 
-export const hot = (sourceModule: any, entryPoints: EntryPoint[]): EntryPoint[] => {
+export const hot = (sourceModule: NodeModule, entryPoints: EntryPoint[]): EntryPoint[] => {
     if (!sourceModule.hot) {
         return entryPoints
     }
