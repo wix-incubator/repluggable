@@ -1,4 +1,5 @@
 import { Reducer, Action, createStore, Store } from 'redux'
+import { devToolsEnhancer } from 'redux-devtools-extension/developmentOnly'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
 
@@ -34,7 +35,7 @@ export const createThrottledStore = (
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
 ): ThrottledStore => {
-    const store = createStore(reducer)
+    const store = createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
 
     const invoke = (f: Subscriber) => f()
     let subscribers: Subscriber[] = []
