@@ -1,5 +1,5 @@
 import { Reducer, Action, createStore, Store } from 'redux'
-import { devToolsEnhancer } from 'redux-devtools-extension'
+import { devToolsEnhancer } from 'redux-devtools-extension/developmentOnly'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
 
