@@ -2,6 +2,7 @@ import { Reducer, Action, createStore, Store } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
+import { AppHost } from './API'
 
 const curry = _.curry
 
@@ -30,13 +31,14 @@ export interface ThrottledStore<T = any> extends Store<T> {
 }
 
 export const createThrottledStore = (
-    host: AppHostServicesProvider,
+    host: AppHost & AppHostServicesProvider,
     reducer: Reducer<any, Action<any>>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
 ): ThrottledStore => {
-    const store = createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
-
+    const store = host.options.enableReduxDevtoolsExtension
+        ? createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
+        : createStore(reducer)
     const invoke = (f: Subscriber) => f()
     let subscribers: Subscriber[] = []
     const subscribe = (subscriber: Subscriber) => {
