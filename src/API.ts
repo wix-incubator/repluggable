@@ -295,6 +295,7 @@ export interface AppHostOptions {
     readonly disableLayersValidation?: boolean
     readonly disableCheckCircularDependencies?: boolean
     readonly enableStickyErrorBoundaries?: boolean
+    readonly enableReduxDevtoolsExtension?: boolean
 }
 
 export interface MemoizeMissHit {
