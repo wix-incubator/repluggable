@@ -104,7 +104,10 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
-    const hostAPI: AppHostAPI = {}
+    const hostAPI: AppHostAPI = {
+        getAllEntryPoints: () => [...addedShells.entries()].map(([, { entryPoint }]) => entryPoint),
+        getAppHostOptions: () => options
+    }
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
     const host: AppHost & AppHostServicesProvider = {
         getStore,

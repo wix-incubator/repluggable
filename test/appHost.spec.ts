@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger } from '../src/API'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger, PrivateShell } from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -12,7 +12,7 @@ import {
     mockShellStateKey
 } from '../testKit/mockPackage'
 
-import { AppHostAPI, AppHostServicesEntryPointName } from '../src/appHostServices'
+import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
 import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
@@ -1004,6 +1004,25 @@ describe('App Host', () => {
             }).toThrowError(
                 new RegExp(`Error: Extension slot with key '${SecondMockAPIv2.name}\\\(v${SecondMockAPIv2.version}\\\)' already exists`)
             )
+        })
+    })
+
+    describe('Host API', () => {
+        it('should get all entry points', async () => {
+            const host = createAppHost([mockPackage], testHostOptions) as AppHost & AppHostServicesProvider
+            await host.addShells([mockPackageWithPublicAPI])
+
+            const allEntryPoints = host.getAPI(AppHostAPI).getAllEntryPoints()
+
+            expect(_.sortBy(allEntryPoints, 'name')).toEqual(
+                _.sortBy([mockPackage, mockPackageWithPublicAPI, (host.getAppHostServicesShell() as PrivateShell).entryPoint], 'name')
+            )
+        })
+
+        it('should get host options', () => {
+            const host = createAppHost([mockPackage], testHostOptions)
+
+            expect(host.getAPI(AppHostAPI).getAppHostOptions()).toEqual(testHostOptions)
         })
     })
 })
