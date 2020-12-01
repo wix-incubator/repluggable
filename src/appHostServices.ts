@@ -1,6 +1,9 @@
-import { EntryPoint, Shell, SlotKey } from './API'
+import { AppHostOptions, EntryPoint, Shell, SlotKey } from './API'
 
-export interface AppHostAPI {} /* tslint:disable-line:no-empty-interface */
+export interface AppHostAPI {
+    getAllEntryPoints(): EntryPoint[]
+    getAppHostOptions(): AppHostOptions
+}
 
 export const AppHostServicesEntryPointName = 'APP-HOST-SERVICES'
 
