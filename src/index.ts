@@ -3,6 +3,7 @@ export {
     EntryPointOrPackagesMap,
     EntryPoint,
     AppHost,
+    AppHostAPI,
     AppHostOptions,
     Shell,
     ExtensionSlot,
