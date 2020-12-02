@@ -319,6 +319,21 @@ export interface ContributeAPIOptions<TAPI> {
     disableMonitoring?: boolean | (keyof TAPI)[]
 }
 
+export interface StateObserver {
+    hasChanges(): boolean
+}
+
+export type StateChangeDetector<TState> = (prev: TState, next: TState) => boolean
+export type StateObserverInjector = (observer: StateObserver) => void
+interface  StateObserverDeclaration<TState> {
+    detector: StateChangeDetector<TState>
+    injector: StateObserverInjector
+}
+export interface StateObserverFilter {
+    readonly whiteList?: StateObserver[]
+    readonly blackList?: StateObserver[]
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 /**
@@ -370,6 +385,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem>
+
     // TODO: Fix contributeAPI factory type not to resort to lowest common
     /**
      * Contribute an implementation of an API (a.k.a contract)
@@ -388,8 +404,10 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @param {ReducersMapObjectContributor<TState>} contributor
      */
     contributeState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
-        contributor: ReducersMapObjectContributor<TState, TAction>
+        contributor: ReducersMapObjectContributor<TState, TAction>,
+        observers?: StateObserverDeclaration<TState>[]
     ): void
+
     /**
      * Contribute the main view (root) of the application
      * Intended to be used by a single {Shell} in an application
