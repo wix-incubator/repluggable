@@ -1,8 +1,19 @@
-import { Reducer, Action, createStore, Store } from 'redux'
+import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost } from './API'
+import { AppHost, ExtensionSlot, ReducersMapObjectContributor, StateObserver } from './API'
+import { contributeInstalledShellsState } from './installedShellsState'
+//TODO import { interceptAnyObject } from './interceptAnyObject'
+
+interface ShellsReducersMap {
+    slowlyChanging: {
+        [shellName: string]: ReducersMapObject
+    }
+    rapidlyChanging: {
+        [shellName: string]: ReducersMapObject
+    }
+}
 
 const curry = _.curry
 
@@ -26,16 +37,85 @@ const animationFrameRenderer = curry(
 
 type Subscriber = () => void
 
+export interface StateContribution<TState = {}, TAction extends AnyAction = AnyAction> {
+    reducerFactory: ReducersMapObjectContributor<TState, TAction>
+    observers: StateObserver[]
+    changeRate: 'slow' | 'rapid'
+}
+
 export interface ThrottledStore<T = any> extends Store<T> {
     flush(): void
 }
 
+const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>): Reducer => {
+
+    //TODO
+    // let slowStateChangeCount = 0
+
+    // function interceptSlowlyChangingReducer(reducer: Reducer): Reducer {
+    //     return (state0, action) => {
+    //         slowStateChangeCount++
+    //         const state1 = reducer(state0, action)
+    //         if (state1 !== state0) {
+    //             slowStateChangeCount++
+    //         }
+    //         return state1
+    //     }
+    // }
+
+    function getPerShellReducersMapObject(): ShellsReducersMap {
+        const emptyMap: ShellsReducersMap = {
+            slowlyChanging: {},
+            rapidlyChanging: {}
+        }
+        return contributedState.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
+            const shellName = item.shell.name
+            reducersMap.slowlyChanging[shellName] = {
+                ...reducersMap.slowlyChanging[shellName],
+                ...item.contribution.reducerFactory()
+            }
+            return reducersMap
+        }, emptyMap)
+    }
+
+    function getCombinedShellReducers(): ReducersMapObject {
+        const shellsReducerMaps = getPerShellReducersMapObject()
+        return Object.keys(shellsReducerMaps).reduce((reducersMap: ReducersMapObject, shellName: string) => {
+            reducersMap[shellName] = combineReducers(shellsReducerMaps.slowlyChanging[shellName])
+            return reducersMap
+        }, {})
+    }
+
+    function buildReducersMapObject(): ReducersMapObject {
+        // TODO: get rid of builtInReducersMaps
+        const builtInReducersMaps: ReducersMapObject = {
+            ...contributeInstalledShellsState()
+        }
+        return { ...builtInReducersMaps, ...getCombinedShellReducers() }
+    }
+
+    const reducersMap = buildReducersMapObject()
+    const reducer = combineReducers(reducersMap)
+    
+    return reducer
+}
+
+export const updateThrottledStore = (
+    store: ThrottledStore,
+    contributedState: ExtensionSlot<StateContribution>
+): void => {
+    const newReducer = buildStoreReducer(contributedState)
+    store.replaceReducer(newReducer)
+}
+
 export const createThrottledStore = (
     host: AppHost & AppHostServicesProvider,
-    reducer: Reducer<any, Action<any>>,
+    contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
 ): ThrottledStore => {
+
+    const reducer = buildStoreReducer(contributedState)
     const store = host.options.enableReduxDevtoolsExtension
         ? createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
         : createStore(reducer)
