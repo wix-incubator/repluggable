@@ -4,7 +4,7 @@ import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
 import { AppHost, ExtensionSlot, ReducersMapObjectContributor, StateObserver } from './API'
 import { contributeInstalledShellsState } from './installedShellsState'
-//TODO import { interceptAnyObject } from './interceptAnyObject'
+import { interceptAnyObject } from './interceptAnyObject'
 
 interface ShellsReducersMap {
     slowlyChanging: {
@@ -47,21 +47,36 @@ export interface ThrottledStore<T = any> extends Store<T> {
     flush(): void
 }
 
-const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>): Reducer => {
+export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
+    incrementSlowChangesCount(): void
+}
 
-    //TODO
-    // let slowStateChangeCount = 0
+const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, incrementSlowChangesCount: () => void): Reducer => {
 
-    // function interceptSlowlyChangingReducer(reducer: Reducer): Reducer {
-    //     return (state0, action) => {
-    //         slowStateChangeCount++
-    //         const state1 = reducer(state0, action)
-    //         if (state1 !== state0) {
-    //             slowStateChangeCount++
-    //         }
-    //         return state1
-    //     }
-    // }
+    function withIncrementSlowChangeCount(reducer: Reducer): Reducer {
+        return (state0, action) => {
+            const state1 = reducer(state0, action)
+            if (state1 !== state0) {
+                incrementSlowChangesCount()
+            }
+            return state1
+        }
+    }
+
+    function applyIncrementSlowChangeCount(original: ReducersMapObject): ReducersMapObject {
+        const wrapper = interceptAnyObject(
+            original, 
+            (name, original) => {
+                const originalReducer = original as Reducer
+                return withIncrementSlowChangeCount(originalReducer)
+            }
+        )
+        return wrapper
+    }
+
+    function applyNotifyObservers(original: ReducersMapObject): ReducersMapObject {
+        return original //TODO
+    }
 
     function getPerShellReducersMapObject(): ShellsReducersMap {
         const emptyMap: ShellsReducersMap = {
@@ -71,7 +86,8 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>): 
         return contributedState.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
             const shellName = item.shell.name
             reducersMap.slowlyChanging[shellName] = {
-                ...reducersMap.slowlyChanging[shellName],
+                ...applyIncrementSlowChangeCount(reducersMap.slowlyChanging[shellName] || {}),
+                ...applyNotifyObservers(reducersMap.rapidlyChanging[shellName] || {}),
                 ...item.contribution.reducerFactory()
             }
             return reducersMap
@@ -80,7 +96,7 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>): 
 
     function getCombinedShellReducers(): ReducersMapObject {
         const shellsReducerMaps = getPerShellReducersMapObject()
-        return Object.keys(shellsReducerMaps).reduce((reducersMap: ReducersMapObject, shellName: string) => {
+        return Object.keys(shellsReducerMaps.slowlyChanging).reduce((reducersMap: ReducersMapObject, shellName: string) => {
             reducersMap[shellName] = combineReducers(shellsReducerMaps.slowlyChanging[shellName])
             return reducersMap
         }, {})
@@ -101,10 +117,10 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>): 
 }
 
 export const updateThrottledStore = (
-    store: ThrottledStore,
+    store: PrivateThrottledStore,
     contributedState: ExtensionSlot<StateContribution>
 ): void => {
-    const newReducer = buildStoreReducer(contributedState)
+    const newReducer = buildStoreReducer(contributedState, store.incrementSlowChangesCount)
     store.replaceReducer(newReducer)
 }
 
@@ -113,14 +129,17 @@ export const createThrottledStore = (
     contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
-): ThrottledStore => {
+): PrivateThrottledStore => {
 
-    const reducer = buildStoreReducer(contributedState)
-    const store = host.options.enableReduxDevtoolsExtension
+    const reducer = buildStoreReducer(contributedState, () => {})
+    const store: Store = host.options.enableReduxDevtoolsExtension
         ? createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
         : createStore(reducer)
     const invoke = (f: Subscriber) => f()
+    
+    let slowChangeCount = 0
     let subscribers: Subscriber[] = []
+
     const subscribe = (subscriber: Subscriber) => {
         subscribers = _.concat(subscribers, subscriber)
         return () => {
@@ -136,7 +155,10 @@ export const createThrottledStore = (
     let cancelRender = _.noop
 
     store.subscribe(() => {
-        cancelRender = notifySubscribersOnAnimationFrame()
+        if (slowChangeCount > 0) {
+            cancelRender = notifySubscribersOnAnimationFrame()
+            slowChangeCount = 0
+        }
     })
 
     const flush = () => {
@@ -144,11 +166,15 @@ export const createThrottledStore = (
         notifySubscribers()
     }
 
-    return _.defaults(
-        {
-            subscribe,
-            flush
-        },
-        store
-    )
+    const incrementSlowChangesCount = () => {
+        slowChangeCount++
+    }
+
+    const result: PrivateThrottledStore = {
+        ...store,
+        subscribe,
+        flush,
+        incrementSlowChangesCount
+    }
+    return result
 }

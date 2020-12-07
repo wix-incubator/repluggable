@@ -35,7 +35,7 @@ import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } 
 import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
-import { createThrottledStore, StateContribution, ThrottledStore, updateThrottledStore } from './throttledStore'
+import { createThrottledStore, PrivateThrottledStore, StateContribution, ThrottledStore, updateThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
@@ -81,7 +81,7 @@ const createUnreadyEntryPointsStore = (): UnreadyEntryPointsStore => {
 }
 
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
-    let store: ThrottledStore | null = null
+    let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
 
     const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
