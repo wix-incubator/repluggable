@@ -29,15 +29,17 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
         getItems,
         getSingleItem,
         getItemByName,
+        getItemsByNames,
         discardBy
     }
 
-    function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
+    function contribute(fromShell: Shell, item: T, condition: ContributionPredicate = alwaysTrue, name?: string): void {
         items.push({
             shell: fromShell,
             contribution: item,
             condition: condition || alwaysTrue,
-            uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
+            uniqueId: _.uniqueId(`${fromShell.name}_extItem_`),
+            name
         })
     }
 
@@ -51,6 +53,10 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
 
     function getItemByName(name: string): ExtensionItem<T> {
         return items.find(item => item.name === name && item.condition()) as ExtensionItem<T>
+    }
+
+    function getItemsByNames(names: string[]): ExtensionItem<T>[] {
+        return names.map(name => getItemByName(name))
     }
 
     function discardBy(predicate: ExtensionItemFilter<T>) {

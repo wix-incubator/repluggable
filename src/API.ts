@@ -132,7 +132,7 @@ export interface ExtensionSlot<T> {
      * @param {T} item Extension item to be added to the slot
      * @param {ContributionPredicate} [condition] A predicate to condition the retrieval of the item when slot items are requested with {ExtensionSlot<T>.getItems}
      */
-    contribute(shell: Shell, item: T, condition?: ContributionPredicate): void
+    contribute(shell: Shell, item: T, condition?: ContributionPredicate, name?: string): void
     /**
      * Get all items contributed to the slot
      *
@@ -153,6 +153,13 @@ export interface ExtensionSlot<T> {
      * @return {ExtensionItem<T>} Extension item
      */
     getItemByName(name: string): ExtensionItem<T>
+    /**
+     * Get a specific items in the slot
+     *
+     * @param {string[]} names Extension items' names
+     * @return {ExtensionItem<T>[]} all the Extension items
+     */
+    getItemsByNames(names: string[]): ExtensionItem<T>[]
     /**
      * Remove items from the slot by predicate
      *
