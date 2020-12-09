@@ -108,10 +108,19 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, b
         }
         return contributedState.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
             const shellName = item.shell.name
-            reducersMap.broadcastingReducers[shellName] = {
-                ...withBroadcastingReducersMap(reducersMap.broadcastingReducers[shellName] || {}),
-                ...withObservableReducersMap(reducersMap.observableReducers[shellName] || {}),
-                ...item.contribution.reducerFactory()
+            switch (item.contribution.notificationScope) {
+                case 'broadcasting':
+                    reducersMap.broadcastingReducers[shellName] = {
+                        ...reducersMap.broadcastingReducers[shellName],
+                        ...withBroadcastingReducersMap(item.contribution.reducerFactory() || {})
+                    }
+                    break
+                case 'observable':
+                    reducersMap.broadcastingReducers[shellName] = {
+                        ...reducersMap.observableReducers[shellName],
+                        ...withObservableReducersMap(item.contribution.reducerFactory() || {})
+                    }
+                    break
             }
             return reducersMap
         }, emptyMap)
