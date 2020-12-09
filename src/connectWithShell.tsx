@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction, StateObserver } from './API'
+import { Shell, AnyFunction, ChangeObserver } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -115,7 +115,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
 export interface ConnectWithShellOptions {
     readonly componentName?: string
     readonly allowOutOfEntryPoint?: boolean
-    readonly alsoObserve?: StateObserver[]
+    readonly alsoObserve?: ChangeObserver[]
     shouldComponentUpdate?(shell: Shell): boolean
 }
 

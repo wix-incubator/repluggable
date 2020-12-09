@@ -28,14 +28,14 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    StateObserver
+    ChangeObserver
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
-import { createThrottledStore, PrivateThrottledStore, StateContribution, ThrottledStore, updateThrottledStore } from './throttledStore'
+import { createChangeObserver, createThrottledStore, PrivateThrottledStore, StateContribution, ThrottledStore, updateThrottledStore } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
@@ -674,6 +674,7 @@ miss: ${memoizedWithMissHit.miss}
         let APIsEnabled = false
         let wasInitCompleted = false
         let dependencyAPIs: AnySlotKey[] = []
+        let nextObserverId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
@@ -817,27 +818,25 @@ miss: ${memoizedWithMissHit.miss}
                 contributor: ReducersMapObjectContributor<TState, TAction>
             ): void {
                 const contribution: StateContribution = {
+                    notificationScope: 'broadcasting',
                     reducerFactory: contributor,
-                    observers: [],
-                    changeRate: 'slow'
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
             },
 
-            contributeRapidlyChangingState<TState, TAction extends AnyAction = AnyAction>(
+            contributeObservableState<TState, TAction extends AnyAction = AnyAction>(
                 contributor: ReducersMapObjectContributor<TState, TAction>
-            ): StateObserver {
-                const observer: StateObserver = {
-                    type: 'RepluggableStateObserver'
-                }
+            ): ChangeObserver {
+                const observerUniqueName = `${entryPoint.name}/observer_${nextObserverId++}`
+                const observer = createChangeObserver(shell, observerUniqueName)
                 const contribution: StateContribution = {
+                    notificationScope: 'observable',
                     reducerFactory: contributor,
-                    observers: [observer],
-                    changeRate: 'rapid'
+                    observer,
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
                 return observer
-            },
+            }, 
 
             getStore<TState>(): ScopedStore<TState> {
                 return {

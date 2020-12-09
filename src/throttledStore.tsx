@@ -2,15 +2,17 @@ import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAct
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost, ExtensionSlot, ReducersMapObjectContributor, StateObserver } from './API'
+import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ChangeObserver, ChangeObserverCallback, Shell, SlotKey } from './API'
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
+import { invokeSlotCallbacks } from './invokeSlotCallbacks'
 
+type ReducerNotificationScope = 'broadcasting' | 'observable'
 interface ShellsReducersMap {
-    slowlyChanging: {
+    broadcastingReducers: {
         [shellName: string]: ReducersMapObject
     }
-    rapidlyChanging: {
+    observableReducers: {
         [shellName: string]: ReducersMapObject
     }
 }
@@ -39,8 +41,8 @@ type Subscriber = () => void
 
 export interface StateContribution<TState = {}, TAction extends AnyAction = AnyAction> {
     reducerFactory: ReducersMapObjectContributor<TState, TAction>
-    observers: StateObserver[]
-    changeRate: 'slow' | 'rapid'
+    notificationScope: ReducerNotificationScope
+    observer?: PrivateChangeObserver
 }
 
 export interface ThrottledStore<T = any> extends Store<T> {
@@ -48,46 +50,67 @@ export interface ThrottledStore<T = any> extends Store<T> {
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
-    incrementSlowChangesCount(): void
+    broadcastNotify(): void
 }
 
-const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, incrementSlowChangesCount: () => void): Reducer => {
+export interface PrivateChangeObserver extends ChangeObserver {
+    notify(): void
+}
 
-    function withIncrementSlowChangeCount(reducer: Reducer): Reducer {
+const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, broadcastNotify: () => void): Reducer => {
+
+    function withBroadcastNotify(reducer: Reducer): Reducer {
         return (state0, action) => {
             const state1 = reducer(state0, action)
             if (state1 !== state0) {
-                incrementSlowChangesCount()
+                broadcastNotify()
             }
             return state1
         }
     }
 
-    function applyIncrementSlowChangeCount(original: ReducersMapObject): ReducersMapObject {
+    function withBroadcastingReducersMap(original: ReducersMapObject): ReducersMapObject {
         const wrapper = interceptAnyObject(
             original, 
             (name, original) => {
                 const originalReducer = original as Reducer
-                return withIncrementSlowChangeCount(originalReducer)
+                return withBroadcastNotify(originalReducer)
             }
         )
         return wrapper
     }
 
-    function applyNotifyObservers(original: ReducersMapObject): ReducersMapObject {
-        return original //TODO
+    function withObserver(reducer: Reducer): Reducer {
+        return (state0, action) => {
+            const state1 = reducer(state0, action)
+            if (state1 !== state0) {
+                //TODO
+            }
+            return state1
+        }
+    }
+
+    function withObservableReducersMap(original: ReducersMapObject): ReducersMapObject {
+        const wrapper = interceptAnyObject(
+            original, 
+            (name, original) => {
+                const originalReducer = original as Reducer
+                return withObserver(originalReducer)
+            }
+        )
+        return wrapper
     }
 
     function getPerShellReducersMapObject(): ShellsReducersMap {
         const emptyMap: ShellsReducersMap = {
-            slowlyChanging: {},
-            rapidlyChanging: {}
+            broadcastingReducers: {},
+            observableReducers: {}
         }
         return contributedState.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
             const shellName = item.shell.name
-            reducersMap.slowlyChanging[shellName] = {
-                ...applyIncrementSlowChangeCount(reducersMap.slowlyChanging[shellName] || {}),
-                ...applyNotifyObservers(reducersMap.rapidlyChanging[shellName] || {}),
+            reducersMap.broadcastingReducers[shellName] = {
+                ...withBroadcastingReducersMap(reducersMap.broadcastingReducers[shellName] || {}),
+                ...withObservableReducersMap(reducersMap.observableReducers[shellName] || {}),
                 ...item.contribution.reducerFactory()
             }
             return reducersMap
@@ -96,8 +119,8 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, i
 
     function getCombinedShellReducers(): ReducersMapObject {
         const shellsReducerMaps = getPerShellReducersMapObject()
-        return Object.keys(shellsReducerMaps.slowlyChanging).reduce((reducersMap: ReducersMapObject, shellName: string) => {
-            reducersMap[shellName] = combineReducers(shellsReducerMaps.slowlyChanging[shellName])
+        return Object.keys(shellsReducerMaps.broadcastingReducers).reduce((reducersMap: ReducersMapObject, shellName: string) => {
+            reducersMap[shellName] = combineReducers(shellsReducerMaps.broadcastingReducers[shellName])
             return reducersMap
         }, {})
     }
@@ -120,7 +143,7 @@ export const updateThrottledStore = (
     store: PrivateThrottledStore,
     contributedState: ExtensionSlot<StateContribution>
 ): void => {
-    const newReducer = buildStoreReducer(contributedState, store.incrementSlowChangesCount)
+    const newReducer = buildStoreReducer(contributedState, store.broadcastNotify)
     store.replaceReducer(newReducer)
 }
 
@@ -137,7 +160,7 @@ export const createThrottledStore = (
         : createStore(reducer)
     const invoke = (f: Subscriber) => f()
     
-    let slowChangeCount = 0
+    let receivedNotifyBroadcast = false
     let subscribers: Subscriber[] = []
 
     const subscribe = (subscriber: Subscriber) => {
@@ -155,9 +178,12 @@ export const createThrottledStore = (
     let cancelRender = _.noop
 
     store.subscribe(() => {
-        if (slowChangeCount > 0) {
-            cancelRender = notifySubscribersOnAnimationFrame()
-            slowChangeCount = 0
+        if (receivedNotifyBroadcast) {
+            try {
+                cancelRender = notifySubscribersOnAnimationFrame()
+            } finally {
+                receivedNotifyBroadcast = false
+            }
         }
     })
 
@@ -166,15 +192,33 @@ export const createThrottledStore = (
         notifySubscribers()
     }
 
-    const incrementSlowChangesCount = () => {
-        slowChangeCount++
+    const onBroadcastNotify = () => {
+        receivedNotifyBroadcast = true
     }
 
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
         flush,
-        incrementSlowChangesCount
+        broadcastNotify: onBroadcastNotify
     }
     return result
+}
+
+export const createChangeObserver = (shell: Shell, uniqueName: string): PrivateChangeObserver => {
+    const subscribersSlotKey: SlotKey<ChangeObserverCallback> = {
+        name: uniqueName
+    }
+    const subscribersSlot = shell.declareSlot(subscribersSlotKey)
+    return {
+        type: 'RepluggableChangeObserver',
+        subscribe(fromShell, callback) {
+            if (typeof callback == 'function') {
+                subscribersSlot.contribute(fromShell, callback)
+            }
+        },
+        notify() {
+            invokeSlotCallbacks(subscribersSlot)
+        }
+    }
 }
