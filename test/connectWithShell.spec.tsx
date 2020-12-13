@@ -377,7 +377,7 @@ describe('connectWithShell', () => {
 
 })
 
-describe('connectWithShell-componentUpdates', () => {
+describe('connectWithShell-useCases', () => {
     interface TestStateOne {
         one: {
             valueOne: string
@@ -483,6 +483,21 @@ describe('connectWithShell-componentUpdates', () => {
         //dom.update()
     }
 
+    it('should include observable state in store', () => {
+        const { shell } = createMocks(entryPointTwoWithObserver)
+        const state = shell.getStore<TestStateTwo>().getState()
+        expect(state).toBeDefined()
+    })
+
+    it('should dispatch actions to observable reducers', () => {
+        const { shell } = createMocks(entryPointTwoWithObserver)
+
+        shell.getStore<TestStateTwo>().dispatch({ type: 'SET_TWO', value: 'updated_by_test'})
+
+        const state = shell.getStore<TestStateTwo>().getState()
+        expect(state.two.valueTwo).toEqual('updated_by_test')
+    })
+
     it('should update component on change in regular state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
@@ -515,7 +530,7 @@ describe('connectWithShell-componentUpdates', () => {
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
 
-    it('should not update uninterested component on change in observable state', () => {
+    it.only('should not update uninterested component on change in observable state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwoWithObserver])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
@@ -541,9 +556,10 @@ describe('connectWithShell-componentUpdates', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it.skip('should update component through observer', () => {
+    it('should update component through observer', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwoWithObserver])
-        const ConnectedComp = connectWithShellAndObserve([], mapStateToProps, undefined, shell)(PureComp)
+        const valueTwoObserver = host.getAPI(TwoAPI).observers.valueTwo
+        const ConnectedComp = connectWithShellAndObserve([valueTwoObserver], mapStateToProps, undefined, shell)(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {

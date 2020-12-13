@@ -849,7 +849,10 @@ miss: ${memoizedWithMissHit.miss}
                 return {
                     dispatch: host.getStore().dispatch,
                     subscribe: host.getStore().subscribe,
-                    getState: () => host.getStore().getState()[shell.name],
+                    getState: () => {
+                        const entireStoreState = host.getStore().getState()
+                        return entireStoreState[shell.name]
+                    },
                     flush: host.getStore().flush
                 }
             },
