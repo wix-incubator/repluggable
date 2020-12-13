@@ -8,13 +8,12 @@ import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
 
 type ReducerNotificationScope = 'broadcasting' | 'observable'
+interface ReducersMapObjectPerShell {
+    [shellName: string]: ReducersMapObject
+}
 interface ShellsReducersMap {
-    broadcastingReducers: {
-        [shellName: string]: ReducersMapObject
-    }
-    observableReducers: {
-        [shellName: string]: ReducersMapObject
-    }
+    broadcastingReducers: ReducersMapObjectPerShell
+    observableReducers: ReducersMapObjectPerShell
 }
 
 const curry = _.curry
@@ -58,8 +57,7 @@ export interface PrivateChangeObserver extends ChangeObserver {
 }
 
 const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, broadcastNotify: () => void): Reducer => {
-
-    function withBroadcastNotify(reducer: Reducer): Reducer {
+    function withBroadcast(reducer: Reducer): Reducer {
         return (state0, action) => {
             const state1 = reducer(state0, action)
             if (state1 !== state0) {
@@ -69,35 +67,29 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, b
         }
     }
 
-    function withBroadcastingReducersMap(original: ReducersMapObject): ReducersMapObject {
-        const wrapper = interceptAnyObject(
-            original, 
-            (name, original) => {
-                const originalReducer = original as Reducer
-                return withBroadcastNotify(originalReducer)
-            }
-        )
+    function withBroadcastingReducers(original: ReducersMapObject): ReducersMapObject {
+        const wrapper = interceptAnyObject(original, (name, original) => {
+            const originalReducer = original as Reducer
+            return withBroadcast(originalReducer)
+        })
         return wrapper
     }
 
-    function withObserver(reducer: Reducer): Reducer {
+    function withObserver(reducer: Reducer, observer: PrivateChangeObserver): Reducer {
         return (state0, action) => {
             const state1 = reducer(state0, action)
             if (state1 !== state0) {
-                //TODO
+                observer.notify()
             }
             return state1
         }
     }
 
-    function withObservableReducersMap(original: ReducersMapObject): ReducersMapObject {
-        const wrapper = interceptAnyObject(
-            original, 
-            (name, original) => {
-                const originalReducer = original as Reducer
-                return withObserver(originalReducer)
-            }
-        )
+    function withObservableReducers(original: ReducersMapObject, observer: PrivateChangeObserver): ReducersMapObject {
+        const wrapper = interceptAnyObject(original, (name, original) => {
+            const originalReducer = original as Reducer
+            return withObserver(originalReducer, observer)
+        })
         return wrapper
     }
 
@@ -108,19 +100,23 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, b
         }
         return contributedState.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
             const shellName = item.shell.name
+            const { observer, reducerFactory } = item.contribution
             switch (item.contribution.notificationScope) {
                 case 'broadcasting':
                     reducersMap.broadcastingReducers[shellName] = {
                         ...reducersMap.broadcastingReducers[shellName],
-                        ...withBroadcastingReducersMap(item.contribution.reducerFactory() || {})
+                        ...withBroadcastingReducers(reducerFactory() || {})
                     }
                     break
                 case 'observable':
-                    reducersMap.broadcastingReducers[shellName] = {
-                        ...reducersMap.observableReducers[shellName],
-                        ...withObservableReducersMap(item.contribution.reducerFactory() || {})
+                    if (!observer) {
+                        // should never happen; would be an internal bug
+                        throw new Error(`getPerShellReducersMapObject: notificationScope=observable but observer is falsy in shell '${shellName}'`)
                     }
-                    break
+                    reducersMap.observableReducers[shellName] = {
+                        ...reducersMap.observableReducers[shellName],
+                        ...withObservableReducers(reducerFactory() || {}, observer)
+                    }
             }
             return reducersMap
         }, emptyMap)
@@ -144,14 +140,11 @@ const buildStoreReducer = (contributedState: ExtensionSlot<StateContribution>, b
 
     const reducersMap = buildReducersMapObject()
     const reducer = combineReducers(reducersMap)
-    
+
     return reducer
 }
 
-export const updateThrottledStore = (
-    store: PrivateThrottledStore,
-    contributedState: ExtensionSlot<StateContribution>
-): void => {
+export const updateThrottledStore = (store: PrivateThrottledStore, contributedState: ExtensionSlot<StateContribution>): void => {
     const newReducer = buildStoreReducer(contributedState, store.broadcastNotify)
     store.replaceReducer(newReducer)
 }
@@ -162,13 +155,12 @@ export const createThrottledStore = (
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame']
 ): PrivateThrottledStore => {
-
     const reducer = buildStoreReducer(contributedState, () => {})
     const store: Store = host.options.enableReduxDevtoolsExtension
         ? createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
         : createStore(reducer)
     const invoke = (f: Subscriber) => f()
-    
+
     let receivedNotifyBroadcast = false
     let subscribers: Subscriber[] = []
 
@@ -205,9 +197,17 @@ export const createThrottledStore = (
         receivedNotifyBroadcast = true
     }
 
+    //TODO: temporary for debug; remove when done
+    // const dispatch: Dispatch<AnyAction> = (action) => {
+    //     receivedNotifyBroadcast = true
+    //     const result = store.dispatch(action)
+    //     return result
+    // }
+
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
+        //dispatch,
         flush,
         broadcastNotify: onBroadcastNotify
     }

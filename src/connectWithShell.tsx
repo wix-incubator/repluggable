@@ -115,8 +115,25 @@ function wrapWithShellContext<S, OP, SP, DP>(
 export interface ConnectWithShellOptions {
     readonly componentName?: string
     readonly allowOutOfEntryPoint?: boolean
-    readonly alsoObserve?: ChangeObserver[]
     shouldComponentUpdate?(shell: Shell): boolean
+}
+
+const validateComponentLifecycle = (
+    boundShell: Shell,
+    options: ConnectWithShellOptions = {},
+    component: React.ComponentType<any>
+) => {
+    if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
+        const componentText = component.displayName || component.name || component
+        const errorText =
+            `connectWithShell(${boundShell.name})(${componentText}): ` +
+            'attempt to create component type outside of Entry Point lifecycle. ' +
+            'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
+            'If you really have to create this component type dynamically, ' +
+            'either pass {allowOutOfEntryPoint:true} in options, or use shell.runLateInitializer().'
+        //TODO: replace with throw after a grace period
+        boundShell.log.warning(errorText)
+    }
 }
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
@@ -125,22 +142,55 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
 ) {
-    const validateLifecycle = (component: React.ComponentType<any>) => {
-        if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
-            const componentText = component.displayName || component.name || component
-            const errorText =
-                `connectWithShell(${boundShell.name})(${componentText}): ` +
-                'attempt to create component type outside of Entry Point lifecycle. ' +
-                'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
-                'If you really have to create this component type dynamically, ' +
-                'either pass {allowOutOfEntryPoint:true} in options, or use shell.runLateInitializer().'
-            //TODO: replace with throw after a grace period
-            boundShell.log.warning(errorText)
+    return (component: React.ComponentType<OP & SP & DP>) => {
+        validateComponentLifecycle(boundShell, options, component)
+        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
+    }
+}
+
+export function withObservers<OP>(
+    boundShell: Shell,
+    observers: ChangeObserver[],
+    connectedComponent: React.ComponentType<OP>
+) {
+    type ObservableWrapperState = { observedVersion: number };
+    class ObservableWrapperComponent extends React.Component<OP, ObservableWrapperState> {
+        public connectedComponent: React.ComponentType<OP>
+
+        constructor(props: OP) {
+            super(props)
+            this.connectedComponent = connectedComponent;
+            this.setState({ observedVersion: 1 })
+
+            observers.forEach(observer => observer.subscribe(boundShell, () => {
+                this.setState({ observedVersion: this.state.observedVersion + 1 })
+            }));
+        }
+
+        public render() {
+            const Component = this.connectedComponent
+            return <Component {...this.props} observedVersion={this.state.observedVersion} />
         }
     }
 
+
+    const hoc: React.FunctionComponent<OP> = (props) => {
+        return (
+            <ObservableWrapperComponent {...props} />
+        )
+    }
+    return hoc;
+} 
+
+export function connectWithShellAndObserve<S = {}, OP = {}, SP = {}, DP = {}>(
+    observers: ChangeObserver[],
+    mapStateToProps: MapStateToProps<S, OP, SP>,
+    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+    boundShell: Shell,
+    options: ConnectWithShellOptions = {}
+) {
     return (component: React.ComponentType<OP & SP & DP>) => {
-        validateLifecycle(component)
-        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
+        validateComponentLifecycle(boundShell, options, component)
+        return withObservers(boundShell, observers, wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options))
     }
 }

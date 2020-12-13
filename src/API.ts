@@ -7,7 +7,7 @@ export { AppHostAPI } from './appHostServices'
 export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush'>
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
-    TState, 
+    TState,
     TAction
 >
 export type ContributionPredicate = () => boolean
@@ -319,10 +319,9 @@ export interface ContributeAPIOptions<TAPI> {
     disableMonitoring?: boolean | (keyof TAPI)[]
 }
 
-
 export type ChangeObserverCallback = () => void
 export interface ChangeObserver {
-    readonly type: 'RepluggableChangeObserver'   // just for better type safety
+    readonly type: 'RepluggableChangeObserver' // just for better type safety
     subscribe(fromShell: Shell, callback: ChangeObserverCallback): void
 }
 
@@ -390,14 +389,14 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     /**
-     * Contribute a Redux reducer that will be added to the host store. 
+     * Contribute a Redux reducer that will be added to the host store.
      * Use it for slowly changing state (e.g. not changing because of mouse movement)
      *
      * @template TState
      * @param {ReducersMapObjectContributor<TState>} contributor
      */
     contributeState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
-        contributor: ReducersMapObjectContributor<TState, TAction>,
+        contributor: ReducersMapObjectContributor<TState, TAction>
     ): void
 
     /**
@@ -411,7 +410,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
      */
     contributeObservableState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
-        contributor: ReducersMapObjectContributor<TState, TAction>,
+        contributor: ReducersMapObjectContributor<TState, TAction>
     ): ChangeObserver
 
     /**

@@ -188,9 +188,9 @@ function createShell(host: AppHost): PrivateShell {
             return []
         },
         contributeState: _.noop,
-        contributeObservableState: () => ({ 
-            type: 'RepluggableChangeObserver', 
-            subscribe: () => {} 
+        contributeObservableState: () => ({
+            type: 'RepluggableChangeObserver',
+            subscribe: () => {}
         }),
         contributeMainView: _.noop,
         flushMemoizedForState: _.noop,

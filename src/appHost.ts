@@ -35,7 +35,14 @@ import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } 
 import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
-import { createChangeObserver, createThrottledStore, PrivateThrottledStore, StateContribution, ThrottledStore, updateThrottledStore } from './throttledStore'
+import {
+    createChangeObserver,
+    createThrottledStore,
+    PrivateThrottledStore,
+    StateContribution,
+    ThrottledStore,
+    updateThrottledStore
+} from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
@@ -819,7 +826,7 @@ miss: ${memoizedWithMissHit.miss}
             ): void {
                 const contribution: StateContribution = {
                     notificationScope: 'broadcasting',
-                    reducerFactory: contributor,
+                    reducerFactory: contributor
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
             },
@@ -832,11 +839,11 @@ miss: ${memoizedWithMissHit.miss}
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,
-                    observer,
+                    observer
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
                 return observer
-            }, 
+            },
 
             getStore<TState>(): ScopedStore<TState> {
                 return {
