@@ -1,7 +1,7 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { EntryPoint, ChangeObserver, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
@@ -189,10 +189,7 @@ function createShell(host: AppHost): PrivateShell {
             return []
         },
         contributeState: _.noop,
-        contributeObservableState: () => ({
-            type: 'RepluggableChangeObserver',
-            subscribe: () => {}
-        }),
+        contributeObservableState: <TState, TSelectors, TAction>() => mockObservable<TSelectors>(undefined as any),
         contributeMainView: _.noop,
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
@@ -200,5 +197,16 @@ function createShell(host: AppHost): PrivateShell {
         clearCache: _.noop,
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint)
+    }
+}
+
+export function mockObservable<T>(value: T): ChangeObserver<T> {
+    return {
+        subscribe: () => {
+            return () => {}
+        },
+        getValue() {
+            return value
+        }
     }
 }

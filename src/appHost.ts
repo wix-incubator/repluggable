@@ -831,11 +831,12 @@ miss: ${memoizedWithMissHit.miss}
                 getSlot(stateSlotKey).contribute(shell, contribution)
             },
 
-            contributeObservableState<TState, TAction extends AnyAction = AnyAction>(
-                contributor: ReducersMapObjectContributor<TState, TAction>
-            ): ChangeObserver {
+            contributeObservableState<TState, TSelectorAPI, TAction extends AnyAction = AnyAction>(
+                contributor: ReducersMapObjectContributor<TState, TAction>,
+                mapStateToSelectors: (state: TState) => TSelectorAPI
+            ): ChangeObserver<TSelectorAPI> {
                 const observerUniqueName = `${entryPoint.name}/observer_${nextObserverId++}`
-                const observer = createChangeObserver(shell, observerUniqueName)
+                const observer = createChangeObserver(shell, observerUniqueName, mapStateToSelectors)
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,

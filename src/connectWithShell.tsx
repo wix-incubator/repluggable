@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction, ChangeObserver } from './API'
+import { Shell, AnyFunction, AnyChangeObserver } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -148,10 +148,10 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     }
 }
 
-function withObservers<S = {}, OP = {}, SP = {}, DP = {}>(
+export function observeWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     innerFactory: ConnectedComponentFactory<S, OP, SP, DP>,
     boundShell: Shell,
-    observers: ChangeObserver[]
+    observers: AnyChangeObserver[]
 ): ConnectedComponentFactory<S, OP, SP, DP> {
     interface ObservableWrapperState {
         observedVersion: number
@@ -194,13 +194,13 @@ function withObservers<S = {}, OP = {}, SP = {}, DP = {}>(
 }
 
 export function connectWithShellAndObserve<S = {}, OP = {}, SP = {}, DP = {}>(
-    observers: ChangeObserver[],
+    observers: AnyChangeObserver[],
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
 ): ConnectedComponentFactory<S, OP, SP, DP> {
     const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
-    const wrapperFactory = withObservers(innerFactory, boundShell, observers)
+    const wrapperFactory = observeWithShell(innerFactory, boundShell, observers)
     return wrapperFactory
 }

@@ -319,11 +319,13 @@ export interface ContributeAPIOptions<TAPI> {
     disableMonitoring?: boolean | (keyof TAPI)[]
 }
 
-export type ChangeObserverCallback = () => void
-export interface ChangeObserver {
-    readonly type: 'RepluggableChangeObserver' // just for better type safety
-    subscribe(fromShell: Shell, callback: ChangeObserverCallback): void
+export type ChangeObserverUnsubscribe = () => void
+export type ChangeObserverCallback<T> = (next: T) => void
+export interface ChangeObserver<T> {
+    subscribe(fromShell: Shell, callback: ChangeObserverCallback<T>): ChangeObserverUnsubscribe
+    getValue(): T
 }
+export type AnyChangeObserver = ChangeObserver<any>
 
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
@@ -409,9 +411,10 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @param {ReducersMapObjectContributor<TState>} contributor
      * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
      */
-    contributeObservableState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
-        contributor: ReducersMapObjectContributor<TState, TAction>
-    ): ChangeObserver
+    contributeObservableState<TState, TSelector, TAction extends Redux.AnyAction = Redux.AnyAction>(
+        contributor: ReducersMapObjectContributor<TState, TAction>,
+        selectorFactory: (state: TState) => TSelector
+    ): ChangeObserver<TSelector>
 
     /**
      * Contribute the main view (root) of the application
