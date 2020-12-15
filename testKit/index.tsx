@@ -8,9 +8,10 @@ import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
 export { AppHost } from '../src/index'
-export { connectWithShell } from '../src/connectWithShell'
+export { connectWithShell, connectWithShellAndObserve } from '../src/connectWithShell'
 export { SlotRenderer } from '../src/renderSlotComponents'
 export { withConsoleErrors } from './withConsoleErrors'
+export { withThrowOnError } from './withThrowOnError'
 export * from './mockPackage'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {

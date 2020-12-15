@@ -118,69 +118,80 @@ export interface ConnectWithShellOptions {
     shouldComponentUpdate?(shell: Shell): boolean
 }
 
-const validateComponentLifecycle = (
-    boundShell: Shell,
-    options: ConnectWithShellOptions = {},
-    component: React.ComponentType<any>
-) => {
-    if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
-        const componentText = component.displayName || component.name || component
-        const errorText =
-            `connectWithShell(${boundShell.name})(${componentText}): ` +
-            'attempt to create component type outside of Entry Point lifecycle. ' +
-            'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
-            'If you really have to create this component type dynamically, ' +
-            'either pass {allowOutOfEntryPoint:true} in options, or use shell.runLateInitializer().'
-        //TODO: replace with throw after a grace period
-        boundShell.log.warning(errorText)
-    }
-}
+export type ConnectedComponentFactory<S = {}, OP = {}, SP = {}, DP = {}> = (
+    component: React.ComponentType<OP & SP & DP>
+) => (props: WithChildren<OP>) => JSX.Element
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-) {
+): ConnectedComponentFactory<S, OP, SP, DP> {
+    const validateLifecycle = (component: React.ComponentType<any>) => {
+        if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
+            const componentText = component.displayName || component.name || component
+            const errorText =
+                `connectWithShell(${boundShell.name})(${componentText}): ` +
+                'attempt to create component type outside of Entry Point lifecycle. ' +
+                'To fix this, call connectWithShell() from Entry Point attach() or extend(). ' +
+                'If you really have to create this component type dynamically, ' +
+                'either pass {allowOutOfEntryPoint:true} in options, or use shell.runLateInitializer().'
+            //TODO: replace with throw after a grace period
+            boundShell.log.warning(errorText)
+        }
+    }
+
     return (component: React.ComponentType<OP & SP & DP>) => {
-        validateComponentLifecycle(boundShell, options, component)
+        validateLifecycle(component)
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
     }
 }
 
-export function withObservers<OP>(
+function withObservers<S = {}, OP = {}, SP = {}, DP = {}>(
+    innerFactory: ConnectedComponentFactory<S, OP, SP, DP>,
     boundShell: Shell,
-    observers: ChangeObserver[],
-    connectedComponent: React.ComponentType<OP>
-) {
-    type ObservableWrapperState = { observedVersion: number };
-    class ObservableWrapperComponent extends React.Component<OP, ObservableWrapperState> {
-        public connectedComponent: React.ComponentType<OP>
-
-        constructor(props: OP) {
-            super(props)
-            this.connectedComponent = connectedComponent;
-            this.setState({ observedVersion: 1 })
-
-            observers.forEach(observer => observer.subscribe(boundShell, () => {
-                this.setState({ observedVersion: this.state.observedVersion + 1 })
-            }));
-        }
-
-        public render() {
-            const Component = this.connectedComponent
-            return <Component {...this.props} observedVersion={this.state.observedVersion} />
-        }
+    observers: ChangeObserver[]
+): ConnectedComponentFactory<S, OP, SP, DP> {
+    interface ObservableWrapperState {
+        observedVersion: number
     }
 
+    const observableConnectedComponentFactory: ConnectedComponentFactory<S, OP, SP, DP> = pureComponent => {
+        class ObservableWrapperComponent extends React.Component<OP, ObservableWrapperState> {
+            public connectedComponent: React.ComponentType<OP>
 
-    const hoc: React.FunctionComponent<OP> = (props) => {
-        return (
-            <ObservableWrapperComponent {...props} />
-        )
+            constructor(props: OP) {
+                super(props)
+                this.connectedComponent = innerFactory(pureComponent)
+                this.state = { observedVersion: 1 }
+
+                observers.forEach(observer => {
+                    observer.subscribe(boundShell, () => {
+                        const { state } = this
+                        this.setState({
+                            ...state,
+                            observedVersion: state.observedVersion + 1
+                        })
+                    })
+                })
+            }
+
+            public render() {
+                const Component = this.connectedComponent
+                return <Component {...this.props} observedVersion={this.state.observedVersion} />
+            }
+        }
+
+        const hoc = (props: WithChildren<OP>) => {
+            return <ObservableWrapperComponent {...props} />
+        }
+
+        return hoc
     }
-    return hoc;
-} 
+
+    return observableConnectedComponentFactory
+}
 
 export function connectWithShellAndObserve<S = {}, OP = {}, SP = {}, DP = {}>(
     observers: ChangeObserver[],
@@ -188,9 +199,8 @@ export function connectWithShellAndObserve<S = {}, OP = {}, SP = {}, DP = {}>(
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-) {
-    return (component: React.ComponentType<OP & SP & DP>) => {
-        validateComponentLifecycle(boundShell, options, component)
-        return withObservers(boundShell, observers, wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options))
-    }
+): ConnectedComponentFactory<S, OP, SP, DP> {
+    const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
+    const wrapperFactory = withObservers(innerFactory, boundShell, observers)
+    return wrapperFactory
 }

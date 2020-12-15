@@ -2,10 +2,18 @@ import _ from 'lodash'
 import React, { FunctionComponent, ReactElement } from 'react'
 
 import { AppHost, EntryPoint, Shell, SlotKey, ChangeObserver } from '../src/API'
-import { createAppHost, mockPackage, mockShellStateKey, MockState, renderInHost, connectWithShell } from '../testKit'
+import {
+    createAppHost,
+    mockPackage,
+    mockShellStateKey,
+    MockState,
+    renderInHost,
+    connectWithShell,
+    connectWithShellAndObserve,
+    withThrowOnError
+} from '../testKit'
 import { ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
-import { connectWithShellAndObserve } from '../src'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -24,7 +32,7 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
         }
     }
 
-    const host = createAppHost([wrappedPackage, ...moreEntryPoints])
+    const host = createAppHost([wrappedPackage, ...moreEntryPoints], withThrowOnError())
     const getShell = () => cachedShell as Shell
 
     return {
@@ -35,7 +43,6 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
 }
 
 describe('connectWithShell', () => {
-
     it('should pass exact shell to mapStateToProps', () => {
         const { shell, renderInShellContext } = createMocks(mockPackage)
 
@@ -374,49 +381,42 @@ describe('connectWithShell', () => {
         expect(pureCompQuery.length).toBe(1)
         expect(pureCompQuery.first().text()).toBe('123')
     })
-
 })
 
 describe('connectWithShell-useCases', () => {
     interface TestStateOne {
-        one: {
-            valueOne: string
-        }
+        one: { valueOne: string }
     }
-    
+
     interface TestStateTwo {
-        two: {
-            valueTwo: string
-        }
+        two: { valueTwo: string }
     }
 
     interface TwoAPI {
         getValueTwo(): string
-        observers: {
-            valueTwo: ChangeObserver
-        }
+        observers: { valueTwo: ChangeObserver }
     }
     const TwoAPI: SlotKey<TwoAPI> = { name: 'TWO_API', public: true }
-    
-    const entryPointOne : EntryPoint = {
+
+    const entryPointOne: EntryPoint = {
         name: 'ONE',
         getDependencyAPIs: () => [TwoAPI],
         attach(shell) {
             shell.contributeState<TestStateOne>(() => ({
-                one: (state = {valueOne: 'init1'}, action) => {
-                    return (action.type === 'SET_ONE' ? {valueOne: action.value} : state)
+                one: (state = { valueOne: 'init1' }, action) => {
+                    return action.type === 'SET_ONE' ? { valueOne: action.value } : state
                 }
             }))
         }
     }
 
-    const entryPointTwo : EntryPoint = {
+    const entryPointTwo: EntryPoint = {
         name: 'TWO',
         declareAPIs: () => [TwoAPI],
         attach(shell) {
             shell.contributeState<TestStateTwo>(() => ({
-                two: (state = {valueTwo: 'init2'}, action) => {
-                    return (action.type === 'SET_TWO' ? {valueTwo: action.value} : state)
+                two: (state = { valueTwo: 'init2' }, action) => {
+                    return action.type === 'SET_TWO' ? { valueTwo: action.value } : state
                 }
             }))
             shell.contributeAPI(TwoAPI, () => ({
@@ -424,20 +424,20 @@ describe('connectWithShell-useCases', () => {
                     return shell.getStore<TestStateTwo>().getState().two.valueTwo
                 },
                 observers: {
-                    valueTwo: {} //TODO: why is this allowed?! 
+                    valueTwo: {} //TODO: why is this allowed?!
                 }
             }))
         }
     }
 
     // same as EntryPointTwo, but this time it contributes observable state
-    const entryPointTwoWithObserver : EntryPoint = {
+    const entryPointTwoWithObserver: EntryPoint = {
         name: 'TWO_WITH_OBSERVER',
         declareAPIs: () => [TwoAPI],
         attach(shell) {
             const valueTwoObserver = shell.contributeObservableState<TestStateTwo>(() => ({
-                two: (state = {valueTwo: 'init2'}, action) => {
-                    return (action.type === 'SET_TWO' ? {valueTwo: action.value} : state)
+                two: (state = { valueTwo: 'init2' }, action) => {
+                    return action.type === 'SET_TWO' ? { valueTwo: action.value } : state
                 }
             }))
             shell.contributeAPI(TwoAPI, () => ({
@@ -451,9 +451,9 @@ describe('connectWithShell-useCases', () => {
         }
     }
 
-    interface CompProps { 
+    interface CompProps {
         valueOne: string
-        valueTwo: string 
+        valueTwo: string
     }
 
     const renderSpy = jest.fn()
@@ -492,7 +492,7 @@ describe('connectWithShell-useCases', () => {
     it('should dispatch actions to observable reducers', () => {
         const { shell } = createMocks(entryPointTwoWithObserver)
 
-        shell.getStore<TestStateTwo>().dispatch({ type: 'SET_TWO', value: 'updated_by_test'})
+        shell.getStore<TestStateTwo>().dispatch({ type: 'SET_TWO', value: 'updated_by_test' })
 
         const state = shell.getStore<TestStateTwo>().getState()
         expect(state.two.valueTwo).toEqual('updated_by_test')
@@ -511,26 +511,26 @@ describe('connectWithShell-useCases', () => {
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({type: 'SET_ONE', value: 'update1'}, root, host)
+        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({type: 'SET_TWO', value: 'update2'}, root, host)
+        handleAction({ type: 'SET_TWO', value: 'update2' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({type: 'SET_THREE', value: 'update3'}, root, host)
+        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
 
-    it.only('should not update uninterested component on change in observable state', () => {
+    it('should not update uninterested component on change in observable state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwoWithObserver])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
 
@@ -543,13 +543,13 @@ describe('connectWithShell-useCases', () => {
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({type: 'SET_ONE', value: 'update1'}, root, host)
+        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({type: 'SET_TWO', value: 'update2'}, root, host)
+        handleAction({ type: 'SET_TWO', value: 'update2' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -570,23 +570,22 @@ describe('connectWithShell-useCases', () => {
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({type: 'SET_ONE', value: 'update1'}, root, host)
+        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({type: 'SET_TWO', value: 'update2'}, root, host)
+        handleAction({ type: 'SET_TWO', value: 'update2' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({type: 'SET_THREE', value: 'update3'}, root, host)
+        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
-    
 })
