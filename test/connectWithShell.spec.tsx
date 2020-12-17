@@ -495,15 +495,6 @@ describe('connectWithShell-useCases', () => {
         }
     }
 
-    const mapStateToPropsWithObservables = (shell: Shell, state: TestStateOne): CompProps => {
-        mapStateToPropsSpy()
-        return {
-            valueOne: state.one.valueOne,
-            valueTwo: shell.getAPI(TwoAPI).getValueTwo(),
-            valueThree: shell.getAPI(ThreeAPI).observables.three.getValue().getValueThree()
-        }
-    }
-
     beforeEach(() => {
         renderSpy.mockClear()
         mapStateToPropsSpy.mockClear()
@@ -620,8 +611,22 @@ describe('connectWithShell-useCases', () => {
             entryPointTwo,
             entryPointThree
         ])
-        const threeObservable = host.getAPI(ThreeAPI).observables.three
-        const ConnectedComp = connectWithShellAndObserve([threeObservable], mapStateToPropsWithObservables, undefined, shell)(PureComp)
+
+        const ConnectedComp = connectWithShellAndObserve(
+            {
+                observedThree: host.getAPI(ThreeAPI).observables.three
+            },
+            (_shell, state: TestStateOne, ownProps): CompProps => {
+                mapStateToPropsSpy()
+                return {
+                    valueOne: state.one.valueOne,
+                    valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
+                    valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
+                }
+            },
+            undefined,
+            shell
+        )(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
