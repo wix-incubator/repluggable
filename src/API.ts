@@ -319,16 +319,16 @@ export interface ContributeAPIOptions<TAPI> {
     disableMonitoring?: boolean | (keyof TAPI)[]
 }
 
-export type ChangeObserverUnsubscribe = () => void
-export type ChangeObserverCallback<T> = (next: T) => void
-export interface ChangeObserver<T> {
-    subscribe(fromShell: Shell, callback: ChangeObserverCallback<T>): ChangeObserverUnsubscribe
-    getValue(): T
+export type StateObserverUnsubscribe = () => void
+export type StateObserver<TSelectorAPI> = (next: TSelectorAPI) => void
+export interface ObservableState<TSelectorAPI> {
+    subscribe(fromShell: Shell, callback: StateObserver<TSelectorAPI>): StateObserverUnsubscribe
+    current(): TSelectorAPI
 }
-export type AnyChangeObserver = ChangeObserver<any>
 
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
+
 /**
  * An scoped communication terminal provided for an {EntryPoint}
  * in order to contribute its application content to the {AppHost}
@@ -414,7 +414,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     contributeObservableState<TState, TSelector, TAction extends Redux.AnyAction = Redux.AnyAction>(
         contributor: ReducersMapObjectContributor<TState, TAction>,
         selectorFactory: (state: TState) => TSelector
-    ): ChangeObserver<TSelector>
+    ): ObservableState<TSelector>
 
     /**
      * Contribute the main view (root) of the application

@@ -28,7 +28,7 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    ChangeObserver
+    ObservableState
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
@@ -36,7 +36,7 @@ import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import {
-    createChangeObserver,
+    createObservable,
     createThrottledStore,
     PrivateThrottledStore,
     StateContribution,
@@ -681,7 +681,7 @@ miss: ${memoizedWithMissHit.miss}
         let APIsEnabled = false
         let wasInitCompleted = false
         let dependencyAPIs: AnySlotKey[] = []
-        let nextObserverId = 1
+        let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
@@ -834,16 +834,16 @@ miss: ${memoizedWithMissHit.miss}
             contributeObservableState<TState, TSelectorAPI, TAction extends AnyAction = AnyAction>(
                 contributor: ReducersMapObjectContributor<TState, TAction>,
                 mapStateToSelectors: (state: TState) => TSelectorAPI
-            ): ChangeObserver<TSelectorAPI> {
-                const observerUniqueName = `${entryPoint.name}/observer_${nextObserverId++}`
-                const observer = createChangeObserver(shell, observerUniqueName, mapStateToSelectors)
+            ): ObservableState<TSelectorAPI> {
+                const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
+                const observable = createObservable(shell, observableUniqueName, mapStateToSelectors)
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,
-                    observer
+                    observable: observable
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
-                return observer
+                return observable
             },
 
             getStore<TState>(): ScopedStore<TState> {

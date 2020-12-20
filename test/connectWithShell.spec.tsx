@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, { FunctionComponent, ReactElement } from 'react'
 
-import { AppHost, EntryPoint, Shell, SlotKey, ChangeObserver, AnySlotKey } from '../src/API'
+import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
 import {
     createAppHost,
     mockPackage,
@@ -400,7 +400,7 @@ describe('connectWithShell-useCases', () => {
     const TwoAPI: SlotKey<TwoAPI> = { name: 'TWO_API', public: true }
 
     interface ThreeAPI {
-        observables: { three: ChangeObserver<ThreeAPISelectors> }
+        observables: { three: ObservableState<ThreeAPISelectors> }
     }
     interface ThreeAPISelectors {
         getValueThree(): string

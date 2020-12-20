@@ -1,7 +1,7 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { EntryPoint, ChangeObserver, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
@@ -200,12 +200,12 @@ function createShell(host: AppHost): PrivateShell {
     }
 }
 
-export function mockObservable<T>(value: T): ChangeObserver<T> {
+export function mockObservable<T>(value: T): ObservableState<T> {
     return {
         subscribe: () => {
             return () => {}
         },
-        getValue() {
+        current() {
             return value
         }
     }

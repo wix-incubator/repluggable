@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction, ChangeObserver, ChangeObserverUnsubscribe } from './API'
+import { Shell, AnyFunction, ObservableState, StateObserverUnsubscribe } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -149,11 +149,11 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
 }
 
 export interface ObservablesMap {
-    [key: string]: ChangeObserver<any>
+    [key: string]: ObservableState<any>
 }
 
 export type ObservedSelectorsMap<M> = {
-    [K in keyof M]: M[K] extends ChangeObserver<infer S> ? S : undefined
+    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
 }
 
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
@@ -161,7 +161,7 @@ export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
 export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
     const result: Partial<ObservedSelectorsMap<M>> = {}
     for (const key in map) {
-        const selector = map[key].getValue()
+        const selector = map[key].current()
         result[key] = selector
     }
     return result as ObservedSelectorsMap<M>
@@ -181,12 +181,12 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
         const observableConnectedComponentFactory: ConnectedComponentFactory<S, ObservableWrapperProps, SP, DP, OP> = pureComponent => {
             class ObservableWrapperComponent extends React.Component<ObservableWrapperProps, ObservableWrapperState> {
                 public connectedComponent: React.ComponentType<OP>
-                public unsubscribers: ChangeObserverUnsubscribe[]
+                public unsubscribes: StateObserverUnsubscribe[]
 
                 constructor(props: OP) {
                     super(props)
                     this.connectedComponent = innerFactory(pureComponent)
-                    this.unsubscribers = []
+                    this.unsubscribes = []
                     this.state = mapObservablesToSelectors(observables)
                 }
 
@@ -199,20 +199,20 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
                                 this.setState(newState)
                             }
                         })
-                        this.unsubscribers.push(unsubscribe)
+                        this.unsubscribes.push(unsubscribe)
                     }
                 }
 
                 public componentWillUnmount() {
-                    this.unsubscribers.forEach(unsubscribe => unsubscribe())
-                    this.unsubscribers = []
+                    this.unsubscribes.forEach(unsubscribe => unsubscribe())
+                    this.unsubscribes = []
                 }
 
                 public render() {
                     const ConnectedComponent = this.connectedComponent
                     const connectedComponentProps: OP = {
                         ...this.props, // OP excluding observed selectors
-                        ...this.state // observed selectors
+                        ...this.state  // observed selectors
                     } as OP // TypeScript doesn't get it
                     return <ConnectedComponent {...connectedComponentProps} />
                 }
