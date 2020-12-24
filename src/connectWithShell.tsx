@@ -159,12 +159,11 @@ export type ObservedSelectorsMap<M> = {
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
 
 export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
-    const result: Partial<ObservedSelectorsMap<M>> = {}
-    for (const key in map) {
-        const selector = map[key].current()
-        result[key] = selector
-    }
-    return result as ObservedSelectorsMap<M>
+    const result = _.mapValues(map, observable => {
+        const selector = observable.current()
+        return selector
+    })
+    return result
 }
 
 export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
@@ -193,11 +192,8 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
                 public componentDidMount() {
                     for (const key in observables) {
                         const unsubscribe = observables[key].subscribe(boundShell, () => {
-                            const oldState = this.state
                             const newState = mapObservablesToSelectors(observables)
-                            if (newState !== oldState) {
-                                this.setState(newState)
-                            }
+                            this.setState(newState)
                         })
                         this.unsubscribes.push(unsubscribe)
                     }
@@ -212,7 +208,7 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
                     const ConnectedComponent = this.connectedComponent
                     const connectedComponentProps: OP = {
                         ...this.props, // OP excluding observed selectors
-                        ...this.state  // observed selectors
+                        ...this.state // observed selectors
                     } as OP // TypeScript doesn't get it
                     return <ConnectedComponent {...connectedComponentProps} />
                 }

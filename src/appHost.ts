@@ -840,7 +840,7 @@ miss: ${memoizedWithMissHit.miss}
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,
-                    observable: observable
+                    observable
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
                 return observable

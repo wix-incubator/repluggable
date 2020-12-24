@@ -61,52 +61,36 @@ const buildStoreReducer = (
     broadcastNotify: PrivateThrottledStore['broadcastNotify'],
     observableNotify: PrivateThrottledStore['observableNotify']
 ): Reducer => {
-    function withBroadcastingReducers(originalReducersMap: ReducersMapObject): ReducersMapObject {
-        const withBroadcast = (originalReducer: Reducer): Reducer => {
-            return (state0, action) => {
-                const state1 = originalReducer(state0, action)
-                if (/*state0 && */ state1 !== state0) {
-                    broadcastNotify()
-                }
-                return state1
-            }
-        }
-        const wrapper = interceptAnyObject(originalReducersMap, (name, func) => {
-            const originalReducer = func as Reducer
-            return withBroadcast(originalReducer)
-        })
-        return wrapper
-    }
-
-    function withObservableReducers(originalReducersMap: ReducersMapObject, observable: AnyPrivateObservableState): ReducersMapObject {
-        const withObservable = (originalReducer: Reducer): Reducer => {
+    function withNotifyAction(originalReducersMap: ReducersMapObject, notifyAction: () => void): ReducersMapObject {
+        const decorateReducer = (originalReducer: Reducer): Reducer => {
             return (state0, action) => {
                 const state1 = originalReducer(state0, action)
                 if (state1 !== state0) {
-                    observableNotify(observable)
+                    notifyAction()
                 }
                 return state1
             }
         }
         const wrapper = interceptAnyObject(originalReducersMap, (name, func) => {
             const originalReducer = func as Reducer
-            return withObservable(originalReducer)
+            return decorateReducer(originalReducer)
         })
         return wrapper
     }
 
-    function withBroadcastingOrObservable(
+    function withBroadcastOrObservableNotify(
         { notificationScope, reducerFactory, observable }: StateContribution,
         shellName: string
     ): ReducersMapObject {
+        const originalReducersMap = reducerFactory()
         if (notificationScope === 'broadcasting') {
-            return withBroadcastingReducers(reducerFactory())
+            return withNotifyAction(originalReducersMap, broadcastNotify)
         }
         if (!observable) {
             // should never happen; would be an internal bug
             throw new Error(`getPerShellReducersMapObject: notificationScope=observable but 'observable' is falsy, in shell '${shellName}'`)
         }
-        return withObservableReducers(reducerFactory(), observable)
+        return withNotifyAction(originalReducersMap, () => observableNotify(observable))
     }
 
     function getPerShellReducersMapObject(): ShellsReducersMap {
@@ -114,7 +98,7 @@ const buildStoreReducer = (
             const shellName = item.shell.name
             map[shellName] = {
                 ...map[shellName],
-                ...withBroadcastingOrObservable(item.contribution, shellName)
+                ...withBroadcastOrObservableNotify(item.contribution, shellName)
             }
             return map
         }, {})
@@ -122,10 +106,7 @@ const buildStoreReducer = (
 
     function getCombinedShellReducers(): ReducersMapObject {
         const shellsReducerMaps = getPerShellReducersMapObject()
-        const combinedReducersMap = Object.keys(shellsReducerMaps).reduce((map: ReducersMapObject, shellName: string) => {
-            map[shellName] = combineReducers(shellsReducerMaps[shellName])
-            return map
-        }, {})
+        const combinedReducersMap = _.mapValues(shellsReducerMaps, singleMap => combineReducers(singleMap))
         return combinedReducersMap
     }
 
