@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction } from './API'
+import { Shell, AnyFunction, ObservableState, StateObserverUnsubscribe } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -118,12 +118,16 @@ export interface ConnectWithShellOptions {
     shouldComponentUpdate?(shell: Shell): boolean
 }
 
+export type ConnectedComponentFactory<S = {}, OP = {}, SP = {}, DP = {}, OPPure = OP> = (
+    component: React.ComponentType<OPPure & SP & DP>
+) => (props: WithChildren<OP>) => JSX.Element
+
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-) {
+): ConnectedComponentFactory<S, OP, SP, DP> {
     const validateLifecycle = (component: React.ComponentType<any>) => {
         if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
             const componentText = component.displayName || component.name || component
@@ -142,4 +146,93 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
         validateLifecycle(component)
         return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
     }
+}
+
+export interface ObservablesMap {
+    [key: string]: ObservableState<any>
+}
+
+export type ObservedSelectorsMap<M> = {
+    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
+}
+
+export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
+
+export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
+    const result = _.mapValues(map, observable => {
+        const selector = observable.current()
+        return selector
+    })
+    return result
+}
+
+export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
+    observables: OM,
+    boundShell: Shell
+): <S, SP, DP>(
+    innerFactory: ConnectedComponentFactory<S, OP, SP, DP>
+) => ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
+    return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OP, SP, DP>) => {
+        // exclude observed selectors from wrapper props, because we want those selectors to be in the wrapper's state instead
+        type ObservableWrapperProps = OmitObservedSelectors<OP, OM>
+        type ObservableWrapperState = ObservedSelectorsMap<OM>
+
+        const observableConnectedComponentFactory: ConnectedComponentFactory<S, ObservableWrapperProps, SP, DP, OP> = pureComponent => {
+            class ObservableWrapperComponent extends React.Component<ObservableWrapperProps, ObservableWrapperState> {
+                public connectedComponent: React.ComponentType<OP>
+                public unsubscribes: StateObserverUnsubscribe[]
+
+                constructor(props: OP) {
+                    super(props)
+                    this.connectedComponent = innerFactory(pureComponent)
+                    this.unsubscribes = []
+                    this.state = mapObservablesToSelectors(observables)
+                }
+
+                public componentDidMount() {
+                    for (const key in observables) {
+                        const unsubscribe = observables[key].subscribe(boundShell, () => {
+                            const newState = mapObservablesToSelectors(observables)
+                            this.setState(newState)
+                        })
+                        this.unsubscribes.push(unsubscribe)
+                    }
+                }
+
+                public componentWillUnmount() {
+                    this.unsubscribes.forEach(unsubscribe => unsubscribe())
+                    this.unsubscribes = []
+                }
+
+                public render() {
+                    const ConnectedComponent = this.connectedComponent
+                    const connectedComponentProps: OP = {
+                        ...this.props, // OP excluding observed selectors
+                        ...this.state // observed selectors
+                    } as OP // TypeScript doesn't get it
+                    return <ConnectedComponent {...connectedComponentProps} />
+                }
+            }
+
+            const hoc = (props: WithChildren<OmitObservedSelectors<OP, OM>>) => {
+                return <ObservableWrapperComponent {...props} {...mapObservablesToSelectors(observables)} />
+            }
+
+            return hoc
+        }
+
+        return observableConnectedComponentFactory
+    }
+}
+
+export function connectWithShellAndObserve<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, S = {}, SP = {}, DP = {}>(
+    observables: OM,
+    mapStateToProps: MapStateToProps<S, OP, SP>,
+    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+    boundShell: Shell,
+    options: ConnectWithShellOptions = {}
+): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
+    const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
+    const wrapperFactory = observeWithShell<OM, OP>(observables, boundShell)(innerFactory)
+    return wrapperFactory
 }

@@ -319,8 +319,16 @@ export interface ContributeAPIOptions<TAPI> {
     disableMonitoring?: boolean | (keyof TAPI)[]
 }
 
+export type StateObserverUnsubscribe = () => void
+export type StateObserver<TSelectorAPI> = (next: TSelectorAPI) => void
+export interface ObservableState<TSelectorAPI> {
+    subscribe(fromShell: Shell, callback: StateObserver<TSelectorAPI>): StateObserverUnsubscribe
+    current(): TSelectorAPI
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
+
 /**
  * An scoped communication terminal provided for an {EntryPoint}
  * in order to contribute its application content to the {AppHost}
@@ -370,6 +378,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem>
+
     // TODO: Fix contributeAPI factory type not to resort to lowest common
     /**
      * Contribute an implementation of an API (a.k.a contract)
@@ -382,7 +391,8 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     /**
-     * Contribute a Redux reducer that will be added to the host store
+     * Contribute a Redux reducer that will be added to the host store.
+     * Use it for slowly changing state (e.g. not changing because of mouse movement)
      *
      * @template TState
      * @param {ReducersMapObjectContributor<TState>} contributor
@@ -390,6 +400,22 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     contributeState<TState, TAction extends Redux.AnyAction = Redux.AnyAction>(
         contributor: ReducersMapObjectContributor<TState, TAction>
     ): void
+
+    /**
+     * Contribute a Redux reducer that will be added to the host store
+     * Use it for rapidly changing state (e.g. changing on every mouse movement event)
+     * Changes to this state won't trigger the usual subscribers.
+     * In order to subscribe to changes in this state, use the observer object returned by this function.
+     *
+     * @template TState
+     * @param {ReducersMapObjectContributor<TState>} contributor
+     * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
+     */
+    contributeObservableState<TState, TSelector, TAction extends Redux.AnyAction = Redux.AnyAction>(
+        contributor: ReducersMapObjectContributor<TState, TAction>,
+        selectorFactory: (state: TState) => TSelector
+    ): ObservableState<TSelector>
+
     /**
      * Contribute the main view (root) of the application
      * Intended to be used by a single {Shell} in an application

@@ -1,4 +1,4 @@
-import { AnyAction, combineReducers, ReducersMapObject, Store } from 'redux'
+import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
     AnySlotKey,
@@ -27,22 +27,26 @@ import {
     ContributeAPIOptions,
     APILayer,
     CustomExtensionSlotHandler,
-    CustomExtensionSlot
+    CustomExtensionSlot,
+    ObservableState
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
-import { contributeInstalledShellsState, InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
+import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
-import { createThrottledStore, ThrottledStore } from './throttledStore'
+import {
+    createObservable,
+    createThrottledStore,
+    PrivateThrottledStore,
+    StateContribution,
+    ThrottledStore,
+    updateThrottledStore
+} from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
-
-interface ShellsReducersMap {
-    [shellName: string]: ReducersMapObject
-}
 
 export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory): LazyEntryPointDescriptor => {
     return {
@@ -54,7 +58,7 @@ export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory)
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = {
     name: 'mainView'
 }
-export const stateSlotKey: SlotKey<ReducersMapObjectContributor> = {
+export const stateSlotKey: SlotKey<StateContribution> = {
     name: 'state'
 }
 
@@ -84,8 +88,9 @@ const createUnreadyEntryPointsStore = (): UnreadyEntryPointsStore => {
 }
 
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
-    let store: ThrottledStore | null = null
+    let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
+
     const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
     const layers: APILayer[] = options.layers || []
     const trace: Trace[] = []
@@ -147,7 +152,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     })
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
-    declareSlot<ReducersMapObjectContributor>(stateSlotKey)
+    declareSlot<StateContribution>(stateSlotKey)
     addShells([appHostServicesEntryPoint])
 
     const memoize = <T extends AnyFunction>(
@@ -477,14 +482,12 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function buildStore(): Store {
-        // TODO:  preserve existing state
-        const reducersMap = buildReducersMapObject()
-        const reducer = combineReducers(reducersMap)
+        const contributedState = getSlot(stateSlotKey)
 
         if (store) {
-            store.replaceReducer(reducer)
+            updateThrottledStore(store, contributedState)
         } else {
-            store = createThrottledStore(host, reducer, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store = createThrottledStore(host, contributedState, window.requestAnimationFrame, window.cancelAnimationFrame)
             store.subscribe(() => {
                 flushMemoizedForState()
             })
@@ -505,34 +508,6 @@ miss: ${memoizedWithMissHit.miss}
         if (memoizedFunction.cache && memoizedFunction.cache.clear) {
             memoizedFunction.cache.clear()
         }
-    }
-
-    function getPerShellReducersMapObject(): ShellsReducersMap {
-        const stateSlot = getSlot(stateSlotKey)
-        return stateSlot.getItems().reduce((reducersMap: ShellsReducersMap, item) => {
-            const shellName = item.shell.name
-            reducersMap[shellName] = {
-                ...reducersMap[shellName],
-                ...item.contribution()
-            }
-            return reducersMap
-        }, {})
-    }
-
-    function getCombinedShellReducers(): ReducersMapObject {
-        const shellsReducerMaps = getPerShellReducersMapObject()
-        return Object.keys(shellsReducerMaps).reduce((reducersMap: ReducersMapObject, shellName: string) => {
-            reducersMap[shellName] = combineReducers(shellsReducerMaps[shellName])
-            return reducersMap
-        }, {})
-    }
-
-    function buildReducersMapObject(): ReducersMapObject {
-        // TODO: get rid of builtInReducersMaps
-        const builtInReducersMaps: ReducersMapObject = {
-            ...contributeInstalledShellsState()
-        }
-        return { ...builtInReducersMaps, ...getCombinedShellReducers() }
     }
 
     function invokeEntryPointPhase(
@@ -706,6 +681,7 @@ miss: ${memoizedWithMissHit.miss}
         let APIsEnabled = false
         let wasInitCompleted = false
         let dependencyAPIs: AnySlotKey[] = []
+        let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
         const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
@@ -848,14 +824,36 @@ miss: ${memoizedWithMissHit.miss}
             contributeState<TState, TAction extends AnyAction = AnyAction>(
                 contributor: ReducersMapObjectContributor<TState, TAction>
             ): void {
-                getSlot(stateSlotKey).contribute(shell, contributor)
+                const contribution: StateContribution = {
+                    notificationScope: 'broadcasting',
+                    reducerFactory: contributor
+                }
+                getSlot(stateSlotKey).contribute(shell, contribution)
+            },
+
+            contributeObservableState<TState, TSelectorAPI, TAction extends AnyAction = AnyAction>(
+                contributor: ReducersMapObjectContributor<TState, TAction>,
+                mapStateToSelectors: (state: TState) => TSelectorAPI
+            ): ObservableState<TSelectorAPI> {
+                const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
+                const observable = createObservable(shell, observableUniqueName, mapStateToSelectors)
+                const contribution: StateContribution = {
+                    notificationScope: 'observable',
+                    reducerFactory: contributor,
+                    observable
+                }
+                getSlot(stateSlotKey).contribute(shell, contribution)
+                return observable
             },
 
             getStore<TState>(): ScopedStore<TState> {
                 return {
                     dispatch: host.getStore().dispatch,
                     subscribe: host.getStore().subscribe,
-                    getState: () => host.getStore().getState()[shell.name],
+                    getState: () => {
+                        const entireStoreState = host.getStore().getState()
+                        return entireStoreState[shell.name]
+                    },
                     flush: host.getStore().flush
                 }
             },

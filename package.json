@@ -29,7 +29,8 @@
     "build-bundle-dev": "webpack --config webpack.dev.config.js",
     "build-bundle-prod": "webpack --config webpack.prod.config.js",
     "test": "jest --coverage",
-    "posttest": "tslint --project ."
+    "posttest": "tslint --project .",
+    "lintfix": "tslint --fix --project ."
   },
   "dependencies": {
     "lodash": "^4.17.20",

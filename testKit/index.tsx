@@ -1,16 +1,17 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { EntryPoint, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
 export { AppHost } from '../src/index'
-export { connectWithShell } from '../src/connectWithShell'
+export { connectWithShell, connectWithShellAndObserve } from '../src/connectWithShell'
 export { SlotRenderer } from '../src/renderSlotComponents'
 export { withConsoleErrors } from './withConsoleErrors'
+export { withThrowOnError } from './withThrowOnError'
 export * from './mockPackage'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
@@ -188,6 +189,7 @@ function createShell(host: AppHost): PrivateShell {
             return []
         },
         contributeState: _.noop,
+        contributeObservableState: <TState, TSelectors, TAction>() => mockObservable<TSelectors>(undefined as any),
         contributeMainView: _.noop,
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
@@ -195,5 +197,16 @@ function createShell(host: AppHost): PrivateShell {
         clearCache: _.noop,
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint)
+    }
+}
+
+export function mockObservable<T>(value: T): ObservableState<T> {
+    return {
+        subscribe: () => {
+            return () => {}
+        },
+        current() {
+            return value
+        }
     }
 }
