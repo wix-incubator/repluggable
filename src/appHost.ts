@@ -274,7 +274,7 @@ miss: ${memoizedWithMissHit.miss}
             validateLayers(entryPoints)
         }
         validateUniqueShellNames(entryPoints)
-        !options.disableCheckCircularDependencies && validateCircularDependency(allEntryPoints)
+        !options.disableCheckCircularDependencies && !options.experimentalCyclicMode && validateCircularDependency(allEntryPoints)
 
         const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
             LazyEntryPointDescriptor[],
@@ -288,10 +288,38 @@ miss: ${memoizedWithMissHit.miss}
         return Promise.resolve()
     }
 
+    function isAllAPIDependenciesAreReadyOrPending(
+        checkedKey: SlotKey<any>,
+        pendingEntryPoints: EntryPoint[],
+        passed: SlotKey<any>[] = []
+    ): boolean {
+        // TODO: Avoid iterating N (cycle length) times for the same cycle
+        const declarers = pendingEntryPoints.flatMap(ep => (ep.declareAPIs?.() || []).map(k => [k, ep] as const))
+        const [, keyDeclarerEntryPoint] = declarers.find(([k, ep]) => _.isEqual(k, checkedKey)) || []
+        if (!keyDeclarerEntryPoint) {
+            return false
+        }
+
+        const dependencies = keyDeclarerEntryPoint.getDependencyAPIs && keyDeclarerEntryPoint.getDependencyAPIs()
+        const uncheckDependencies = _.differenceWith(dependencies, passed, _.isEqual)
+
+        const everyDependenciesReadyOrPending = _.every(
+            uncheckDependencies,
+            k => readyAPIs.has(getOwnSlotKey(k)) || isAllAPIDependenciesAreReadyOrPending(k, pendingEntryPoints, passed.concat(checkedKey))
+        )
+
+        return everyDependenciesReadyOrPending
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
             const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
-            return _.isEmpty(_.find(dependencies, key => !readyAPIs.has(getOwnSlotKey(key))))
+            return _.every(
+                dependencies,
+                k =>
+                    readyAPIs.has(getOwnSlotKey(k)) ||
+                    (options.experimentalCyclicMode && isAllAPIDependenciesAreReadyOrPending(k, entryPoints))
+            )
         })
 
         unReadyEntryPointsStore.set(_.union(_.difference(unReadyEntryPointsStore.get(), readyEntryPoints), currentUnReadyEntryPoints))
