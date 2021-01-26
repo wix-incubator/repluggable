@@ -4,6 +4,8 @@ import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
 import { AnyExtensionSlot } from '../extensionSlot'
+import { StoreDebugUtility } from './debug'
+import { PrivateThrottledStore } from '../throttledStore'
 
 interface PerformanceDebugParams {
     options: AppHost['options']
@@ -70,6 +72,31 @@ export function setupDebugInfo({
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
+    const actionCountByType = new Map<string, number>()
+    const getPrivateStore = () => host.getStore() as PrivateThrottledStore
+
+    const store: StoreDebugUtility = {
+        startActionStats() {
+            getPrivateStore().setActionMonitor(action => {
+                const currentCount = actionCountByType.get(action.type)
+                actionCountByType.set(action.type, (currentCount || 0) + 1)
+            })
+        },
+        stopActionStats() {
+            getPrivateStore().setActionMonitor(null)
+        },
+        getActionStats() {
+            return (
+                [...actionCountByType.entries()]
+                .map(([type, count]) => ({ type, count }))
+                .sort((a, b) => b.count - a.count)
+            )
+        },
+        resetActionStats() {
+            actionCountByType.clear()
+        }
+    }
+
     window.repluggableAppDebug = {
         host,
         uniqueShellNames,
@@ -81,6 +108,7 @@ export function setupDebugInfo({
         utils,
         hmr: {
             hot
-        }
+        },
+        store
     }
 }

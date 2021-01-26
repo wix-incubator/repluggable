@@ -44,10 +44,12 @@ export interface ThrottledStore<T = any> extends Store<T> {
     flush(): void
 }
 
+export type ActionMonitorCallback = (action: AnyAction) => void
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     broadcastNotify(): void
     observableNotify(observer: AnyPrivateObservableState): void
     resetPendingNotifications(): void
+    setActionMonitor(callback: ActionMonitorCallback | null): void
 }
 
 export interface PrivateObservableState<TState, TSelector> extends ObservableState<TSelector> {
@@ -137,6 +139,7 @@ export const createThrottledStore = (
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
+    let actionMonitor: ActionMonitorCallback | null = null
 
     const onBroadcastNotify = () => {
         pendingBroadcastNotification = true
@@ -207,6 +210,7 @@ export const createThrottledStore = (
 
     const dispatch: Dispatch<AnyAction> = action => {
         resetPendingNotifications()
+        actionMonitor && actionMonitor(action)
         const dispatchResult = store.dispatch(action)
         return dispatchResult
     }
@@ -218,7 +222,10 @@ export const createThrottledStore = (
         flush,
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
-        resetPendingNotifications
+        resetPendingNotifications,
+        setActionMonitor(callback: ActionMonitorCallback | null) {
+            actionMonitor = callback
+        }
     }
 
     resetPendingNotifications()
