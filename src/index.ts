@@ -19,7 +19,10 @@ export {
     ShellLoggerSpan,
     HostLogger,
     LogSeverity,
-    APILayer
+    APILayer,
+    StateObserverUnsubscribe,
+    StateObserver,
+    ObservableState
 } from './API'
 
 export { AppMainView } from './appMainView'
