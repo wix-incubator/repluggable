@@ -174,13 +174,20 @@ export const createThrottledStore = (
                     _.forEach(broadcastSubscribers, invoke)
                 )
             }
+        } finally {
+            resetPendingNotifications()
+        }
+    }
+
+    const notifyObservers = () => {
+        try {
             if (pendingObservableNotifications) {
                 pendingObservableNotifications.forEach(observable => {
                     observable.notify()
                 })
             }
         } finally {
-            resetPendingNotifications()
+            pendingObservableNotifications?.clear()
         }
     }
 
@@ -189,6 +196,7 @@ export const createThrottledStore = (
     let cancelRender = _.noop
 
     store.subscribe(() => {
+        notifyObservers()
         cancelRender = notifySubscribersOnAnimationFrame()
     })
 
