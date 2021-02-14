@@ -2,7 +2,7 @@ import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAct
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, StateObserver, Shell, SlotKey } from './API'
+import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, StateObserver, Shell, SlotKey, ObservablesMap, ObservedSelectorsMap, StateObserverUnsubscribe } from './API'
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
@@ -248,8 +248,11 @@ export const createObservable = <TState, TSelector>(
     return {
         subscribe(fromShell, callback) {
             observersSlot.contribute(fromShell, callback)
-            return () => {
-                observersSlot.discardBy(item => item.contribution === callback)
+            return {
+                currentSelector: getOrCreateCachedSelector(),
+                unsubscribe: () => {
+                    observersSlot.discardBy(item => item.contribution === callback)
+                }
             }
         },
         notify() {
@@ -257,6 +260,81 @@ export const createObservable = <TState, TSelector>(
             const newSelector = getOrCreateCachedSelector()
             invokeSlotCallbacks(observersSlot, newSelector)
         },
-        current: getOrCreateCachedSelector
     }
 }
+
+export interface SubscribeToObservablesResult<M extends ObservablesMap> {
+    selectors: ObservedSelectorsMap<M>
+    unsubscribes: StateObserverUnsubscribe[]
+}
+
+export function subscribeToObservables<M extends ObservablesMap>(
+    shell: Shell, 
+    observablesMap: M, 
+    getState: () => ObservedSelectorsMap<M>,
+    setState: (newState: ObservedSelectorsMap<M>) => void,
+): SubscribeToObservablesResult<M> {
+    const unsubscribes: StateObserverUnsubscribe[] = [];
+    const selectors = _.mapValues(observablesMap, (observable, key) => {
+        const { currentSelector, unsubscribe } = observable.subscribe(shell, newSelector => {
+            const nextState = {
+                ...getState(),
+                [key]: newSelector
+            };
+            setState(nextState)
+        });
+        unsubscribes.push(unsubscribe)
+        return currentSelector
+    })
+    return {
+        selectors,
+        unsubscribes
+    }
+}
+
+export function createChainedObservable<
+    M extends ObservablesMap, 
+    TSelector
+>(
+    shell: Shell, 
+    uniqueName: string,
+    sources: M, 
+    selectorFactory: (sourceSelectors: ObservedSelectorsMap<M>) => TSelector
+): ObservableState<TSelector> {
+    const subscribersSlotKey: SlotKey<StateObserver<TSelector>> = {
+        name: uniqueName
+    }
+    const observersSlot = shell.declareSlot(subscribersSlotKey)
+
+    let targetSelector: TSelector | undefined = undefined
+    let lastObservedSourceSelectors: ObservedSelectorsMap<M> | undefined = undefined
+    
+    const subscription = subscribeToObservables(
+        shell, 
+        sources, 
+        () => {
+            return lastObservedSourceSelectors!
+        },
+        (newObservedSelectors) => {
+            lastObservedSourceSelectors = newObservedSelectors
+            targetSelector = selectorFactory(newObservedSelectors)
+            invokeSlotCallbacks(observersSlot, targetSelector)
+        }
+    )
+
+    lastObservedSourceSelectors = subscription.selectors
+    targetSelector = selectorFactory(lastObservedSourceSelectors)
+
+    return {
+        subscribe(fromShell, callback) {
+            observersSlot.contribute(fromShell, callback)
+            return {
+                currentSelector: targetSelector!,
+                unsubscribe: () => {
+                    observersSlot.discardBy(item => item.contribution === callback)
+                }
+            }
+        },
+    }
+}
+

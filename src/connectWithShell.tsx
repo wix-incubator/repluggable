@@ -2,11 +2,12 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction, ObservableState, StateObserverUnsubscribe } from './API'
+import { Shell, AnyFunction, StateObserverUnsubscribe, ObservablesMap, ObservedSelectorsMap } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
+import { subscribeToObservables } from './throttledStore'
 
 interface WrapperMembers<S, OP, SP, DP> {
     connectedComponent: any
@@ -148,23 +149,7 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     }
 }
 
-export interface ObservablesMap {
-    [key: string]: ObservableState<any>
-}
-
-export type ObservedSelectorsMap<M> = {
-    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
-}
-
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
-
-export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
-    const result = _.mapValues(map, observable => {
-        const selector = observable.current()
-        return selector
-    })
-    return result
-}
 
 export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
     observables: OM,
@@ -186,17 +171,18 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
                     super(props)
                     this.connectedComponent = innerFactory(pureComponent)
                     this.unsubscribes = []
-                    this.state = mapObservablesToSelectors(observables)
                 }
 
                 public componentDidMount() {
-                    for (const key in observables) {
-                        const unsubscribe = observables[key].subscribe(boundShell, () => {
-                            const newState = mapObservablesToSelectors(observables)
-                            this.setState(newState)
-                        })
-                        this.unsubscribes.push(unsubscribe)
-                    }
+                    const { unsubscribes, selectors } = subscribeToObservables(
+                        boundShell, 
+                        observables, 
+                        () => this.state, 
+                        (newState) => this.setState(newState)
+                    )
+
+                    this.unsubscribes = unsubscribes
+                    this.state = selectors
                 }
 
                 public componentWillUnmount() {
@@ -205,9 +191,13 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
                 }
 
                 public render() {
+                    if (!this.state) {
+                        return null
+                    }
+                    
                     const ConnectedComponent = this.connectedComponent
                     const connectedComponentProps: OP = {
-                        ...this.props, // OP excluding observed selectors
+                        ...this.props, // own props excluding observed selectors
                         ...this.state // observed selectors
                     } as OP // TypeScript doesn't get it
                     return <ConnectedComponent {...connectedComponentProps} />
@@ -215,7 +205,7 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
             }
 
             const hoc = (props: WithChildren<OmitObservedSelectors<OP, OM>>) => {
-                return <ObservableWrapperComponent {...props} {...mapObservablesToSelectors(observables)} />
+                return <ObservableWrapperComponent {...props} />
             }
 
             return hoc
