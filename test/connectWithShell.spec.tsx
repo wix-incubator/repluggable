@@ -54,7 +54,7 @@ describe('connectWithShell', () => {
                 _.invoke(mockPackage, 'attach', shell)
                 ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
             }
-        });
+        })
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -62,17 +62,17 @@ describe('connectWithShell', () => {
     })
 
     it('should pass exact shell to mapDispatchToProps', () => {
-        let ConnectedComp: any;
+        let ConnectedComp: any
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapDispatchToProps = (s: Shell) => ({ shellName: s.name })
 
         const { renderInShellContext } = createMocks({
             ...mockPackage,
             attach(shell) {
-                _.invoke(mockPackage, 'attach', shell);
+                _.invoke(mockPackage, 'attach', shell)
                 ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell)(PureComp)
             }
-        });
+        })
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -80,7 +80,7 @@ describe('connectWithShell', () => {
     })
 
     it('should optimize props comparison', () => {
-        let ConnectedComp: any;
+        let ConnectedComp: any
         const mapStateToProps = () => props
         const PureComp: FunctionComponent<CompProps> = ({ obj, func }) => {
             renderSpy()
@@ -93,7 +93,7 @@ describe('connectWithShell', () => {
                 _.invoke(mockPackage, 'attach', shell)
                 ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
             }
-        });
+        })
 
         type FuncProps = (event: any) => void
         interface CompProps {
@@ -104,7 +104,6 @@ describe('connectWithShell', () => {
         const func2: FuncProps = jest.fn()
         const renderSpy = jest.fn()
         let props = { obj: { a: 1 }, func: func1 }
-        
 
         let counter = 0
         host.getStore().replaceReducer(() => ({
@@ -144,7 +143,7 @@ describe('connectWithShell', () => {
     })
 
     it('should optimize props comparison with should update', () => {
-        let ConnectedComp: any;
+        let ConnectedComp: any
         const mapStateToProps = () => props
         const PureComp: FunctionComponent<CompProps> = ({ obj, func }) => {
             renderSpy()
@@ -157,7 +156,7 @@ describe('connectWithShell', () => {
                 _.invoke(mockPackage, 'attach', shell)
                 ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { shouldComponentUpdate: () => false })(PureComp)
             }
-        });
+        })
 
         type FuncProps = (event: any) => void
         interface CompProps {
@@ -183,7 +182,6 @@ describe('connectWithShell', () => {
             ref.update()
         }
 
-
         const { root } = renderInShellContext(<ConnectedComp />)
 
         if (!root) {
@@ -208,7 +206,7 @@ describe('connectWithShell', () => {
     })
 
     it('should pass scoped state to mapStateToProps', () => {
-        let ConnectedWithState: any;
+        let ConnectedWithState: any
         const PureCompNeedsState = ({ valueFromState }: { valueFromState: string }) => <div>{valueFromState}</div>
         const mapStateToProps = (s: Shell, state: MockPackageState) => ({
             valueFromState: getValueFromState(state)
@@ -220,7 +218,7 @@ describe('connectWithShell', () => {
                 _.invoke(mockPackage, 'attach', shell)
                 ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell)(PureCompNeedsState)
             }
-        });
+        })
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -228,9 +226,9 @@ describe('connectWithShell', () => {
     })
 
     it('should bind shell context', async () => {
-        const { host, renderInShellContext } = createMocks(mockPackage);
+        const { host, renderInShellContext } = createMocks(mockPackage)
 
-        let ConnectedWithState: any;
+        let ConnectedWithState: any
         const boundShellState = { mockValue: 'bound-value' }
         const PureComp = ({ value }: { value: string }) => <div>{value}</div>
         const mapStateToProps = (shell: Shell, state: MockPackageState) => ({
@@ -293,7 +291,7 @@ describe('connectWithShell', () => {
                     shell
                 )(PureCompWithChildren)
             }
-        });
+        })
 
         let ConnectedBoundCompWithChildren: any
         const boundShellState = { mockValue: 'bound-value' }
@@ -573,13 +571,16 @@ describe('connectWithShell-useCases', () => {
 
     it('should update component on change in regular state', () => {
         let ConnectedComp: any
-        const { host, renderInShellContext } = createMocks({
-            ...entryPointOne,
-            attach(shell) {
-                _.invoke(entryPointOne, 'attach', shell)
-                ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
-            }
-        }, [entryPointTwo])
+        const { host, renderInShellContext } = createMocks(
+            {
+                ...entryPointOne,
+                attach(shell) {
+                    _.invoke(entryPointOne, 'attach', shell)
+                    ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+                }
+            },
+            [entryPointTwo]
+        )
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
@@ -615,13 +616,16 @@ describe('connectWithShell-useCases', () => {
 
     it('should not update uninterested component on change in observable state', () => {
         let ConnectedComp: any
-        const { host, renderInShellContext } = createMocks({
-            ...entryPointOne,
-            attach(shell) {
-                _.invoke(entryPointOne, 'attach', shell)
-                ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
-            }
-        }, [entryPointTwo, entryPointThree])
+        const { host, renderInShellContext } = createMocks(
+            {
+                ...entryPointOne,
+                attach(shell) {
+                    _.invoke(entryPointOne, 'attach', shell)
+                    ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+                }
+            },
+            [entryPointTwo, entryPointThree]
+        )
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
@@ -652,27 +656,30 @@ describe('connectWithShell-useCases', () => {
     it.skip('should update component through observer', () => {
         let ConnectedComp: any
         const entryPointOneEnhanced = withDependencyAPIs(entryPointOne, [ThreeAPI])
-        const { host, renderInShellContext } = createMocks({
-            ...entryPointOneEnhanced,
-            extend(shell) {
-                _.invoke(entryPointOneEnhanced, 'extend', shell)
-                ConnectedComp = connectWithShellAndObserve(
-                    {
-                        observedThree: shell.getAPI(ThreeAPI).observables.three
-                    },
-                    (_shell, state: TestStateOne, ownProps): CompProps => {
-                        mapStateToPropsSpy()
-                        return {
-                            valueOne: state.one.valueOne,
-                            valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
-                            valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
-                        }
-                    },
-                    undefined,
-                    shell
-                )(PureComp)
-            }
-        }, [entryPointTwo, entryPointThree])
+        const { host, renderInShellContext } = createMocks(
+            {
+                ...entryPointOneEnhanced,
+                extend(shell) {
+                    _.invoke(entryPointOneEnhanced, 'extend', shell)
+                    ConnectedComp = connectWithShellAndObserve(
+                        {
+                            observedThree: shell.getAPI(ThreeAPI).observables.three
+                        },
+                        (_shell, state: TestStateOne, ownProps): CompProps => {
+                            mapStateToPropsSpy()
+                            return {
+                                valueOne: state.one.valueOne,
+                                valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
+                                valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
+                            }
+                        },
+                        undefined,
+                        shell
+                    )(PureComp)
+                }
+            },
+            [entryPointTwo, entryPointThree]
+        )
 
         // const { host, shell, renderInShellContext } = createMocks(entryPointOneEnhanced, [
         //     entryPointTwo,
