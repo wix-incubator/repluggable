@@ -43,13 +43,19 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
 }
 
 describe('connectWithShell', () => {
-    it('should pass exact shell to mapStateToProps', () => {
-        const { shell, renderInShellContext } = createMocks(mockPackage)
-
+    it.only('should pass exact shell to mapStateToProps', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
-        const mapStateToProps = (s: Shell) => ({ shellName: s.name })
+        const mapStateToProps = (s: Shell) => ({ shellName: s.name });
+        let ConnectedComp: any;
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const { renderInShellContext } = createMocks({
+            ...mockPackage,
+            attach(shell: Shell): void {
+                _.invoke(mockPackage, 'attach', shell);
+                console.log('<=== test wasInitializationCompleted ===>', shell.wasInitializationCompleted());
+                ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+            }
+        });
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
