@@ -653,54 +653,28 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it.skip('should update component through observer', () => {
-        let ConnectedComp: any
-        const entryPointOneEnhanced = withDependencyAPIs(entryPointOne, [ThreeAPI])
-        const { host, renderInShellContext } = createMocks(
+    it('should update component through observer', () => {
+        const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointOne, [ThreeAPI]), [
+            entryPointTwo,
+            entryPointThree
+        ])
+
+        const ConnectedComp = connectWithShellAndObserve(
             {
-                ...entryPointOneEnhanced,
-                extend(shell) {
-                    _.invoke(entryPointOneEnhanced, 'extend', shell)
-                    ConnectedComp = connectWithShellAndObserve(
-                        {
-                            observedThree: shell.getAPI(ThreeAPI).observables.three
-                        },
-                        (_shell, state: TestStateOne, ownProps): CompProps => {
-                            mapStateToPropsSpy()
-                            return {
-                                valueOne: state.one.valueOne,
-                                valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
-                                valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
-                            }
-                        },
-                        undefined,
-                        shell
-                    )(PureComp)
+                observedThree: host.getAPI(ThreeAPI).observables.three
+            },
+            (_shell, state: TestStateOne, ownProps): CompProps => {
+                mapStateToPropsSpy()
+                return {
+                    valueOne: state.one.valueOne,
+                    valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
+                    valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
                 }
             },
-            [entryPointTwo, entryPointThree]
-        )
-
-        // const { host, shell, renderInShellContext } = createMocks(entryPointOneEnhanced, [
-        //     entryPointTwo,
-        //     entryPointThree
-        // ])
-
-        // const ConnectedComp = connectWithShellAndObserve(
-        //     {
-        //         observedThree: host.getAPI(ThreeAPI).observables.three
-        //     },
-        //     (_shell, state: TestStateOne, ownProps): CompProps => {
-        //         mapStateToPropsSpy()
-        //         return {
-        //             valueOne: state.one.valueOne,
-        //             valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
-        //             valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
-        //         }
-        //     },
-        //     undefined,
-        //     shell
-        // )(PureComp)
+            undefined,
+            shell,
+            { allowOutOfEntryPoint: true }
+        )(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
