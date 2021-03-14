@@ -86,7 +86,7 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
         return entryPoint.tags ? { ...entryPoint.tags, $ep: entryPoint.name } : { $ep: entryPoint.name }
     }
 
-    function withEntryPointTags(keyValuePairs?: Object): Object | undefined {
+    function withEntryPointTags(keyValuePairs?: Object) {
         return keyValuePairs ? { ...keyValuePairs, ...entryPointTags } : entryPointTags
     }
 
