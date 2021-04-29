@@ -346,10 +346,10 @@ To contribute the reducers, perform these steps:
 
     ```TypeScript
     attach(shell: Shell) {
-        shell.contributeState<FooState>({
+        shell.contributeState<FooState>(() => ({
             baz: bazReducer,
             qux: quxReducer
-        })
+        }))
     }
     ```
 
