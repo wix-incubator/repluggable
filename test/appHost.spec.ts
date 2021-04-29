@@ -970,6 +970,100 @@ describe('App Host', () => {
                 `Cannot contribute API ${MockAPI1.name} of layer ${MockAPI1.layer} from entry point ${EntryPoint1.name} of layer ${EntryPoint1.layer}`
             )
         })
+
+        it('should support multi dimensional layers definition', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['INFRA', 'COMMON'] }
+            const layersDimension1 = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+            const layersDimension2 = [
+                {
+                    level: 0,
+                    name: 'COMMON'
+                },
+                {
+                    level: 1,
+                    name: 'SPECIFIC'
+                }
+            ]
+
+            const host = createAppHost([], {
+                ...emptyLoggerOptions,
+                layers: [layersDimension1, layersDimension2]
+            })
+
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: ['INFRA', 'COMMON'],
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                layer: ['PRODUCT', 'SPECIFIC'],
+                getDependencyAPIs: () => [MockAPI1]
+            }
+
+            expect(() => host.addShells([EntryPoint1, EntryPoint2])).not.toThrow()
+        })
+
+        it('should throw for multi dimensional layers violation', () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['INFRA', 'SPECIFIC'] }
+            const layersDimension1 = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'PRODUCT'
+                }
+            ]
+            const layersDimension2 = [
+                {
+                    level: 0,
+                    name: 'COMMON'
+                },
+                {
+                    level: 1,
+                    name: 'SPECIFIC'
+                }
+            ]
+
+            const host = createAppHost([], {
+                ...emptyLoggerOptions,
+                layers: [layersDimension1, layersDimension2]
+            })
+
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: ['INFRA', 'SPECIFIC'],
+                declareAPIs: () => [MockAPI1],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                }
+            }
+
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                layer: ['PRODUCT', 'COMMON'],
+                getDependencyAPIs: () => [MockAPI1]
+            }
+
+            expect(() => host.addShells([EntryPoint1, EntryPoint2])).toThrowError(
+                `Entry point ${EntryPoint2.name} of layer COMMON cannot depend on API ${MockAPI1.name} of layer SPECIFIC`
+            )
+        })
     })
 
     describe('API version', () => {

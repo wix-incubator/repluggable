@@ -48,6 +48,11 @@ import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
 
+const isMultiArray = <T>(v: T[] | T[][]): v is T[][] => _.every(v, _.isArray)
+const castMultiArray = <T>(v: T[] | T[][]): T[][] => {
+    return isMultiArray(v) ? v : [v]
+}
+
 export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory): LazyEntryPointDescriptor => {
     return {
         name,
@@ -87,12 +92,19 @@ const createUnreadyEntryPointsStore = (): UnreadyEntryPointsStore => {
     }
 }
 
+interface InternalAPILayer extends APILayer {
+    dimension: number
+}
+
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
 
     const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
-    const layers: APILayer[] = options.layers || []
+
+    const layers: InternalAPILayer[][] = _.map(options.layers ? castMultiArray(options.layers) : [], (singleDimension, i) =>
+        _.map(singleDimension, layer => ({ ...layer, dimension: i }))
+    )
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
@@ -105,7 +117,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
-    const APILayers = new WeakMap<AnySlotKey, APILayer | undefined>()
+    const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
     const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
 
@@ -228,35 +240,54 @@ miss: ${memoizedWithMissHit.miss}
         return memoizedWithMissHit
     }
 
-    function getLayerByName(layerName: string): APILayer {
-        const layer = _.find(layers, { name: layerName })
+    function getLayerByName(layerName: string): InternalAPILayer {
+        const layer = _(layers).flatten().find({ name: layerName })
         if (!layer) {
             throw new Error(`Cannot find layer ${layerName}`)
         }
         return layer
     }
 
-    type Dependency = { layer?: APILayer; apiKey: SlotKey<any> } | undefined
+    type Dependency = { layer?: InternalAPILayer; apiKey: SlotKey<any> } | undefined
     function validateEntryPointLayer(entryPoint: EntryPoint) {
         if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
             return
         }
-        const highestLevelDependency: Dependency = _.chain(entryPoint.getDependencyAPIs())
-            .map(apiKey => ({
-                layer: apiKey.layer ? getLayerByName(apiKey.layer) : undefined,
-                apiKey
-            }))
-            .maxBy(({ layer }) => (layer ? layer.level : -Infinity))
-            .value()
-        const currentLayer = getLayerByName(entryPoint.layer)
-
-        if (highestLevelDependency && highestLevelDependency.layer && currentLayer.level < highestLevelDependency.layer.level) {
-            throw new Error(
-                `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${slotKeyToName(
-                    highestLevelDependency.apiKey
-                )} of layer ${highestLevelDependency.layer.name}`
+        const highestLevelDependencies: Dependency[] = _.chain(entryPoint.getDependencyAPIs())
+            .flatMap<Dependency>(apiKey =>
+                apiKey.layer
+                    ? _(apiKey.layer)
+                          .castArray()
+                          .map(l => ({
+                              layer: getLayerByName(l),
+                              apiKey
+                          }))
+                          .value()
+                    : { apiKey }
             )
+            .groupBy(dependency => dependency?.layer?.dimension)
+            .map(dimension => _.maxBy(dimension, dependency => (dependency?.layer ? dependency.layer.level : -Infinity)))
+            .value()
+
+        const currentLayers = _(entryPoint.layer)
+            .castArray()
+            .map(l => getLayerByName(l))
+            .value()
+
+        const getCurrentLayerOfSameDimension = (layer: InternalAPILayer): InternalAPILayer | undefined => {
+            return currentLayers.find(entryPointLayer => entryPointLayer.dimension === layer.dimension)
         }
+
+        highestLevelDependencies.forEach(highestLevelDependency => {
+            const currentLayer = highestLevelDependency?.layer && getCurrentLayerOfSameDimension(highestLevelDependency.layer)
+            if (highestLevelDependency?.layer && currentLayer && currentLayer.level < highestLevelDependency.layer.level) {
+                throw new Error(
+                    `Entry point ${entryPoint.name} of layer ${currentLayer.name} cannot depend on API ${slotKeyToName(
+                        highestLevelDependency.apiKey
+                    )} of layer ${highestLevelDependency.layer.name}`
+                )
+            }
+        })
     }
 
     function validateLayers(entryPoints: AnyEntryPoint[]) {
@@ -817,7 +848,10 @@ miss: ${memoizedWithMissHit.miss}
                     )
                 }
 
-                if (!options.disableLayersValidation && (entryPoint.layer || key.layer) && entryPoint.layer !== key.layer) {
+                const areSameLayers = (l1: string | string[] | undefined, l2: string | string[] | undefined) =>
+                    _.isEqual(_(l1).castArray().sort().value(), _(l2).castArray().sort().value())
+
+                if (!options.disableLayersValidation && (entryPoint.layer || key.layer) && !areSameLayers(entryPoint.layer, key.layer)) {
                     throw new Error(
                         `Cannot contribute API ${slotKeyToName(key)} of layer ${key.layer || '<BLANK>'} from entry point ${
                             entryPoint.name
@@ -835,7 +869,15 @@ miss: ${memoizedWithMissHit.miss}
                 )
                 const apiSlot = declareSlot<TAPI>(key)
 
-                APILayers.set(key, !options.disableLayersValidation && entryPoint.layer ? getLayerByName(entryPoint.layer) : undefined)
+                APILayers.set(
+                    key,
+                    !options.disableLayersValidation && entryPoint.layer
+                        ? _(entryPoint.layer)
+                              .castArray()
+                              .map(l => getLayerByName(l))
+                              .value()
+                        : undefined
+                )
                 apiSlot.contribute(shell, monitoredAPI)
 
                 readyAPIs.add(key)
