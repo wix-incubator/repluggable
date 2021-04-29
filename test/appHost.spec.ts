@@ -1025,4 +1025,81 @@ describe('App Host', () => {
             expect(host.getAPI(AppHostAPI).getAppHostOptions()).toEqual(testHostOptions)
         })
     })
+
+    describe('Cyclic Mode', () => {
+        it('should load cyclic dependencies groups if all other dependencies are ready', () => {
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{}> = { name: 'API2' }
+            const API3: SlotKey<{}> = { name: 'API3' }
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        shell.contributeAPI(API1, () => ({}))
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API3],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({}))
+                    }
+                },
+                {
+                    name: 'Package3',
+                    getDependencyAPIs: () => [API1],
+                    declareAPIs: () => [API3],
+                    attach(shell) {
+                        shell.contributeAPI(API3, () => ({}))
+                    }
+                }
+            ]
+            const host = createAppHost(entryPoints, { ...testHostOptions, experimentalCyclicMode: true })
+
+            expect(host.hasShell(entryPoints[0].name)).toBe(true)
+            expect(host.hasShell(entryPoints[1].name)).toBe(true)
+            expect(host.hasShell(entryPoints[2].name)).toBe(true)
+        })
+
+        it('should not load cyclic dependencies groups if some other dependencies are not ready', () => {
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{}> = { name: 'API2' }
+            const API3: SlotKey<{}> = { name: 'API3' }
+            const API4: SlotKey<{}> = { name: 'API4' }
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        shell.contributeAPI(API1, () => ({}))
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API3],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({}))
+                    }
+                },
+                {
+                    name: 'Package3',
+                    getDependencyAPIs: () => [API1, API4],
+                    declareAPIs: () => [API3],
+                    attach(shell) {
+                        shell.contributeAPI(API3, () => ({}))
+                    }
+                }
+            ]
+            const host = createAppHost(entryPoints, { ...testHostOptions, experimentalCyclicMode: true })
+
+            expect(host.hasShell(entryPoints[0].name)).toBe(false)
+            expect(host.hasShell(entryPoints[1].name)).toBe(false)
+            expect(host.hasShell(entryPoints[2].name)).toBe(false)
+        })
+    })
 })
