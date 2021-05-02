@@ -972,7 +972,7 @@ describe('App Host', () => {
         })
 
         it('should support multi dimensional layers definition', () => {
-            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['INFRA', 'COMMON'] }
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['COMMON', 'INFRA'] }
             const layersDimension1 = [
                 {
                     level: 0,
@@ -1056,13 +1056,43 @@ describe('App Host', () => {
 
             const EntryPoint2: EntryPoint = {
                 name: 'MOCK_ENTRY_POINT_2',
-                layer: ['PRODUCT', 'COMMON'],
+                layer: ['COMMON', 'PRODUCT'],
                 getDependencyAPIs: () => [MockAPI1]
             }
 
             expect(() => host.addShells([EntryPoint1, EntryPoint2])).toThrowError(
                 `Entry point ${EntryPoint2.name} of layer COMMON cannot depend on API ${MockAPI1.name} of layer SPECIFIC`
             )
+        })
+
+        it('should enforce cross-multi-dimensional-layers name uniqueness', () => {
+            const layersDimension1 = [
+                {
+                    level: 0,
+                    name: 'INFRA'
+                },
+                {
+                    level: 1,
+                    name: 'NOT_UNIQUE'
+                }
+            ]
+            const layersDimension2 = [
+                {
+                    level: 0,
+                    name: 'COMMON'
+                },
+                {
+                    level: 1,
+                    name: 'NOT_UNIQUE'
+                }
+            ]
+
+            expect(() =>
+                createAppHost([], {
+                    ...emptyLoggerOptions,
+                    layers: [layersDimension1, layersDimension2]
+                })
+            ).toThrowError(`Cannot initialize host with non unique layers: NOT_UNIQUE`)
         })
     })
 

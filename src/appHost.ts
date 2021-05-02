@@ -96,15 +96,33 @@ interface InternalAPILayer extends APILayer {
     dimension: number
 }
 
+const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
+    if (!layers) {
+        return
+    }
+    const flatLayers = _.flatten(layers)
+    const nonUnique = _(flatLayers)
+        .countBy(({ name }) => name)
+        .pickBy(v => v > 1)
+        .keys()
+        .value()
+    if (nonUnique.length > 0) {
+        throw new Error(`Cannot initialize host with non unique layers: ${nonUnique}`)
+    }
+}
+
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
+
+    verifyLayersUniqueness(options.layers)
 
     const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
 
     const layers: InternalAPILayer[][] = _.map(options.layers ? castMultiArray(options.layers) : [], (singleDimension, i) =>
         _.map(singleDimension, layer => ({ ...layer, dimension: i }))
     )
+
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
