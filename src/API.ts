@@ -44,11 +44,11 @@ export interface SlotKey<T> extends AnySlotKey {
      */
     readonly empty?: T
     /**
-     * Application layer that will restrict usage of APIs contributed by this entry point.
+     * Application layer/layers that will restrict usage of APIs contributed by this entry point.
      * Layers hierarchy is defined in the host options
      * @See {AppHostOptions.layers}
      */
-    readonly layer?: string // TODO: Move to new interface - APIKey
+    readonly layer?: string | string[] // TODO: Move to new interface - APIKey
     /**
      * Version of the API that will be part of the API key unique identification
      */
@@ -67,11 +67,11 @@ export interface EntryPoint {
     readonly name: string
     readonly tags?: EntryPointTags
     /**
-     * Application layer that will restrict usage of APIs contributed by this entry point.
+     * Application layer / layers that will restrict usage of APIs contributed by this entry point.
      * Layers hierarchy is defined in the host options
      * See {AppHostOptions.layers}
      */
-    readonly layer?: string
+    readonly layer?: string | string[]
     /**
      * Define which API keys (a.k.a. contracts) are mandatory for this entry point to be executed
      * @return {SlotKey<any>[]} API keys to wait for implementation
@@ -293,7 +293,7 @@ export interface APILayer {
 export interface AppHostOptions {
     readonly logger?: HostLogger
     readonly monitoring: MonitoringOptions
-    readonly layers?: APILayer[]
+    readonly layers?: APILayer[] | APILayer[][]
     readonly disableLayersValidation?: boolean
     readonly disableCheckCircularDependencies?: boolean
     readonly enableStickyErrorBoundaries?: boolean
