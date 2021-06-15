@@ -5,7 +5,6 @@
     "moduleResolution": "node",
     "lib": ["dom", "esnext"],
     "jsx": "react",
-    "importHelpers": true,
     "declaration": true,
     "declarationMap": true,
     "noUnusedLocals": true,
