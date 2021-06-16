@@ -15,7 +15,8 @@
     "downlevelIteration": true,
     "allowUnreachableCode": false,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
   },
   "include": [
     "src",

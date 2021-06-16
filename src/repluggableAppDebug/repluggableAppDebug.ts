@@ -4,6 +4,7 @@ import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
 import { AnyExtensionSlot } from '../extensionSlot'
+import { activateProfilingLogger, deactivateProfilingLogger } from './profilingHostLogger.js'
 
 interface PerformanceDebugParams {
     options: AppHost['options']
@@ -81,6 +82,10 @@ export function setupDebugInfo({
         utils,
         hmr: {
             hot
+        },
+        profiling: {
+            startProfiling: activateProfilingLogger,
+            stopProfiling: deactivateProfilingLogger
         }
     }
 }
