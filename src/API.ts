@@ -427,6 +427,12 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     contributeMainView(fromShell: Shell, contributor: ReactComponentContributor): void
     contributeBoundaryAspect(component: ShellBoundaryAspect): void
     /**
+     * Contribute sub layers dimension to be validated as well as the main host's layers
+     *
+     * @param {APILayer[]} subLayers
+     */
+    contributeSubLayersDimension(subLayers: APILayer[]): void
+    /**
      * Create a function with internal cache until any state change in the {AppHost} store
      *
      * @template T
