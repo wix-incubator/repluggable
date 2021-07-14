@@ -45,12 +45,12 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
         return forceAll ? items : items.filter(item => item.condition())
     }
 
-    function getSingleItem(): ExtensionItem<T> | undefined {
-        return items.find(item => item.condition())
+    function getSingleItem(): ExtensionItem<T> {
+        return items.find(item => item.condition()) as ExtensionItem<T>
     }
 
-    function getItemByName(name: string): ExtensionItem<T> | undefined {
-        return items.find(item => item.name === name && item.condition())
+    function getItemByName(name: string): ExtensionItem<T> {
+        return items.find(item => item.name === name && item.condition()) as ExtensionItem<T>
     }
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
