@@ -145,18 +145,18 @@ export interface ExtensionSlot<T> {
      *
      * @return {ExtensionItem<T>} The first item in the slot
      */
-    getSingleItem(): ExtensionItem<T>
+    getSingleItem(): ExtensionItem<T> | undefined
     /**
      * Get a specific item in the slot
      *
      * @param {string} name Extension item name
-     * @return {ExtensionItem<T>} Extension item
+     * @return {ExtensionItem<T> | undefined} Extension item
      */
-    getItemByName(name: string): ExtensionItem<T>
+    getItemByName(name: string): ExtensionItem<T> | undefined
     /**
      * Remove items from the slot by predicate
      *
-     * @param {ExtensionItemFilter<T>} predicate Remove all items matching this predicate
+     * @param {ExtensionItemFilter<T> | undefined} predicate Remove all items matching this predicate
      */
     discardBy(predicate: ExtensionItemFilter<T>): void
 }
