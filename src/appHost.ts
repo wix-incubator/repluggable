@@ -486,7 +486,11 @@ miss: ${memoizedWithMissHit.miss}
 
     function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
         const APISlot = getSlot<TAPI>(key)
-        return APISlot.getSingleItem().contribution
+        const item = APISlot.getSingleItem()
+        if (item) {
+            return item.contribution
+        }
+        throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
     }
 
     function getStore(): ThrottledStore {
