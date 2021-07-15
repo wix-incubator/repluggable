@@ -490,7 +490,7 @@ miss: ${memoizedWithMissHit.miss}
         if (item) {
             return item.contribution
         }
-        throw new Error(`Extension item for extension slot with key '${key}' doesn't exist.`)
+        throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
     }
 
     function getStore(): ThrottledStore {
