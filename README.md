@@ -374,12 +374,12 @@ To contribute the reducers, perform these steps:
     const createFooAPI = (shell: Shell): FooAPI => {
         // this returns a scoped wrapper over the full
         // store of the main application
-        const entryPointStore = shell.getStore()
-
         // IMPORTANT! the generic parameter (FooState)
         // must match the one specified when contributing state!
         // In our example, we did contributeState<FooState>(...)
-        const getState = () => entryPointStore.getState<FooState>()
+        const entryPointStore = shell.getStore<FooState>()
+
+        const getState = () => entryPointStore.getState()
 
         return {
             ...
