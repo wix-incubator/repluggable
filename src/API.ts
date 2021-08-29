@@ -290,10 +290,23 @@ export interface APILayer {
     name: string
 }
 
+export type FunctionInterceptor = (name: string, original: Function) => Function
+export type PropertyInterceptor = (name: string, original: any) => any
+
+export interface APIAspect {
+    readonly name: string
+    readonly interceptFunction?: FunctionInterceptor
+    readonly interceptProperty?: PropertyInterceptor
+    readonly descendNestedLevel?: number
+}
+
+export type APIAspectFactory = (apiKey: AnySlotKey, normalizedName: string) => APIAspect
+
 export interface AppHostOptions {
     readonly logger?: HostLogger
     readonly monitoring: MonitoringOptions
     readonly layers?: APILayer[] | APILayer[][]
+    readonly apiAspects?: APIAspectFactory[]
     readonly disableLayersValidation?: boolean
     readonly disableCheckCircularDependencies?: boolean
     readonly enableStickyErrorBoundaries?: boolean
