@@ -62,23 +62,33 @@ function wrapWithShellContext<S, OP, SP, DP>(
                   }
                 : (_.stubObject as Returns<DP>)
 
+            const shouldComponentUpdate =
+                options.shouldComponentUpdate && this.props.shell.memoizeForState(options.shouldComponentUpdate, () => '*')
+
+            const memoWithShouldUpdate = <F extends AnyFunction>(f: F): F => {
+                let last: ReturnType<F> | null = null
+                return ((...args) => {
+                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell)) {
+                        return last
+                    }
+                    last = f(...args)
+                    return last
+                }) as F
+            }
+
             this.connectedComponent = reduxConnect<SP, DP, OP, S>(
-                this.mapStateToProps,
+                memoWithShouldUpdate(this.mapStateToProps),
                 this.mapDispatchToProps,
                 undefined,
                 options.shouldComponentUpdate
                     ? {
                           ...reduxConnectOptions,
                           areStatePropsEqual: wrapWithShouldUpdate(
-                              options.shouldComponentUpdate,
+                              shouldComponentUpdate,
                               reduxConnectOptions.areStatePropsEqual,
                               boundShell
                           ),
-                          areOwnPropsEqual: wrapWithShouldUpdate(
-                              options.shouldComponentUpdate,
-                              reduxConnectOptions.areOwnPropsEqual,
-                              boundShell
-                          )
+                          areOwnPropsEqual: wrapWithShouldUpdate(shouldComponentUpdate, reduxConnectOptions.areOwnPropsEqual, boundShell)
                       }
                     : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'

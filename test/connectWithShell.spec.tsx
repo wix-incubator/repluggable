@@ -127,7 +127,7 @@ describe('connectWithShell', () => {
         expect(func2).not.toHaveBeenCalled()
     })
 
-    it('should optimize props comparison with should update', () => {
+    it('should avoid mapping state with should update', () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
         type FuncProps = (event: any) => void
@@ -138,8 +138,12 @@ describe('connectWithShell', () => {
         const func1: FuncProps = jest.fn()
         const func2: FuncProps = jest.fn()
         const renderSpy = jest.fn()
+        const mapStateSpy = jest.fn()
         let props = { obj: { a: 1 }, func: func1 }
-        const mapStateToProps = () => props
+        const mapStateToProps = () => {
+            mapStateSpy()
+            return props
+        }
 
         let counter = 0
         host.getStore().replaceReducer(() => ({
@@ -170,17 +174,21 @@ describe('connectWithShell', () => {
 
         expect(root.find(ConnectedComp).text()).toBe('{"a":1}')
         expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
         update(root, _.cloneDeep(props))
         expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
         update(root, { ...props, obj: { a: 2 } })
         expect(root.find(ConnectedComp).text()).toBe('{"a":1}')
         expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
         update(root, { ...props, func: func2 })
         root.find(PureComp).simulate('click')
         expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
         expect(func1).toHaveBeenCalled()
         expect(func2).not.toHaveBeenCalled()
     })
