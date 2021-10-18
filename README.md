@@ -30,7 +30,7 @@ Run the following commands:
 ```
 npx create-react-app your-app-name --template typescript
 cd your-app-name
-yarn add react@^16.14.0 react-dom@^16.14.0 @types/react@^16.14.0 @types/react-dom@^16.9.0 repluggable
+yarn add react@16.14.0 react-dom@16.14.0 @types/react@16.14.0 @types/react-dom@16.9.0 repluggable
 rm src/App*
 rm src/logo*
 cp -R node_modules/repluggable/examples/helloWorld/src/ ./src
