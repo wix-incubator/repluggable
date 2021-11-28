@@ -168,41 +168,41 @@ export const createThrottledStore = (
     }
 
     const notifySubscribers = () => {
+        if (pendingBroadcastNotification || !pendingObservableNotifications) {
+            host.getAppHostServicesShell().log.monitor('ThrottledStore.notifySubscribers', {}, () =>
+                _.forEach(broadcastSubscribers, invoke)
+            )
+        }
+    }
+
+    const notifyObservers = () => {
+        if (pendingObservableNotifications) {
+            pendingObservableNotifications.forEach(observable => {
+                observable.notify()
+            })
+        }
+    }
+
+    const notifyAll = () => {
         try {
-            if (pendingBroadcastNotification || !pendingObservableNotifications) {
-                host.getAppHostServicesShell().log.monitor('ThrottledStore.notifySubscribers', {}, () =>
-                    _.forEach(broadcastSubscribers, invoke)
-                )
-            }
+            notifySubscribers()
+            notifyObservers()
         } finally {
             resetPendingNotifications()
         }
     }
 
-    const notifyObservers = () => {
-        try {
-            if (pendingObservableNotifications) {
-                pendingObservableNotifications.forEach(observable => {
-                    observable.notify()
-                })
-            }
-        } finally {
-            pendingObservableNotifications?.clear()
-        }
-    }
-
-    const notifySubscribersOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, notifySubscribers)
+    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, notifyAll)
 
     let cancelRender = _.noop
 
     store.subscribe(() => {
-        notifyObservers()
-        cancelRender = notifySubscribersOnAnimationFrame()
+        cancelRender = notifyAllOnAnimationFrame()
     })
 
     const flush = () => {
         cancelRender()
-        notifySubscribers()
+        notifyAll()
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
