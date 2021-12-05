@@ -2,6 +2,9 @@ import _ from 'lodash'
 
 export const propsDeepEqual = (propsA: any, propsB: any) => {
     const customizer: _.IsEqualCustomizer = (a, b, key, objectA) => {
+        if (key === '_owner') {
+            return true
+        }
         if (key === 'children' && objectA === propsA) {
             if (typeof a === 'function' && typeof b === 'function') {
                 return false
