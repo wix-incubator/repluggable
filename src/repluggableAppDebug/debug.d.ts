@@ -17,6 +17,7 @@ export interface RepluggableAppDebugInfo {
     shellInstallers: WeakMap<PrivateShell, string[]>
     utils: RepluggableDebugUtils
     hmr: RepluggableHMR
+    store: StoreDebugUtility
 }
 
 export interface RepluggableDebugUtils {
@@ -33,4 +34,15 @@ export interface RepluggableHMR {
 export interface APIDebugInfo {
     key: AnySlotKey
     impl(): any
+}
+
+export interface StoreDebugUtility {
+    startActionStats(): void
+    stopActionStats(): void
+    getActionStats(): StoreActionDebugInfo[]
+    resetActionStats(): void
+}
+export interface StoreActionDebugInfo {
+    type: string
+    count: number
 }
