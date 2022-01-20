@@ -1,25 +1,27 @@
 import { EntryPoint } from './API'
+import { RepluggableAppDebugInfo } from './repluggableAppDebug/debug'
 
-export const hot = (sourceModule: NodeModule, entryPoints: EntryPoint[]): EntryPoint[] => {
+export type Hot = (sourceModule: NodeModule, entryPoints: EntryPoint[], repluggableAppDebugObject?: RepluggableAppDebugInfo) => EntryPoint[]
+
+export const hot: Hot = (sourceModule, entryPoints, repluggableAppDebugObject) => {
     if (!sourceModule.hot) {
         return entryPoints
     }
 
     sourceModule.hot.accept()
+
+    const debug = repluggableAppDebugObject ?? window.repluggableAppDebug
+    const shellNames = entryPoints.map(x => x.name)
+    const shortModuleId = sourceModule.id.split('/').pop()
+
     sourceModule.hot.dispose(() => {
-        const shortModuleId = sourceModule.id.split('/').pop()
-        const oldShellNames = entryPoints.map(x => x.name)
-        console.debug(`----- HMR[${shortModuleId}] > REMOVING SHELLS >`, oldShellNames)
-        return window.repluggableAppDebug.host.removeShells(oldShellNames)
+        console.debug(`----- HMR[${shortModuleId}] > REMOVING SHELLS >`, shellNames)
+        return debug.host.removeShells(shellNames)
     })
 
     if (sourceModule.hot.status() === 'apply') {
-        const shortModuleId = sourceModule.id.split('/').pop()
-        console.debug(
-            `----- HMR[${shortModuleId}] > ADDING SHELLS >`,
-            entryPoints.map(x => x.name)
-        )
-        window.repluggableAppDebug.host.addShells(entryPoints)
+        console.debug(`----- HMR[${shortModuleId}] > ADDING SHELLS >`, shellNames)
+        debug.host.addShells(entryPoints)
     }
 
     return entryPoints

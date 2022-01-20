@@ -1,5 +1,6 @@
 import { EntryPoint, AppHost, AnySlotKey, LazyEntryPointFactory, PrivateShell } from '../API'
 import { AnyExtensionSlot } from '../extensionSlot'
+import { Hot } from '../hot'
 
 declare global {
     interface Window {
@@ -27,7 +28,7 @@ export interface RepluggableDebugUtils {
 }
 
 export interface RepluggableHMR {
-    hot(sourceModule: any, entryPoints: EntryPoint[]): EntryPoint[]
+    hot: Hot
 }
 
 export interface APIDebugInfo {
