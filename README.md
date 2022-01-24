@@ -502,6 +502,24 @@ TBD (advanced topic)
 
 TBD
 
+## Local development
+
+### HMR (hot module replacement)
+For a smooth local development experience, it's recommended to enable HMR, allowing packages' code to update immediately without the need to reload the entire page. (For more information on HMR, see [webpack's docs](https://webpack.js.org/concepts/hot-module-replacement))
+
+To enable HMR, use Repluggable's `hot` util to wrap the export of your repluggable package. For example, in the package root `index.ts`:
+
+```ts
+import { hot } from 'repluggable'
+import { FooEntryPoint } from './fooEntryPoint'
+import { BarEntryPoint } from './barEntryPoint'
+
+export default hot(module, [
+    FooEntryPoint,
+    BarEntryPoint
+])
+```
+
 # Architecture
 
 `repluggable` allows composition of a React+Redux application entirely from a list of pluggable packages.
