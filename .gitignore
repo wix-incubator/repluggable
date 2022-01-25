@@ -63,5 +63,6 @@ typings/
 
 # IDE specific settings
 .idea/
+.vscode/
 
 .DS_Store
