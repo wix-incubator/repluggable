@@ -185,8 +185,8 @@ export const createThrottledStore = (
 
     const notifyAll = () => {
         try {
-            notifySubscribers()
             notifyObservers()
+            notifySubscribers()
         } finally {
             resetPendingNotifications()
         }
@@ -206,7 +206,7 @@ export const createThrottledStore = (
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        resetPendingNotifications()
+        pendingBroadcastNotification = false
         const dispatchResult = store.dispatch(action)
         return dispatchResult
     }
