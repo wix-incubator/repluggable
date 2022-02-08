@@ -141,14 +141,20 @@ export const createThrottledStore = (
     const onBroadcastNotify = () => {
         pendingBroadcastNotification = true
     }
+
     const onObservableNotify = (observable: AnyPrivateObservableState) => {
         if (!pendingObservableNotifications) {
             pendingObservableNotifications = new Set<AnyPrivateObservableState>()
         }
         pendingObservableNotifications.add(observable)
     }
-    const resetPendingNotifications = () => {
+
+    const resetPendingBroadcastNotifications = () => {
         pendingBroadcastNotification = false
+    }
+
+    const resetAllPendingNotifications = () => {
+        resetPendingBroadcastNotifications()
         pendingObservableNotifications = undefined
     }
 
@@ -185,10 +191,10 @@ export const createThrottledStore = (
 
     const notifyAll = () => {
         try {
-            notifyObservers()
             notifySubscribers()
+            notifyObservers()
         } finally {
-            resetPendingNotifications()
+            resetAllPendingNotifications()
         }
     }
 
@@ -206,7 +212,7 @@ export const createThrottledStore = (
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        pendingBroadcastNotification = false
+        resetPendingBroadcastNotifications()
         const dispatchResult = store.dispatch(action)
         return dispatchResult
     }
@@ -218,10 +224,10 @@ export const createThrottledStore = (
         flush,
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
-        resetPendingNotifications
+        resetPendingNotifications: resetAllPendingNotifications
     }
 
-    resetPendingNotifications()
+    resetAllPendingNotifications()
     return result
 }
 
