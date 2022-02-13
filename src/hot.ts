@@ -12,7 +12,7 @@ export type Hot = typeof hot
  * export default hot(module, [FooEntryPoint, BarEntryPoint])
  * ```
  */
-export function hot(sourceModule: NodeModule, entryPoints: EntryPoint[], host?: AppHost) {
+export function hot(sourceModule: any, entryPoints: EntryPoint[], host?: AppHost) {
     if (!sourceModule.hot) {
         return entryPoints
     }
