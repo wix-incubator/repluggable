@@ -22,7 +22,8 @@ export {
     APILayer,
     StateObserverUnsubscribe,
     StateObserver,
-    ObservableState
+    ObservableState,
+    ScopedStore
 } from './API'
 
 export { AppMainView } from './appMainView'
