@@ -17,28 +17,36 @@ export function hot(sourceModule: any, entryPoints: EntryPoint[], host?: AppHost
         return entryPoints
     }
 
-    const hostInstance = host ?? window.repluggableAppDebug?.host
-    if (!hostInstance) {
-        console.error(
-            `HMR error: cannot find host object.\n` +
-                `hot(...) was called without the optional host parameter, and the fallback window.repluggableAppDebug.host doesn't exist`
-        )
-        return entryPoints
+    const getHostInstance = () => {
+        const hostInstance = host ?? window.repluggableAppDebug?.host
+        if (!hostInstance) {
+            console.error(
+                `HMR error: cannot find host object.\n` +
+                    `hot(...) was called without the optional host parameter, and the fallback window.repluggableAppDebug.host doesn't exist`
+            )
+        }
+
+        return hostInstance
     }
 
     const shellNames = entryPoints.map(x => x.name)
     const shortModuleId = sourceModule.id.split('/').pop()
 
     sourceModule.hot.accept()
-
-    sourceModule.hot.dispose(() => {
-        console.debug(`----- HMR[${shortModuleId}] > REMOVING SHELLS >`, shellNames)
-        return hostInstance.removeShells(shellNames)
+    sourceModule.hot.dispose(async () => {
+        const hostInstance = getHostInstance()
+        if (hostInstance) {
+            console.debug(`----- HMR[${shortModuleId}] > REMOVING SHELLS >`, shellNames)
+            await hostInstance.removeShells(shellNames)
+        }
     })
 
     if (sourceModule.hot.status() === 'apply') {
-        console.debug(`----- HMR[${shortModuleId}] > ADDING SHELLS >`, shellNames)
-        hostInstance.addShells(entryPoints)
+        const hostInstance = getHostInstance()
+        if (hostInstance) {
+            console.debug(`----- HMR[${shortModuleId}] > ADDING SHELLS >`, shellNames)
+            hostInstance.addShells(entryPoints)
+        }
     }
 
     return entryPoints
