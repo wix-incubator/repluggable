@@ -882,11 +882,14 @@ miss: ${memoizedWithMissHit.miss}
                 }
 
                 const api = factory()
+                const interceptedAPI = apiOptions?.functionInterceptors 
+                    ? interceptApiFunctions(api, apiOptions.functionInterceptors)
+                    : api
                 const monitoredAPI = monitorAPI(
                     shell,
                     options,
                     normalizeApiName(slotKeyToName(key)),
-                    api /*, trace, memoizedArr*/,
+                    interceptedAPI /*, trace, memoizedArr*/,
                     apiOptions
                 )
                 const apiSlot = declareSlot<TAPI>(key)
@@ -983,5 +986,15 @@ miss: ${memoizedWithMissHit.miss}
 
     function normalizeApiName(name: string) {
         return name.charAt(0).toLowerCase() + name.substring(1).replace(new RegExp(' ', 'g'), '')
+    }
+
+    function interceptApiFunctions<TAPI>(api: TAPI, interceptors: ContributeAPIOptions<TAPI>['functionInterceptors']) {
+        let intercepted = {...api}
+        for (const key in intercepted) {
+            intercepted[key] = interceptors && interceptors[key] 
+                ? interceptors[key](intercepted[key]) 
+                : intercepted[key]
+        }
+        return intercepted
     }
 }

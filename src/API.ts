@@ -318,6 +318,9 @@ export interface StatisticsMemoization {
 export interface ContributeAPIOptions<TAPI> {
     includesNamespaces?: boolean
     disableMonitoring?: boolean | (keyof TAPI)[]
+    functionInterceptors?: { 
+        [K in keyof TAPI]: (func: TAPI[K]) => TAPI[K]
+    }
 }
 
 export type StateObserverUnsubscribe = () => void
