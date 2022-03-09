@@ -191,6 +191,7 @@ function createShell(host: AppHost): PrivateShell {
         contributeState: _.noop,
         contributeObservableState: <TState, TSelectors, TAction>() => mockObservable<TSelectors>(undefined as any),
         contributeMainView: _.noop,
+        contributeSubLayersDimension: _.noop,
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
         memoize: _.identity,

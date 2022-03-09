@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
+import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey, subLayersSlotKey } from '../src/appHost'
 
 import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger, PrivateShell } from '../src/API'
 import {
@@ -428,7 +428,7 @@ describe('App Host', () => {
             const host = createAppHost([mockPackage], testHostOptions)
 
             const actual = sortSlotKeys(host.getAllSlotKeys())
-            const expected = sortSlotKeys([AppHostAPI, mainViewSlotKey, stateSlotKey, MockAPI])
+            const expected = sortSlotKeys([AppHostAPI, mainViewSlotKey, stateSlotKey, subLayersSlotKey, MockAPI])
 
             expect(actual).toEqual(expected)
         })
@@ -1138,6 +1138,93 @@ describe('App Host', () => {
                     layers: [layersDimension1, layersDimension2]
                 })
             ).not.toThrow()
+        })
+
+        it('should enforce contributed layers dimension', async () => {
+            const MockAPI1: SlotKey<{}> = { name: 'Mock-Host-API', layer: 'HOST_0' }
+            const MockAPI2: SlotKey<{}> = { name: 'Mock-Shell-API', layer: ['HOST_1', 'SHELL_1'] }
+            const hostLayersDimension = [
+                {
+                    level: 0,
+                    name: 'HOST_0'
+                },
+                {
+                    level: 1,
+                    name: 'HOST_1'
+                }
+            ]
+            const shellLayersDimension = [
+                {
+                    level: 0,
+                    name: 'SHELL_0'
+                },
+                {
+                    level: 1,
+                    name: 'SHELL_1'
+                }
+            ]
+
+            const EntryPoint1: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_1',
+                layer: 'HOST_0',
+                declareAPIs: () => [MockAPI1],
+                attach: shell => {
+                    shell.contributeAPI(MockAPI1, () => ({}))
+                    shell.contributeSubLayersDimension(shellLayersDimension)
+                }
+            }
+
+            const EntryPoint2: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_2',
+                layer: ['HOST_1', 'SHELL_1'],
+                getDependencyAPIs: () => [MockAPI1],
+                declareAPIs: () => [MockAPI2],
+                attach(shell) {
+                    shell.contributeAPI(MockAPI2, () => ({}))
+                }
+            }
+
+            const EntryPointViolation: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_3',
+                layer: ['HOST_1', 'SHELL_0'],
+                getDependencyAPIs: () => [MockAPI2]
+            }
+
+            const EntryPointWithShellLayersOnly: EntryPoint = {
+                name: 'MOCK_ENTRY_POINT_4',
+                layer: ['HOST_1', 'SHELL_0'],
+                getDependencyAPIs: () => []
+            }
+
+            const host = createAppHost([], {
+                ...emptyLoggerOptions,
+                layers: hostLayersDimension
+            })
+
+            expect(() => {
+                host.addShells([EntryPointWithShellLayersOnly])
+            }).toThrowError(`Cannot find layer SHELL_0`)
+
+            host.addShells([EntryPoint1])
+
+            expect(() => {
+                host.addShells([EntryPoint2])
+            }).not.toThrow()
+
+            expect(() => {
+                host.addShells([EntryPointViolation])
+            }).toThrowError(
+                `Entry point ${EntryPointViolation.name} of layer SHELL_0 cannot depend on API ${MockAPI2.name} of layer SHELL_1`
+            )
+
+            /* 
+            TBD - Should we detach entry points with layers defined by detached shells (?)
+            If so - should they stay on pending list? should we allow adding entry points with layers that are not defined?
+            (currently not really symmetrical with API dependencies behavior that are always pending if missing implementation)
+            */
+            // host.addShells([EntryPointWithShellLayersOnly])
+            // await host.removeShells([EntryPoint1.name])
+            // expect(host.hasShell(EntryPointWithShellLayersOnly.name)).toBe(false)
         })
     })
 

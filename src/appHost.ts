@@ -66,6 +66,9 @@ export const mainViewSlotKey: SlotKey<ReactComponentContributor> = {
 export const stateSlotKey: SlotKey<StateContribution> = {
     name: 'state'
 }
+export const subLayersSlotKey: SlotKey<InternalAPILayer[]> = {
+    name: 'sub-layers'
+}
 
 const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet => {
     return names.reduce<ShellToggleSet>((result: ShellToggleSet, name: string) => {
@@ -183,7 +186,16 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     declareSlot<ReactComponentContributor>(mainViewSlotKey)
     declareSlot<StateContribution>(stateSlotKey)
+    declareSlot<InternalAPILayer[]>(subLayersSlotKey)
+
     addShells([appHostServicesEntryPoint])
+
+    const getAllLayers = () =>
+        layers.concat(
+            getSlot(subLayersSlotKey)
+                .getItems()
+                .map(({ contribution }) => contribution)
+        )
 
     const memoize = <T extends AnyFunction>(
         func: T,
@@ -259,7 +271,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function getLayerByName(layerName: string): InternalAPILayer {
-        const layer = _(layers).flatten().find({ name: layerName })
+        const layer = _(getAllLayers()).flatten().find({ name: layerName })
         if (!layer) {
             throw new Error(`Cannot find layer ${layerName}`)
         }
@@ -268,7 +280,7 @@ miss: ${memoizedWithMissHit.miss}
 
     type Dependency = { layer?: InternalAPILayer; apiKey: SlotKey<any> } | undefined
     function validateEntryPointLayer(entryPoint: EntryPoint) {
-        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
+        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(getAllLayers())) {
             return
         }
         const highestLevelDependencies: Dependency[] = _.chain(entryPoint.getDependencyAPIs())
@@ -956,6 +968,18 @@ miss: ${memoizedWithMissHit.miss}
 
             contributeBoundaryAspect(component: ShellBoundaryAspect): void {
                 boundaryAspects.push(component)
+            },
+
+            contributeSubLayersDimension(subLayers) {
+                const dimension = layers.length
+                verifyLayersUniqueness((layers as APILayer[][]).concat(subLayers))
+                getSlot(subLayersSlotKey).contribute(
+                    shell,
+                    subLayers.map(l => ({
+                        ...l,
+                        dimension
+                    }))
+                )
             },
 
             memoizeForState(func, resolver, shouldClear?) {
