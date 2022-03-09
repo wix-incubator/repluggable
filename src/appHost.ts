@@ -28,7 +28,9 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    ObservableState
+    ObservableState,
+    ObservablesMap,
+    ObservedSelectorsMap,
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
@@ -41,7 +43,8 @@ import {
     PrivateThrottledStore,
     StateContribution,
     ThrottledStore,
-    updateThrottledStore
+    updateThrottledStore,
+    createChainedObservable
 } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
@@ -938,6 +941,14 @@ miss: ${memoizedWithMissHit.miss}
                 return observable
             },
 
+            createChainedObservable<M extends ObservablesMap, TSelector>(
+                sources: M, 
+                selectorFactory: (sourceSelectors: ObservedSelectorsMap<M>) => TSelector
+            ) {
+                const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
+                return createChainedObservable(shell,observableUniqueName, sources, selectorFactory)
+            },
+            
             getStore<TState>(): ScopedStore<TState> {
                 return {
                     dispatch: host.getStore().dispatch,

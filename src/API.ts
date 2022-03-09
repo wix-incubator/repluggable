@@ -322,10 +322,22 @@ export interface ContributeAPIOptions<TAPI> {
 
 export type StateObserverUnsubscribe = () => void
 export type StateObserver<TSelectorAPI> = (next: TSelectorAPI) => void
-export interface ObservableState<TSelectorAPI> {
-    subscribe(fromShell: Shell, callback: StateObserver<TSelectorAPI>): StateObserverUnsubscribe
-    current(): TSelectorAPI
+export interface StateObserverSubscribeResult<TSelectorAPI> {
+    currentSelector: TSelectorAPI
+    unsubscribe: StateObserverUnsubscribe
 }
+export interface ObservableState<TSelectorAPI> {
+    subscribe(fromShell: Shell, callback: StateObserver<TSelectorAPI>): StateObserverSubscribeResult<TSelectorAPI>
+}
+
+export interface ObservablesMap {
+    [key: string]: ObservableState<any>
+}
+
+export type ObservedSelectorsMap<M extends ObservablesMap> = {
+    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
+}
+
 
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
@@ -406,15 +418,31 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * Contribute a Redux reducer that will be added to the host store
      * Use it for rapidly changing state (e.g. changing on every mouse movement event)
      * Changes to this state won't trigger the usual subscribers.
-     * In order to subscribe to changes in this state, use the observer object returned by this function.
+     * In order to subscribe to changes in this state, use the observable object returned by this function.
      *
      * @template TState
      * @param {ReducersMapObjectContributor<TState>} contributor
-     * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
+     * @return {ObservableState<TSelector>} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
      */
     contributeObservableState<TState, TSelector, TAction extends Redux.AnyAction = Redux.AnyAction>(
         contributor: ReducersMapObjectContributor<TState, TAction>,
         selectorFactory: (state: TState) => TSelector
+    ): ObservableState<TSelector>
+
+    /**
+     * Create an observable which in turn uses other observable(s) as the source data of its state
+     *
+     * @template M an object type whose properties contain source observables
+     * @template TSelector the result ("selectors object") of this observable
+     * @param sourceSelectors An object type whose properties contain source observables
+     * @return {ObservableState<TSelector>} The resulting observable object which notifies whenever one of the source observables is changed
+     */
+    createChainedObservable<
+        M extends ObservablesMap, 
+        TSelector
+    >(
+        sources: M, 
+        selectorFactory: (sourceSelectors: ObservedSelectorsMap<M>) => TSelector
     ): ObservableState<TSelector>
 
     /**
