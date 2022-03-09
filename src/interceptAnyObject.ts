@@ -1,10 +1,9 @@
 import _ from 'lodash'
+import { FunctionInterceptor, PropertyInterceptor } from './API'
 
 export interface AnyObject {
     [key: string]: any
 }
-export type FunctionInterceptor = (name: string, original: Function) => Function
-export type PropertyInterceptor = (name: string, original: any) => any
 
 export function interceptAnyObject<T extends AnyObject>(
     inner: T,

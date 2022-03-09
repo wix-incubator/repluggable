@@ -47,6 +47,7 @@ import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
+import { interceptAnyObject } from './interceptAnyObject'
 
 const isMultiArray = <T>(v: T[] | T[][]): v is T[][] => _.every(v, _.isArray)
 const castMultiArray = <T>(v: T[] | T[][]): T[][] => {
@@ -881,14 +882,30 @@ miss: ${memoizedWithMissHit.miss}
                     )
                 }
 
+                const applyAPIAspects = (inner: TAPI): TAPI => {
+                    const normalizedName = normalizeApiName(slotKeyToName(key))
+
+                    let result = monitorAPI(shell, options, normalizedName, api /*, trace, memoizedArr*/, apiOptions)
+
+                    const aspectFactories = options.apiAspects
+
+                    if (aspectFactories) {
+                        for (const aspectFactory of aspectFactories) {
+                            const aspect = aspectFactory(key, normalizedName)
+                            result = interceptAnyObject(
+                                result,
+                                aspect.interceptFunction,
+                                aspect.interceptProperty,
+                                aspect.descendNestedLevel
+                            )
+                        }
+                    }
+
+                    return result
+                }
+
                 const api = factory()
-                const monitoredAPI = monitorAPI(
-                    shell,
-                    options,
-                    normalizeApiName(slotKeyToName(key)),
-                    api /*, trace, memoizedArr*/,
-                    apiOptions
-                )
+                const apiWithAspects = applyAPIAspects(api)
                 const apiSlot = declareSlot<TAPI>(key)
 
                 APILayers.set(
@@ -900,7 +917,7 @@ miss: ${memoizedWithMissHit.miss}
                               .value()
                         : undefined
                 )
-                apiSlot.contribute(shell, monitoredAPI)
+                apiSlot.contribute(shell, apiWithAspects)
 
                 readyAPIs.add(key)
 
@@ -910,7 +927,7 @@ miss: ${memoizedWithMissHit.miss}
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPointsStore.get(), 'name')))
                 }
 
-                return monitoredAPI
+                return apiWithAspects
             },
 
             contributeState<TState, TAction extends AnyAction = AnyAction>(

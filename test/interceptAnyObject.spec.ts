@@ -1,5 +1,6 @@
 import _ from 'lodash'
-import { interceptAnyObject, FunctionInterceptor, PropertyInterceptor } from '../src/interceptAnyObject'
+import { FunctionInterceptor, PropertyInterceptor } from '../src/API'
+import { interceptAnyObject } from '../src/interceptAnyObject'
 
 type LogSpy = jest.Mock<void, string[]>
 
