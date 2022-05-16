@@ -12,7 +12,7 @@ import {
     connectWithShellAndObserve,
     withThrowOnError
 } from '../testKit'
-import { ReactWrapper } from 'enzyme'
+import { mount, ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
 
 interface MockPackageState {
@@ -54,6 +54,21 @@ describe('connectWithShell', () => {
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
         expect(comp && comp.text()).toBe(mockPackage.name)
+    })
+
+    it('should have shell context outside of main view with renderOutsideProvider option', () => {
+        const { shell } = createMocks(mockPackage)
+
+        const PureComp = ({ shellName }: { shellName: string }) => <div className={'my-wrapper'}>{shellName}</div>
+        const mapStateToProps = (s: Shell) => ({ shellName: s.name })
+
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { renderOutsideProvider: true })(PureComp)
+
+        const reactWrapper = mount(<ConnectedComp />)
+        const myWrapperDiv = reactWrapper.find('.my-wrapper')
+
+        expect(myWrapperDiv).toBeDefined()
+        expect(myWrapperDiv && myWrapperDiv.text()).toBe(mockPackage.name)
     })
 
     it('should pass exact shell to mapDispatchToProps', () => {

@@ -9,7 +9,7 @@ import { StoreContext } from './storeContext'
 
 interface ShellRendererProps {
     shell: Shell
-    component: React.ReactNode
+    component: JSX.Element
     name?: string
     host?: AppHost
 }

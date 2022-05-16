@@ -196,7 +196,8 @@ function createShell(host: AppHost): PrivateShell {
         memoize: _.identity,
         clearCache: _.noop,
         getHostOptions: () => host.options,
-        log: createShellLogger(host, entryPoint)
+        log: createShellLogger(host, entryPoint),
+        wrapWithShellRenderer: component => component
     }
 }
 

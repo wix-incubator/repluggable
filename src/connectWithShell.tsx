@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { Shell, AnyFunction, ObservableState, StateObserverUnsubscribe } from './API'
+import { AnyFunction, ObservableState, StateObserverUnsubscribe, PrivateShell, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -39,7 +39,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
     mapDispatchToProps: MapDispatchToProps<OP, DP>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-) {
+): ComponentWithChildrenProps<OP> {
     class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
         public connectedComponent: React.ComponentType<OP>
         public mapStateToProps: (state: S, ownProps?: OP) => SP
@@ -122,15 +122,22 @@ function wrapWithShellContext<S, OP, SP, DP>(
     )
 }
 
+function wrapWithShellRenderer<OP>(boundShell: Shell, component: ComponentWithChildrenProps<OP>): ComponentWithChildrenProps<OP> {
+    return (props: WithChildren<OP>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
+}
+
 export interface ConnectWithShellOptions {
     readonly componentName?: string
     readonly allowOutOfEntryPoint?: boolean
     shouldComponentUpdate?(shell: Shell): boolean
+    renderOutsideProvider?: boolean
 }
+
+type ComponentWithChildrenProps<OP> = (props: WithChildren<OP>) => JSX.Element
 
 export type ConnectedComponentFactory<S = {}, OP = {}, SP = {}, DP = {}, OPPure = OP> = (
     component: React.ComponentType<OPPure & SP & DP>
-) => (props: WithChildren<OP>) => JSX.Element
+) => ComponentWithChildrenProps<OP>
 
 export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
     mapStateToProps: MapStateToProps<S, OP, SP>,
@@ -154,7 +161,11 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
 
     return (component: React.ComponentType<OP & SP & DP>) => {
         validateLifecycle(component)
-        return wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
+        const wrappedWithShellContext = wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
+        if (options.renderOutsideProvider) {
+            return wrapWithShellRenderer(boundShell, wrappedWithShellContext)
+        }
+        return wrappedWithShellContext
     }
 }
 
