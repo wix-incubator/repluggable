@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { FunctionComponent, ReactElement } from 'react'
+import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 
 import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
 import {
@@ -497,9 +497,13 @@ describe('connectWithShell-useCases', () => {
     }
 
     const renderSpy = jest.fn()
+    const mountSpy = jest.fn()
     const mapStateToPropsSpy = jest.fn()
 
     const PureComp: FunctionComponent<CompProps> = ({ valueOne, valueTwo, valueThree }) => {
+        useEffect(() => {
+            mountSpy()
+        }, [])
         renderSpy()
         return (
             <div>
@@ -561,6 +565,23 @@ describe('connectWithShell-useCases', () => {
 
         expect(receivedSelectors.length).toBe(1)
         expect(receivedSelectors[0].getValueThree()).toBe('updated_by_test')
+    })
+
+    it('should not mount connected component on props update', () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const { root } = renderInShellContext(<ConnectedComp />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(mountSpy).toHaveBeenCalledTimes(1)
+
+        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+        expect(mountSpy).toHaveBeenCalledTimes(1)
     })
 
     it('should update component on change in regular state', () => {
