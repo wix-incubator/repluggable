@@ -1,3 +1,4 @@
+import React from 'react'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -47,9 +48,12 @@ import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
+import { ShellRenderer } from '.'
 
-const isMultiArray = <T>(v: T[] | T[][]): v is T[][] => _.every(v, _.isArray)
-const castMultiArray = <T>(v: T[] | T[][]): T[][] => {
+function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
+    return _.every(v, _.isArray)
+}
+function castMultiArray<T>(v: T[] | T[][]): T[][] {
     return isMultiArray(v) ? v : [v]
 }
 
@@ -765,7 +769,9 @@ miss: ${memoizedWithMissHit.miss}
         let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
-        const isOwnContributedAPI = <TAPI>(key: SlotKey<TAPI>): boolean => getAPIContributor(key) === shell
+        function isOwnContributedAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+            return getAPIContributor(key) === shell
+        }
 
         const shell: PrivateShell = {
             name: entryPoint.name,
@@ -975,7 +981,11 @@ miss: ${memoizedWithMissHit.miss}
 
             getHostOptions: () => host.options,
 
-            log: createShellLogger(host, entryPoint)
+            log: createShellLogger(host, entryPoint),
+
+            wrapWithShellRenderer(component): JSX.Element {
+                return <ShellRenderer shell={shell} component={component} host={host} />
+            }
         }
 
         return shell
