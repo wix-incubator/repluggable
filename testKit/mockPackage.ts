@@ -31,7 +31,7 @@ export const mockShellInitialState: MockState = {
     mockValue: true
 }
 
-const TOGGLE_MOCK_VALUE = 'mockEntryPoint/mockAction'
+export const TOGGLE_MOCK_VALUE = 'mockEntryPoint/mockAction'
 
 const mockReducer = (state: MockState = mockShellInitialState, action: AnyAction): MockState => {
     switch (action.type) {

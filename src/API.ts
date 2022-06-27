@@ -4,7 +4,7 @@ import { ThrottledStore } from './throttledStore'
 
 export { AppHostAPI } from './appHostServices'
 
-export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush'>
+export type ScopedStore<S> = Pick<ThrottledStore<S>, 'dispatch' | 'getState' | 'subscribe' | 'flush' | 'hasPendingSubscribers'>
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
     TState,
