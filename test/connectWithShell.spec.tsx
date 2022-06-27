@@ -14,6 +14,7 @@ import {
 } from '../testKit'
 import { mount, ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
+import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -565,6 +566,17 @@ describe('connectWithShell-useCases', () => {
 
         expect(receivedSelectors.length).toBe(1)
         expect(receivedSelectors[0].getValueThree()).toBe('updated_by_test')
+    })
+
+    it('should get correct value for having pending subscribers', () => {
+        const { host } = createMocks(mockPackage)
+        const { dispatch, flush, hasPendingSubscribers } = host.getStore()
+
+        expect(hasPendingSubscribers()).toBe(false)
+        dispatch({ type: TOGGLE_MOCK_VALUE })
+        expect(hasPendingSubscribers()).toBe(true)
+        flush()
+        expect(hasPendingSubscribers()).toBe(false)
     })
 
     it('should not mount connected component on props update', () => {

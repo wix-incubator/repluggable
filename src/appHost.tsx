@@ -952,7 +952,8 @@ miss: ${memoizedWithMissHit.miss}
                         const entireStoreState = host.getStore().getState()
                         return entireStoreState[shell.name]
                     },
-                    flush: host.getStore().flush
+                    flush: host.getStore().flush,
+                    hasPendingSubscribers: host.getStore().hasPendingSubscribers
                 }
             },
 

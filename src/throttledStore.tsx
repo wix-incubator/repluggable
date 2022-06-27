@@ -41,6 +41,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 }
 
 export interface ThrottledStore<T = any> extends Store<T> {
+    hasPendingSubscribers(): boolean
     flush(): void
 }
 
@@ -224,7 +225,8 @@ export const createThrottledStore = (
         flush,
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
-        resetPendingNotifications: resetAllPendingNotifications
+        resetPendingNotifications: resetAllPendingNotifications,
+        hasPendingSubscribers: () => pendingBroadcastNotification
     }
 
     resetAllPendingNotifications()
