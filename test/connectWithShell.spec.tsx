@@ -50,7 +50,7 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapStateToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -63,7 +63,10 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div className={'my-wrapper'}>{shellName}</div>
         const mapStateToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { renderOutsideProvider: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            renderOutsideProvider: true,
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const reactWrapper = mount(<ConnectedComp />)
         const myWrapperDiv = reactWrapper.find('.my-wrapper')
@@ -78,7 +81,7 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapDispatchToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell)(PureComp)
+        const ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
@@ -118,7 +121,7 @@ describe('connectWithShell', () => {
             return <div onClick={func}>{JSON.stringify(obj)}</div>
         }
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
 
@@ -180,7 +183,10 @@ describe('connectWithShell', () => {
             return <div onClick={func}>{JSON.stringify(obj)}</div>
         }
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { shouldComponentUpdate: () => false })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            shouldComponentUpdate: () => false,
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
 
@@ -217,7 +223,7 @@ describe('connectWithShell', () => {
             valueFromState: getValueFromState(state)
         })
 
-        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell)(PureCompNeedsState)
+        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureCompNeedsState)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -247,7 +253,7 @@ describe('connectWithShell', () => {
             value: getValueFromState(state)
         })
 
-        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, getBoundShell())(PureComp)
+        const ConnectedWithState = connectWithShell(mapStateToProps, undefined, getBoundShell(), { allowOutOfEntryPoint: true })(PureComp)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(<ConnectedWithState />)
 
@@ -291,27 +297,19 @@ describe('connectWithShell', () => {
             value: getValueFromState(state)
         })
 
-        const ConnectedUnboundComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedUnboundComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const ConnectedUnboundCompWithChildren = connectWithShell<
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(
-            mapStateToProps,
-            undefined,
-            shell
-        )(PureCompWithChildren)
+        >(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureCompWithChildren)
 
         const ConnectedBoundCompWithChildren = connectWithShell<
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(
-            mapStateToProps,
-            undefined,
-            getBoundShell()
-        )(PureCompWithChildren)
+        >(mapStateToProps, undefined, getBoundShell(), { allowOutOfEntryPoint: true })(PureCompWithChildren)
 
         const { parentWrapper: withConnectedState } = renderInShellContext(
             <ConnectedUnboundCompWithChildren id="A">
@@ -335,7 +333,7 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
-        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         // act
         const result = renderInHost(<ConnectedComp />, host, shell)
@@ -358,7 +356,7 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
-        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         // act
 
@@ -391,7 +389,7 @@ describe('connectWithShell', () => {
         const PureComp: FunctionComponent<{}> = () => (
             <TestAspectContext.Consumer>{aspect => <div className="TEST-PURE-COMP">{aspect.theNumber}</div>}</TestAspectContext.Consumer>
         )
-        const ConnectedComp = connectWithShell(undefined, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         // act
 
@@ -581,7 +579,7 @@ describe('connectWithShell-useCases', () => {
 
     it('should not mount connected component on props update', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
             throw new Error('Connected component failed to render')
@@ -598,7 +596,7 @@ describe('connectWithShell-useCases', () => {
 
     it('should update component on change in regular state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
@@ -634,7 +632,7 @@ describe('connectWithShell-useCases', () => {
 
     it('should not update uninterested component on change in observable state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo, entryPointThree])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell)(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
@@ -681,7 +679,8 @@ describe('connectWithShell-useCases', () => {
                 }
             },
             undefined,
-            shell
+            shell,
+            { allowOutOfEntryPoint: true }
         )(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
