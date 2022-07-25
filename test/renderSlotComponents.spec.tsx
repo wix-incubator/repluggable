@@ -254,7 +254,8 @@ describe('SlotRenderer', () => {
                     num: state.test.num
                 }),
                 undefined,
-                mockShell
+                mockShell,
+                { allowOutOfEntryPoint: true }
             )(nativeComponentPure)
 
             const { root } = renderInHost(
@@ -326,7 +327,8 @@ describe('SlotRenderer', () => {
                         }
                     }
                 },
-                mockShell
+                mockShell,
+                { allowOutOfEntryPoint: true }
             )(nativeComponentPure)
 
             const { root } = renderInHost(
