@@ -14,8 +14,7 @@
     "esModuleInterop": true,
     "allowUnreachableCode": false,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "useUnknownInCatchVariables": false
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
     "src",
