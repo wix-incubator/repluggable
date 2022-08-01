@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES6",
     "module": "esnext",
     "moduleResolution": "node",
     "lib": ["dom", "esnext"],
@@ -12,7 +12,6 @@
     "strict": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "downlevelIteration": true,
     "allowUnreachableCode": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true

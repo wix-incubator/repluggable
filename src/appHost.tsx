@@ -560,7 +560,7 @@ miss: ${memoizedWithMissHit.miss}
 
         for (const scc of sccs) {
             if (scc.length > 1) {
-                host.log.log('debug', `Circular API dependency found: ${scc.map(x => slotKeyToName(x)).join(' -> ')}`)
+                host.log.log('error', `Circular API dependency found: ${scc.map(x => slotKeyToName(x)).join(' -> ')}`)
                 throw new Error(`Circular API dependency found`)
             }
         }
