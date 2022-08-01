@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React, { ReactNode } from 'react'
-import { connect, Options as ReduxConnectOptions, Provider } from 'react-redux'
+import { connect, Provider } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell, AppHost } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
@@ -14,9 +14,8 @@ interface ShellRendererProps {
     host?: AppHost
 }
 
-const connectOptions: ReduxConnectOptions = {
+const connectOptions = {
     context: StoreContext,
-    pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
 }

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React from 'react'
-import { connect as reduxConnect, Options as ReduxConnectOptions } from 'react-redux'
+import { connect as reduxConnect } from 'react-redux'
 import { Action, Dispatch } from 'redux'
 import { AnyFunction, ObservableState, StateObserverUnsubscribe, PrivateShell, Shell } from './API'
 import { ErrorBoundary } from './errorBoundary'
@@ -20,11 +20,9 @@ type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) 
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
-type Mandatory<T> = { [K in keyof T]-?: T[K] }
 
-const reduxConnectOptions: ReduxConnectOptions & Pick<Mandatory<ReduxConnectOptions>, 'areStatePropsEqual' | 'areOwnPropsEqual'> = {
+const reduxConnectOptions = {
     context: StoreContext,
-    pure: true,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
 }
