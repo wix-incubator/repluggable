@@ -599,8 +599,8 @@
 
 "@types/hoist-non-react-statics@^3.3.1":
   version "3.3.1"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/hoist-non-react-statics/-/hoist-non-react-statics-3.3.1.tgz#1124aafe5118cb591977aeb1ceaaed1070eb039f"
-  integrity sha1-ESSq/lEYy1kZd66xzqrtEHDrA58=
+  resolved "https://registry.npmjs.org/@types/hoist-non-react-statics/-/hoist-non-react-statics-3.3.1.tgz#1124aafe5118cb591977aeb1ceaaed1070eb039f"
+  integrity sha512-iMIqiko6ooLrTh1joXodJK5X9xeEALT1kM5G3ZLhD3hszxBdIEd5C75U834D9mLcINgD4OyZf5uQXjkuYydWvA==
   dependencies:
     "@types/react" "*"
     hoist-non-react-statics "^3.3.0"
@@ -674,8 +674,8 @@
 
 "@types/react-dom@^16.0.0":
   version "16.9.16"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/react-dom/-/react-dom-16.9.16.tgz#c591f2ed1c6f32e9759dfa6eb4abfd8041f29e39"
-  integrity sha1-xZHy7RxvMul1nfputKv9gEHynjk=
+  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-16.9.16.tgz#c591f2ed1c6f32e9759dfa6eb4abfd8041f29e39"
+  integrity sha512-Oqc0RY4fggGA3ltEgyPLc3IV9T73IGoWjkONbsyJ3ZBn+UPPCYpU2ec0i3cEbJuEdZtkqcCF2l1zf2pBdgUGSg==
   dependencies:
     "@types/react" "^16"
 
@@ -700,8 +700,8 @@
 
 "@types/use-sync-external-store@^0.0.3":
   version "0.0.3"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/@types/use-sync-external-store/-/use-sync-external-store-0.0.3.tgz#b6725d5f4af24ace33b36fafd295136e75509f43"
-  integrity sha1-tnJdX0rySs4zs2+v0pUTbnVQn0M=
+  resolved "https://registry.npmjs.org/@types/use-sync-external-store/-/use-sync-external-store-0.0.3.tgz#b6725d5f4af24ace33b36fafd295136e75509f43"
+  integrity sha512-EwmlvuaxPNej9+T4v5AuBPJa2x2UOJVdjCtDHgcDqitUeOtjnJKJ+apYjVcAoBEMjKW1VVFGZLUb5+qqa09XFA==
 
 "@types/webpack-env@^1.15.3":
   version "1.16.0"
@@ -5770,13 +5770,13 @@ react-is@^17.0.1:
 
 react-is@^18.0.0:
   version "18.2.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/react-is/-/react-is-18.2.0.tgz#199431eeaaa2e09f86427efbb4f1473edb47609b"
-  integrity sha1-GZQx7qqi4J+GQn77tPFHPttHYJs=
+  resolved "https://registry.npmjs.org/react-is/-/react-is-18.2.0.tgz#199431eeaaa2e09f86427efbb4f1473edb47609b"
+  integrity sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==
 
 react-redux@^8.0.0:
   version "8.0.2"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/react-redux/-/react-redux-8.0.2.tgz#bc2a304bb21e79c6808e3e47c50fe1caf62f7aad"
-  integrity sha1-vCowS7IeecaAjj5HxQ/hyvYveq0=
+  resolved "https://registry.npmjs.org/react-redux/-/react-redux-8.0.2.tgz#bc2a304bb21e79c6808e3e47c50fe1caf62f7aad"
+  integrity sha512-nBwiscMw3NoP59NFCXFf02f8xdo+vSHT/uZ1ldDwF7XaTpzm+Phk97VT4urYBl5TYAPNVaFm12UHAEyzkpNzRA==
   dependencies:
     "@babel/runtime" "^7.12.1"
     "@types/hoist-non-react-statics" "^3.3.1"
@@ -7234,8 +7234,8 @@ url@^0.11.0:
 
 use-sync-external-store@^1.0.0:
   version "1.2.0"
-  resolved "https://repo.dev.wixpress.com/artifactory/api/npm/npm-repos/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
-  integrity sha1-fb79bvP+TnZ6DPXXKHqs+1hGkoo=
+  resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
+  integrity sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==
 
 use@^3.1.0:
   version "3.1.1"
