@@ -765,7 +765,7 @@ miss: ${memoizedWithMissHit.miss}
         let storeEnabled = false
         let APIsEnabled = false
         let wasInitCompleted = false
-        let dependencyAPIs: AnySlotKey[] = []
+        let dependencyAPIs: Set<AnySlotKey> = new Set()
         let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
@@ -811,7 +811,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             setDependencyAPIs(APIs: AnySlotKey[]): void {
-                dependencyAPIs = APIs
+                dependencyAPIs = new Set(APIs)
             },
 
             canUseAPIs(): boolean {
@@ -857,7 +857,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
-                if (dependencyAPIs.indexOf(key) >= 0 || isOwnContributedAPI(key)) {
+                if (dependencyAPIs.has(key) || isOwnContributedAPI(key)) {
                     return host.getAPI(key)
                 }
                 throw new Error(
