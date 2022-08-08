@@ -71,6 +71,11 @@ export const stateSlotKey: SlotKey<StateContribution> = {
     name: 'state'
 }
 
+interface MemoizedFunction {
+    f: Partial<_.MemoizedFunction>
+    shouldClear?(): boolean
+}
+
 const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet => {
     return names.reduce<ShellToggleSet>((result: ShellToggleSet, name: string) => {
         result[name] = isInstalled
@@ -141,7 +146,8 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
-    const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
+    const memoizedFunctionData: MemoizedFunction[] = []
+    const functionToMemFunction: Map<AnyFunction, MemoizedFunction> = new Map()
 
     const hostAPI: AppHostAPI = {
         getAllEntryPoints: () => [...addedShells.entries()].map(([, { entryPoint }]) => entryPoint),
@@ -582,7 +588,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function flushMemoizedForState() {
-        memoizedFunctions.forEach(({ f, shouldClear }) => {
+        memoizedFunctionData.forEach(({ f, shouldClear }) => {
             if ((shouldClear || _.stubTrue)()) {
                 clearCache(f)
             }
@@ -967,8 +973,18 @@ miss: ${memoizedWithMissHit.miss}
 
             memoizeForState(func, resolver, shouldClear?) {
                 const memoized = memoize(func, resolver)
-                memoizedFunctions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
+                const memFn = shouldClear ? { f: memoized, shouldClear, original: func } : { f: memoized }
+                memoizedFunctionData.push(memFn)
+                functionToMemFunction.set(func, memFn)
+
                 return memoized
+            },
+            removeFromMemoizeForState(func) {
+                const memoizedFn = functionToMemFunction.get(func)
+
+                const indexToDelete = memoizedFunctionData.findIndex(it => it === memoizedFn)
+
+                memoizedFunctionData.splice(indexToDelete, 1)
             },
             flushMemoizedForState,
             memoize(func, resolver) {

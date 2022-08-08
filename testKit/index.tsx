@@ -193,6 +193,7 @@ function createShell(host: AppHost): PrivateShell {
         contributeMainView: _.noop,
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,
+        removeFromMemoizeForState: _.identity,
         memoize: _.identity,
         clearCache: _.noop,
         getHostOptions: () => host.options,

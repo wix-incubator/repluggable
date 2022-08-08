@@ -92,6 +92,12 @@ function wrapWithShellContext<S, OP, SP, DP>(
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
         }
 
+        componentWillUnmount() {
+            if (options.shouldComponentUpdate) {
+                ((this.props.shell as unknown) as PrivateShell).removeFromMemoizeForState(options.shouldComponentUpdate)
+            }
+        }
+
         public render() {
             const Component = this.connectedComponent
             const props = _.omit(this.props, 'shell') as OP
