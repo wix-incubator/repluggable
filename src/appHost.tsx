@@ -981,6 +981,7 @@ miss: ${memoizedWithMissHit.miss}
             },
             removeFromMemoizeForState(func) {
                 const memoizedFn = functionToMemFunction.get(func)
+                functionToMemFunction.delete(func)
 
                 const indexToDelete = memoizedFunctionData.findIndex(it => it === memoizedFn)
 
