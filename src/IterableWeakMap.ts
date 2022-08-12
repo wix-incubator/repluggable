@@ -5,7 +5,7 @@ interface WakMapValue<K extends object, V> {
 
 export class IterableWeakMap<K extends object = object, V = any> implements Map<K, V> {
     private readonly weakMap = new WeakMap<K, WakMapValue<K, V>>()
-    private readonly refSet: Set<WeakRef<any>> = new Set()
+    private readonly refSet: Set<WeakRef<K>> = new Set()
     private readonly finalizationGroup = new FinalizationRegistry(IterableWeakMap.cleanup)
 
     private static cleanup({ set, ref }: { set: Set<WeakRef<any>>; ref: WeakRef<any> }) {

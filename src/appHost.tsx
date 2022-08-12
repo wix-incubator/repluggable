@@ -588,9 +588,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function flushMemoizedForState() {
-        const keys = Array.from(memoizedFunctions.values())
-
-        keys.forEach(({ f, shouldClear }) => {
+        memoizedFunctions.forEach(({ f, shouldClear }) => {
             if ((shouldClear || _.stubTrue)()) {
                 clearCache(f)
             }
