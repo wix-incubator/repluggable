@@ -1,6 +1,17 @@
 import { IterableWeakMap } from '../src/IterableWeakMap'
 
 describe('IterableWeakMap', () => {
+    describe('#constructor', () => {
+        it('should add initial values to Map', function () {
+            const ref = {}
+            const value = {}
+            const iwm = new IterableWeakMap([[ref, value]])
+
+            const entries = Array.from(iwm.entries())
+            expect(entries).toEqual([[ref, value]])
+        })
+    })
+
     describe('#set', () => {
         it('should add new value', function () {
             const iwm = new IterableWeakMap()
@@ -40,16 +51,31 @@ describe('IterableWeakMap', () => {
     })
 
     describe('#delete', () => {
-        it('should delete value from Map', function () {
+        it('should delete value from Map and return true', function () {
             const iwm = new IterableWeakMap()
             const ref = {}
             const value = {}
 
             iwm.set(ref, value)
 
-            iwm.delete(ref)
+            const res = iwm.delete(ref)
 
             expect(iwm.size).toBe(0)
+            expect(res).toBeTruthy()
+        })
+
+        it('should return false if there is no ref in Map', function () {
+            const iwm = new IterableWeakMap()
+            const ref = {}
+            const value = {}
+            const refToDelete = {}
+
+            iwm.set(ref, value)
+
+            const res = iwm.delete(refToDelete)
+
+            expect(iwm.size).toBe(1)
+            expect(res).toBeFalsy()
         })
     })
 
@@ -131,6 +157,40 @@ describe('IterableWeakMap', () => {
                 [ref, value, iwm],
                 [ref2, value2, iwm]
             ])
+        })
+    })
+
+    describe('#keys', () => {
+        it('should return all keys in Map', function () {
+            const iwm = new IterableWeakMap()
+            const ref = {}
+            const value = {}
+            const ref2 = {}
+            const value2 = {}
+
+            iwm.set(ref, value)
+            iwm.set(ref2, value2)
+
+            const res = Array.from(iwm.keys())
+
+            expect(res).toEqual([ref, ref2])
+        })
+    })
+
+    describe('#valeus', () => {
+        it('should return all values in Map', function () {
+            const iwm = new IterableWeakMap()
+            const ref = {}
+            const value = {}
+            const ref2 = {}
+            const value2 = {}
+
+            iwm.set(ref, value)
+            iwm.set(ref2, value2)
+
+            const res = Array.from(iwm.values())
+
+            expect(res).toEqual([value, value2])
         })
     })
 
