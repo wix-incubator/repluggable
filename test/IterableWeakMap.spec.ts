@@ -135,9 +135,11 @@ describe('IterableWeakMap', () => {
     })
 
     describe('memory', () => {
+        let originalFinalizationRegistry: FinalizationRegistry
         let cleanupMemory = (ref: any) => {}
 
         beforeEach(() => {
+            originalFinalizationRegistry = FinalizationRegistry as any
             window.FinalizationRegistry = function (cleanupCb: (heldValue: any) => void) {
                 const heldValueSet = new Map()
 
@@ -154,6 +156,10 @@ describe('IterableWeakMap', () => {
                     unregister() {}
                 } as unknown) as FinalizationRegistry
             } as any
+        })
+
+        afterEach(() => {
+            window.FinalizationRegistry = originalFinalizationRegistry as any
         })
 
         it('should be auto cleaned when ref in Map is freeing in program', function () {
