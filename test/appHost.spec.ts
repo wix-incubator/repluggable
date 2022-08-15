@@ -726,6 +726,86 @@ describe('App Host', () => {
 
             expect(objForStateA).toBe(host.getAPI(newAPI).getNewObject())
         })
+
+        describe('memory cleanup:', () => {
+            let originalFinalizationRegistry: FinalizationRegistry
+            let cleanupMemory = (ref: any) => {}
+
+            beforeEach(() => {
+                originalFinalizationRegistry = FinalizationRegistry as any
+                window.FinalizationRegistry = function (cleanupCb: (heldValue: any) => void) {
+                    const heldValueSet = new Map()
+
+                    cleanupMemory = ref => {
+                        const heldValue = heldValueSet.get(ref)
+
+                        cleanupCb(heldValue)
+                    }
+
+                    return ({
+                        register(target: object, heldValue: any, unregisterToken?: object) {
+                            heldValueSet.set(target, heldValue)
+                        },
+                        unregister() {}
+                    } as unknown) as FinalizationRegistry
+                } as any
+            })
+
+            afterEach(() => {
+                window.FinalizationRegistry = originalFinalizationRegistry as any
+            })
+
+            it('should remove memoized function from memory when there is no ref to memoized function', () => {
+                const host = createAppHost([], testHostOptions)
+
+                interface NewAPI {
+                    getNewObject(): object
+                    getNewObject2(): object
+                }
+                const newAPI: SlotKey<NewAPI> = { name: 'newAPI' }
+                let memFn1: _.MemoizedFunction | null = null
+                let memFn2: _.MemoizedFunction | null = null
+                const createAPI = (shell: Shell): NewAPI => {
+                    memFn1 = shell.memoizeForState(() => ({}), _.stubTrue, _.stubTrue) as _.MemoizedFunction
+                    memFn2 = shell.memoizeForState(() => ({}), _.stubTrue, _.stubTrue) as _.MemoizedFunction
+
+                    memFn1.cache.clear = jest.fn()
+                    memFn2.cache.clear = jest.fn()
+
+                    return {
+                        getNewObject: memFn1 as any,
+                        getNewObject2: memFn2 as any
+                    }
+                }
+                addMockShell(host, {
+                    declareAPIs: () => [newAPI],
+                    attach(shell) {
+                        shell.contributeAPI(newAPI, () => createAPI(shell))
+                    }
+                })
+
+                if (memFn1 && memFn2) {
+                    const cacheFnMock1 = (memFn1 as any).cache.clear
+                    const cacheFnMock2 = (memFn2 as any).cache.clear
+
+                    host.getStore().dispatch({ type: 'MOCK_ACTION' })
+                    host.getStore().flush()
+
+                    expect(cacheFnMock1).toHaveBeenCalledTimes(1)
+                    expect(cacheFnMock2).toHaveBeenCalledTimes(1)
+
+                    cleanupMemory(memFn1)
+
+                    host.getStore().dispatch({ type: 'MOCK_ACTION' })
+                    host.getStore().flush()
+
+                    expect(cacheFnMock1).toHaveBeenCalledTimes(1)
+                    expect(cacheFnMock2).toHaveBeenCalledTimes(2)
+                } else {
+                    throw Error('memFn1 or memFn2 is not defined')
+                }
+            })
+        })
     })
 
     describe('Entry Point Shell Scoping', () => {
