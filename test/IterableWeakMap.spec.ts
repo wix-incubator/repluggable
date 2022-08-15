@@ -156,7 +156,7 @@ describe('IterableWeakMap', () => {
             } as any
         })
 
-        it('should be cleaned when there is not refs to Map key', function () {
+        it('should be auto cleaned when ref in Map is freeing in program', function () {
             const iwm = new IterableWeakMap()
             const ref = {}
             const value = {}
