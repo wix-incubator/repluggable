@@ -86,7 +86,11 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         .value()
         .flatMap((entryPoint: EntryPoint) => (entryPoint.declareAPIs ? entryPoint.declareAPIs() : []))
 
-    await new Promise<void>(async resolve => {
+    const timeoutPromise = new Promise((resolve, reject) => {
+        setTimeout(() => reject(new Error('createAppHostAndWaitForLoading - waiting for loading timed out')), 3000)
+    })
+
+    const loadingPromise = new Promise<void>(async resolve => {
         await appHost.addShells([
             {
                 name: 'Depends on all declared APIs',
@@ -100,7 +104,7 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         ])
     })
 
-    return appHost
+    return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
 
 export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }

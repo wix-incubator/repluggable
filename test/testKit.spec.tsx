@@ -118,8 +118,14 @@ describe('App Host TestKit', () => {
         expect(host.getAPI(key).f()).toBe(1)
     })
 
-    it('should wait for loading all packages', async () => {
-        const host = await createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
-        expect(host.getAPI(MockPublicAPI)).toBeDefined()
+    describe('createAppHostAndWaitForLoading', () => {
+        it('should wait for loading all packages', async () => {
+            const host = await createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
+            expect(host.getAPI(MockPublicAPI)).toBeDefined()
+        })
+
+        it('should throw if failed to load all packages', async () => {
+            await expect(createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])).rejects.toThrow()
+        })
     })
 })
