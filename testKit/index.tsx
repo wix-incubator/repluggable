@@ -79,6 +79,30 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
     return createAppHost([...packages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true })
 }
 
+export async function createAppHostAndWaitForLoading(packages: EntryPointOrPackage[], pacts: PactAPIBase[]): Promise<AppHost> {
+    const appHost = createAppHostWithPacts(packages, pacts)
+    const declaredAPIs = _(packages)
+        .flatten()
+        .value()
+        .flatMap((entryPoint: EntryPoint) => (entryPoint.declareAPIs ? entryPoint.declareAPIs() : []))
+
+    await new Promise<void>(async resolve => {
+        await appHost.addShells([
+            {
+                name: 'Depends on all declared APIs',
+                getDependencyAPIs() {
+                    return declaredAPIs
+                },
+                extend() {
+                    resolve()
+                }
+            }
+        ])
+    })
+
+    return appHost
+}
+
 export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
 export const renderHost: RenderHostType = (host: AppHost) => {
     const root = mount(<AppMainView host={host} />) as ReactWrapper
