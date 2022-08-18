@@ -49,6 +49,7 @@ import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
 import { ShellRenderer } from '.'
+import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -69,6 +70,11 @@ export const mainViewSlotKey: SlotKey<ReactComponentContributor> = {
 }
 export const stateSlotKey: SlotKey<StateContribution> = {
     name: 'state'
+}
+
+interface MemoizedFunctionData {
+    f: Partial<_.MemoizedFunction>
+    shouldClear?(): boolean
 }
 
 const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet => {
@@ -141,7 +147,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
-    const memoizedFunctions: { f: Partial<_.MemoizedFunction>; shouldClear?(): boolean }[] = []
+    const memoizedFunctions: IterableWeakMap<AnyFunction, MemoizedFunctionData> = new IterableWeakMap()
 
     const hostAPI: AppHostAPI = {
         getAllEntryPoints: () => [...addedShells.entries()].map(([, { entryPoint }]) => entryPoint),
@@ -967,7 +973,7 @@ miss: ${memoizedWithMissHit.miss}
 
             memoizeForState(func, resolver, shouldClear?) {
                 const memoized = memoize(func, resolver)
-                memoizedFunctions.push(shouldClear ? { f: memoized, shouldClear } : { f: memoized })
+                memoizedFunctions.set(memoized, shouldClear ? { f: memoized, shouldClear } : { f: memoized })
                 return memoized
             },
             flushMemoizedForState,
