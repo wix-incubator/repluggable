@@ -119,15 +119,19 @@ describe('App Host TestKit', () => {
     })
 
     describe('createAppHostAndWaitForLoading', () => {
+        jest.useFakeTimers()
+
         it('should wait for loading all packages', async () => {
-            const host = await createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
+            const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
+            jest.runAllTimers()
+            const host = await hostPromise
             expect(host.getAPI(MockPublicAPI)).toBeDefined()
         })
 
         it('should throw if failed to load all packages', async () => {
-            await expect(createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])).rejects.toThrow(
-                new RegExp(MockPublicAPI.name)
-            )
+            const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])
+            jest.runAllTimers()
+            await expect(hostPromise).rejects.toThrow(new RegExp(MockPublicAPI.name))
         })
     })
 })
