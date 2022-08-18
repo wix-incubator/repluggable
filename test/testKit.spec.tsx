@@ -125,7 +125,9 @@ describe('App Host TestKit', () => {
         })
 
         it('should throw if failed to load all packages', async () => {
-            await expect(createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])).rejects.toThrow()
+            await expect(createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])).rejects.toThrow(
+                new RegExp(MockPublicAPI.name)
+            )
         })
     })
 })

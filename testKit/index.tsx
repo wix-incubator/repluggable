@@ -87,11 +87,16 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         .flatMap((entryPoint: EntryPoint) => (entryPoint.declareAPIs ? entryPoint.declareAPIs() : []))
 
     const timeoutPromise = new Promise((resolve, reject) => {
-        setTimeout(
-            () =>
-                reject(new Error('createAppHostAndWaitForLoading - waiting for loading timed out - not all declaredAPIs were contributed')),
-            3000
-        )
+        setTimeout(() => {
+            const readyAPIs = Array.from(window.repluggableAppDebug.readyAPIs)
+            const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
+            reject(
+                new Error(
+                    'createAppHostAndWaitForLoading - waiting for loading timed out - the following declaredAPIs were not contributed ' +
+                        JSON.stringify(unreadyAPIs)
+                )
+            )
+        }, 3000)
     })
 
     const loadingPromise = new Promise<void>(async resolve => {
