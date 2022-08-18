@@ -142,7 +142,7 @@ describe('IterableWeakMap', () => {
                 const iwm = new IterableWeakMap()
                 const ref = {}
                 const value = {}
-                let ref2: any = {}
+                const ref2 = {}
                 const value2 = {}
 
                 iwm.set(ref, value)
@@ -150,16 +150,14 @@ describe('IterableWeakMap', () => {
 
                 const res: [object, object, IterableWeakMap<any, any>][] = []
 
-                ref2 = null
-
                 iwm.forEach((v, k, map) => {
                     res.push([v, k, map])
                 })
 
-                // expect(res).toEqual([
-                //     [ref, value, iwm],
-                //     [ref2, value2, iwm]
-                // ])
+                expect(res).toEqual([
+                    [ref, value, iwm],
+                    [ref2, value2, iwm]
+                ])
             })
         })
 
