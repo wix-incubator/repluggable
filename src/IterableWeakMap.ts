@@ -10,13 +10,14 @@ const isWeakRef = (val: unknown): val is WeakRef<any> => {
 }
 
 const createWeakMapOrPlain = <T extends object>(val: T): WeakRef<T> | T => {
-    return WeakRef ? new WeakRef(val) : val
+    return typeof WeakRef !== 'undefined' ? new WeakRef(val) : val
 }
 
 export class IterableWeakMap<K extends object = object, V = any> implements Map<K, V> {
     private readonly weakMap = new WeakMap<K, WeakMapValue<K, V>>()
     private readonly refSet: Set<WeakRefOrPlain<K>> = new Set()
-    private readonly finalizationGroup = FinalizationRegistry ? new FinalizationRegistry(IterableWeakMap.cleanup) : null
+    private readonly finalizationGroup =
+        typeof FinalizationRegistry !== 'undefined' ? new FinalizationRegistry(IterableWeakMap.cleanup) : null
 
     private static cleanup({ set, ref }: { set: Set<WeakRefOrPlain<any>>; ref: WeakRefOrPlain<any> }) {
         set.delete(ref)

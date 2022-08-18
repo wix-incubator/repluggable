@@ -261,10 +261,10 @@ describe('IterableWeakMap', () => {
         beforeAll(() => {
             originalWeakRef = global.WeakRef
             // @ts-ignore
-            global.WeakRef = undefined
+            delete global.WeakRef
             originalFinalizationRegistry = global.FinalizationRegistry
             // @ts-ignore
-            global.FinalizationRegistry = undefined
+            delete global.FinalizationRegistry
         })
 
         afterAll(() => {
