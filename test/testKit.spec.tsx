@@ -2,6 +2,8 @@ import _ from 'lodash'
 import { EntryPoint, EntryPointOrPackage, SlotKey } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
 import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage, createAppHostWithPacts, PactAPI } from '../testKit'
+import { asyncLoadMockPackage, dependsOnMockPackageEntryPoint, MockPublicAPI } from '../testKit/mockPackage'
+import { createAppHostAndWaitForLoading } from '../testKit/index'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot
@@ -114,5 +116,28 @@ describe('App Host TestKit', () => {
         }
         const host = createAppHostWithPacts([], [pactAPI])
         expect(host.getAPI(key).f()).toBe(1)
+    })
+
+    describe('createAppHostAndWaitForLoading', () => {
+        beforeAll(() => {
+            jest.useFakeTimers()
+        })
+
+        afterAll(() => {
+            jest.useRealTimers()
+        })
+
+        it('should wait for loading all packages', async () => {
+            const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
+            jest.runAllTimers()
+            const host = await hostPromise
+            expect(host.getAPI(MockPublicAPI)).toBeDefined()
+        })
+
+        it('should throw if failed to load all packages', async () => {
+            const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])
+            jest.runAllTimers()
+            await expect(hostPromise).rejects.toThrow(new RegExp(MockPublicAPI.name))
+        })
     })
 })

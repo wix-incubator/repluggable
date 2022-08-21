@@ -56,6 +56,36 @@ export const mockPackage: EntryPoint = {
     }
 }
 
+export const asyncLoadMockPackage: EntryPoint = {
+    name: 'ASYNC_MOCK_ENTRY_POINT',
+    declareAPIs() {
+        return [MockAPI]
+    },
+    async extend(shell: Shell) {
+        await new Promise<void>(resolve => {
+            setTimeout(() => {
+                shell.contributeAPI(MockAPI, () => createMockAPI(shell))
+                resolve()
+            }, 500)
+        })
+    }
+}
+
+export const dependsOnMockPackageEntryPoint: EntryPoint = {
+    name: 'DEPENDS ON MOCK API',
+    getDependencyAPIs() {
+        return [MockAPI]
+    },
+    declareAPIs() {
+        return [MockPublicAPI]
+    },
+    attach(shell: Shell) {
+        shell.contributeAPI(MockPublicAPI, () => ({
+            stubTrue: () => true
+        }))
+    }
+}
+
 export const mockPackageWithPublicAPI: EntryPoint = {
     name: 'MOCK_ENTRY_POINT_PUBLIC',
     declareAPIs() {
