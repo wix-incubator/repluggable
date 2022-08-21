@@ -119,7 +119,13 @@ describe('App Host TestKit', () => {
     })
 
     describe('createAppHostAndWaitForLoading', () => {
-        jest.useFakeTimers()
+        beforeAll(() => {
+            jest.useFakeTimers()
+        })
+
+        afterAll(() => {
+            jest.useRealTimers()
+        })
 
         it('should wait for loading all packages', async () => {
             const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint, asyncLoadMockPackage], [])
