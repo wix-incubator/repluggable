@@ -192,8 +192,8 @@ export const createThrottledStore = (
 
     const notifyAll = () => {
         try {
-            notifySubscribers()
             notifyObservers()
+            notifySubscribers()
         } finally {
             resetAllPendingNotifications()
         }
