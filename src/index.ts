@@ -28,6 +28,8 @@ export {
 
 export { AppMainView } from './appMainView'
 
+export { ConsoleHostLogger } from './loggers'
+
 export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './appHost'
 
 export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
