@@ -678,53 +678,104 @@ describe('App Host', () => {
             expect(getMockShellState(appHost)).toEqual(mockShellInitialState)
         })
 
-        it('should memoize functions upon demand', () => {
-            const host = createAppHost([mockPackage], testHostOptions)
-            const getObj = () => host.getAPI(MockAPI).getNewObject()
-            expect(getObj()).not.toBe(getObj())
-
-            interface NewAPI {
+        describe('memoizeForState', () => {
+            interface MemoizedAPIInterface {
                 getNewObject(): object
             }
-            const newAPI: SlotKey<NewAPI> = { name: 'newAPI' }
-            const createAPI = (shell: Shell): NewAPI => ({ getNewObject: shell.memoizeForState(() => ({}), _.stubTrue) })
-            addMockShell(host, {
-                declareAPIs: () => [newAPI],
-                attach(shell) {
-                    shell.contributeAPI(newAPI, () => createAPI(shell))
-                }
-            })
+            const memoizedAPI: SlotKey<MemoizedAPIInterface> = { name: 'memoizedAPI' }
 
-            const objForStateA = host.getAPI(newAPI).getNewObject()
-            expect(objForStateA).toBe(host.getAPI(newAPI).getNewObject())
+            function contributeMemoizedAPI(host: AppHost, shouldClear?: () => boolean): Shell {
+                const createAPI = (shell: Shell): MemoizedAPIInterface => ({
+                    getNewObject: shell.memoizeForState(() => ({}), _.stubTrue, shouldClear)
+                })
+                const mockShell = addMockShell(host, {
+                    declareAPIs: () => [memoizedAPI],
+                    attach(shell) {
+                        shell.contributeAPI(memoizedAPI, () => createAPI(shell))
+                    }
+                })
 
-            host.getStore().dispatch({ type: 'MOCK_ACTION' })
-            host.getStore().flush()
-
-            expect(objForStateA).not.toBe(host.getAPI(newAPI).getNewObject())
-        })
-
-        it('should not clear memoized functions if not needed', () => {
-            const host = createAppHost([], testHostOptions)
-
-            interface NewAPI {
-                getNewObject(): object
+                return mockShell
             }
-            const newAPI: SlotKey<NewAPI> = { name: 'newAPI' }
-            const createAPI = (shell: Shell): NewAPI => ({ getNewObject: shell.memoizeForState(() => ({}), _.stubTrue, _.stubFalse) })
-            addMockShell(host, {
-                declareAPIs: () => [newAPI],
-                attach(shell) {
-                    shell.contributeAPI(newAPI, () => createAPI(shell))
-                }
+
+            it('should memoize functions upon demand', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const getObj = () => host.getAPI(MockAPI).getNewObject()
+                expect(getObj()).not.toBe(getObj())
+
+                contributeMemoizedAPI(host)
+
+                const objForStateA = host.getAPI(memoizedAPI).getNewObject()
+                expect(objForStateA).toBe(host.getAPI(memoizedAPI).getNewObject())
             })
 
-            const objForStateA = host.getAPI(newAPI).getNewObject()
+            it('should clear memoized functions on store dispatch', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
 
-            host.getStore().dispatch({ type: 'MOCK_ACTION' })
-            host.getStore().flush()
+                contributeMemoizedAPI(host)
 
-            expect(objForStateA).toBe(host.getAPI(newAPI).getNewObject())
+                const objForStateA = host.getAPI(memoizedAPI).getNewObject()
+                expect(objForStateA).toBe(host.getAPI(memoizedAPI).getNewObject())
+
+                host.getStore().dispatch({ type: 'MOCK_ACTION' })
+                host.getStore().flush()
+
+                expect(objForStateA).not.toBe(host.getAPI(memoizedAPI).getNewObject())
+            })
+
+            it('should clear memoized functions on observable dispatch', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+
+                interface ObservableValueState {
+                    stateValue: number
+                }
+                interface ObservableValueSelector {
+                    getStateValue(): number
+                }
+                const mockShell = addMockShell(host, {
+                    declareAPIs: () => [memoizedAPI],
+                    attach(shell) {
+                        shell.contributeObservableState<ObservableValueState, ObservableValueSelector>(
+                            () => ({
+                                stateValue: (state = 1, action) => {
+                                    return action.type === 'increase' ? state + 1 : state
+                                }
+                            }),
+                            state => {
+                                return {
+                                    getStateValue: () => state.stateValue
+                                }
+                            }
+                        )
+
+                        shell.contributeAPI(memoizedAPI, () => ({
+                            getNewObject: shell.memoizeForState(() => ({}), _.stubTrue)
+                        }))
+                    }
+                })
+
+                const objForStateA = host.getAPI(memoizedAPI).getNewObject()
+                expect(objForStateA).toBe(host.getAPI(memoizedAPI).getNewObject())
+
+                const { dispatch, flush } = mockShell.getStore<ObservableValueState>()
+                dispatch({ type: 'increase' })
+                flush()
+
+                expect(objForStateA).not.toBe(host.getAPI(memoizedAPI).getNewObject())
+            })
+
+            it('should not clear memoized functions if not needed', () => {
+                const host = createAppHost([], testHostOptions)
+
+                contributeMemoizedAPI(host, _.stubFalse)
+
+                const objForStateA = host.getAPI(memoizedAPI).getNewObject()
+
+                host.getStore().dispatch({ type: 'MOCK_ACTION' })
+                host.getStore().flush()
+
+                expect(objForStateA).toBe(host.getAPI(memoizedAPI).getNewObject())
+            })
         })
 
         describe('memory cleanup:', () => {
