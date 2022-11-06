@@ -18,6 +18,7 @@ export interface RepluggableAppDebugInfo {
     shellInstallers: WeakMap<PrivateShell, string[]>
     utils: RepluggableDebugUtils
     hmr: RepluggableHMR
+    profiling: RepluggableDebugProfiling
 }
 
 export interface RepluggableDebugUtils {
@@ -29,6 +30,11 @@ export interface RepluggableDebugUtils {
 
 export interface RepluggableHMR {
     hot: Hot
+}
+
+export interface RepluggableDebugProfiling {
+    startProfiling(): void
+    stopProfiling(): void
 }
 
 export interface APIDebugInfo {
