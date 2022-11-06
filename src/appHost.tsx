@@ -941,6 +941,9 @@ miss: ${memoizedWithMissHit.miss}
             ): ObservableState<TSelectorAPI> {
                 const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
                 const observable = createObservable(shell, observableUniqueName, mapStateToSelectors)
+                observable.subscribe(shell, () => {
+                    flushMemoizedForState()
+                })
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,
