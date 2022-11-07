@@ -869,31 +869,65 @@ describe('observeWithShellPureComponent', () => {
         }
     }
 
+    const renderSpyFunc = jest.fn()
+
+    const ComponentToObserve: FunctionComponent<ObservedSelectorsMap<{ observable: ObservableState<ObservableAPISelectors> }>> = props => {
+        renderSpyFunc()
+        return (
+            <div>
+                <div id="OBSERVED_NUMBER">{props.observable.getNumberValue()}</div>
+                <div id="OBSERVED_STRING">{props.observable.getStringValue()}</div>
+            </div>
+        )
+    }
+
     const handleAction = (action: AnyAction, dom: ReactWrapper, { getStore }: AppHost) => {
         getStore().dispatch(action)
         getStore().flush()
     }
 
+    beforeEach(() => {
+        renderSpyFunc.mockClear()
+    })
+
+    it('should not render observing component on state update', () => {
+        interface TestState {
+            stateValue: string
+        }
+        const stateEntryPoint: EntryPoint = {
+            name: 'STATE_ENTRY_POINT',
+            attach(stateShell) {
+                stateShell.contributeState<TestState>(() => ({
+                    stateValue: (state = 'stateInit', action) => {
+                        return action.type === 'SET_STATE_VALUE' ? action.value : state
+                    }
+                }))
+            }
+        }
+
+        const { host, shell, renderInShellContext } = createMocks(observableEntryPoint, [stateEntryPoint])
+
+        const ObservingComponent = observeWithShellPureComponent(
+            {
+                observable: host.getAPI(ObservableAPI).observable
+            },
+            shell
+        )(ComponentToObserve)
+
+        const { root } = renderInShellContext(<ObservingComponent />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(1)
+
+        host.getStore().dispatch({ type: 'SET_STATE_VALUE', value: 'newValue' })
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(1)
+    })
+
     it('should update observing component', () => {
         const { host, shell, renderInShellContext } = createMocks(observableEntryPoint)
-
-        const renderSpyFunc = jest.fn()
-        const mountSpyFunc = jest.fn()
-
-        const ComponentToObserve: FunctionComponent<
-            ObservedSelectorsMap<{ observable: ObservableState<ObservableAPISelectors> }>
-        > = props => {
-            useEffect(() => {
-                mountSpyFunc()
-            }, [])
-            renderSpyFunc()
-            return (
-                <div>
-                    <div id="OBSERVED_NUMBER">{props.observable.getNumberValue()}</div>
-                    <div id="OBSERVED_STRING">{props.observable.getStringValue()}</div>
-                </div>
-            )
-        }
 
         const ObservingComponent = observeWithShellPureComponent(
             {
