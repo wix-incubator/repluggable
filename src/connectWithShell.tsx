@@ -242,17 +242,6 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
 export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
     observables: OM,
     boundShell: Shell
-): <S, SP, DP>(
-    innerFactory: ConnectedComponentFactory<S, OP, SP, DP>
-) => ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
-    return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OP, SP, DP>) => {
-        return createObservableConnectedComponentFactory(observables, boundShell, innerFactory)
-    }
-}
-
-export function observeWithShellPureComponent<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
-    observables: OM,
-    boundShell: Shell
 ): ConnectedComponentFactory<{}, OmitObservedSelectors<OP, OM>, {}, {}, OP> {
     return createObservableConnectedComponentFactory(observables, boundShell)
 }
@@ -265,6 +254,17 @@ export function connectWithShellAndObserve<OM extends ObservablesMap, OP extends
     options: ConnectWithShellOptions = {}
 ): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
     const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
-    const wrapperFactory = observeWithShell<OM, OP>(observables, boundShell)(innerFactory)
+    const wrapperFactory = observeConnectedComponentWithShell<OM, OP>(observables, boundShell)(innerFactory)
     return wrapperFactory
+}
+
+function observeConnectedComponentWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
+    observables: OM,
+    boundShell: Shell
+): <S, SP, DP>(
+    innerFactory: ConnectedComponentFactory<S, OP, SP, DP>
+) => ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
+    return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OP, SP, DP>) => {
+        return createObservableConnectedComponentFactory(observables, boundShell, innerFactory)
+    }
 }

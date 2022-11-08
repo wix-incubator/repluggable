@@ -15,7 +15,7 @@ import {
 import { mount, ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
-import { ObservedSelectorsMap, observeWithShellPureComponent } from '../src'
+import { ObservedSelectorsMap, observeWithShell } from '../src'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -42,6 +42,11 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
         shell: getShell(),
         renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
     }
+}
+
+const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
+    getStore().dispatch(action)
+    getStore().flush()
 }
 
 describe('connectWithShell', () => {
@@ -562,12 +567,6 @@ describe('connectWithShell-useCases', () => {
         mapStateToPropsSpy.mockClear()
     })
 
-    const handleAction = (action: AnyAction, dom: ReactWrapper, { getStore }: AppHost) => {
-        getStore().dispatch(action)
-        getStore().flush()
-        //dom.update()
-    }
-
     it('should include observable state in store', () => {
         const { shell } = createMocks(entryPointThree)
 
@@ -624,7 +623,7 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(1)
         expect(mountSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_ONE', value: 'update1' }, host)
 
         expect(renderSpy).toHaveBeenCalledTimes(2)
         expect(mountSpy).toHaveBeenCalledTimes(1)
@@ -644,21 +643,21 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_ONE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({ type: 'SET_TWO', value: 'update2' }, root, host)
+        dispatchAndFlush({ type: 'SET_TWO', value: 'update2' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({ type: 'SOME_OTHER_ACTION' }, root, host)
+        dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
@@ -680,7 +679,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_ONE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -688,7 +687,7 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         // this should not notify the uninterested component
-        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
+        dispatchAndFlush({ type: 'SET_THREE', value: 'update3' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -731,7 +730,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_ONE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -739,7 +738,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
+        dispatchAndFlush({ type: 'SET_THREE', value: 'update3' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -747,7 +746,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({ type: 'SOME_OTHER_ACTION' }, root, host)
+        dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -811,7 +810,7 @@ describe('connectWithShell-useCases', () => {
         expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
+        dispatchAndFlush({ type: 'SET_THREE', value: 'update3' }, host)
 
         expect(root.find(FirstConnectedComp).find('#THREE').text()).toBe('update3')
         expect(root.find(SecondConnectedComp).find('#THREE').text()).toBe('init4')
@@ -819,7 +818,7 @@ describe('connectWithShell-useCases', () => {
         expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_FOUR', value: 'update4' }, root, host)
+        dispatchAndFlush({ type: 'SET_FOUR', value: 'update4' }, host)
 
         expect(root.find(FirstConnectedComp).find('#THREE').text()).toBe('update3')
         expect(root.find(SecondConnectedComp).find('#THREE').text()).toBe('update4')
@@ -881,11 +880,6 @@ describe('observeWithShellPureComponent', () => {
         )
     }
 
-    const handleAction = (action: AnyAction, dom: ReactWrapper, { getStore }: AppHost) => {
-        getStore().dispatch(action)
-        getStore().flush()
-    }
-
     beforeEach(() => {
         renderSpyFunc.mockClear()
     })
@@ -907,7 +901,7 @@ describe('observeWithShellPureComponent', () => {
 
         const { host, shell, renderInShellContext } = createMocks(observableEntryPoint, [stateEntryPoint])
 
-        const ObservingComponent = observeWithShellPureComponent(
+        const ObservingComponent = observeWithShell(
             {
                 observable: host.getAPI(ObservableAPI).observable
             },
@@ -929,7 +923,7 @@ describe('observeWithShellPureComponent', () => {
     it('should update observing component', () => {
         const { host, shell, renderInShellContext } = createMocks(observableEntryPoint)
 
-        const ObservingComponent = observeWithShellPureComponent(
+        const ObservingComponent = observeWithShell(
             {
                 observable: host.getAPI(ObservableAPI).observable
             },
@@ -946,14 +940,14 @@ describe('observeWithShellPureComponent', () => {
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_STRING', value: 'update' }, root, host)
+        dispatchAndFlush({ type: 'SET_STRING', value: 'update' }, host)
 
         expect(root.find(ObservingComponent).find('#OBSERVED_NUMBER').text()).toBe('1')
         expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('update')
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(2)
 
-        handleAction({ type: 'SET_NUMBER', value: '2' }, root, host)
+        dispatchAndFlush({ type: 'SET_NUMBER', value: '2' }, host)
 
         expect(root.find(ObservingComponent).find('#OBSERVED_NUMBER').text()).toBe('2')
         expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('update')
