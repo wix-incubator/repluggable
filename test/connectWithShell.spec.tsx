@@ -15,6 +15,7 @@ import {
 import { mount, ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
+import { ObservedSelectorsMap, observeWithShell } from '../src'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -41,6 +42,11 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
         shell: getShell(),
         renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
     }
+}
+
+const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
+    getStore().dispatch(action)
+    getStore().flush()
 }
 
 describe('connectWithShell', () => {
@@ -406,77 +412,112 @@ describe('connectWithShell', () => {
 })
 
 describe('connectWithShell-useCases', () => {
-    interface TestStateOne {
-        one: { valueOne: string }
+    interface FirstState {
+        firstState: { valueOne: string }
     }
-    interface TestStateTwo {
-        two: { valueTwo: string }
+    interface SecondState {
+        secondState: { valueTwo: string }
     }
-    interface TestStateThree {
-        three: { valueThree: string }
+    interface FirstObservableState {
+        firstObservable: { valueThree: string }
+    }
+    interface SecondObservableState {
+        secondObservable: { valueFour: string }
     }
 
-    interface TwoAPI {
+    interface SecondStateAPI {
         getValueTwo(): string
     }
-    const TwoAPI: SlotKey<TwoAPI> = { name: 'TWO_API', public: true }
+    const SecondStateAPI: SlotKey<SecondStateAPI> = { name: 'TWO_API', public: true }
 
-    interface ThreeAPI {
-        observables: { three: ObservableState<ThreeAPISelectors> }
+    interface FirstObservableAPI {
+        observables: { three: ObservableState<FirstObservableSelectors> }
     }
-    interface ThreeAPISelectors {
+    interface FirstObservableSelectors {
         getValueThree(): string
     }
-    const ThreeAPI: SlotKey<ThreeAPI> = { name: 'THREE_API', public: true }
+    const FirstObservableAPI: SlotKey<FirstObservableAPI> = { name: 'THREE_API', public: true }
 
-    const entryPointOne: EntryPoint = {
+    interface SecondObservableAPI {
+        observables: { four: ObservableState<SecondObservableSelectors> }
+    }
+    interface SecondObservableSelectors {
+        getValueFour(): string
+    }
+    const SecondObservableAPI: SlotKey<SecondObservableAPI> = { name: 'FOUR_API', public: true }
+
+    const entryPointWithState: EntryPoint = {
         name: 'ONE',
-        getDependencyAPIs: () => [TwoAPI],
+        getDependencyAPIs: () => [SecondStateAPI],
         attach(shell) {
-            shell.contributeState<TestStateOne>(() => ({
-                one: (state = { valueOne: 'init1' }, action) => {
-                    return action.type === 'SET_ONE' ? { valueOne: action.value } : state
+            shell.contributeState<FirstState>(() => ({
+                firstState: (state = { valueOne: 'init1' }, action) => {
+                    return action.type === 'SET_FIRST_STATE' ? { valueOne: action.value } : state
                 }
             }))
         }
     }
 
-    const entryPointTwo: EntryPoint = {
+    const entryPointSecondStateWithAPI: EntryPoint = {
         name: 'TWO',
-        declareAPIs: () => [TwoAPI],
+        declareAPIs: () => [SecondStateAPI],
         attach(shell) {
-            shell.contributeState<TestStateTwo>(() => ({
-                two: (state = { valueTwo: 'init2' }, action) => {
-                    return action.type === 'SET_TWO' ? { valueTwo: action.value } : state
+            shell.contributeState<SecondState>(() => ({
+                secondState: (state = { valueTwo: 'init2' }, action) => {
+                    return action.type === 'SET_SECOND_STATE' ? { valueTwo: action.value } : state
                 }
             }))
-            shell.contributeAPI(TwoAPI, () => ({
+            shell.contributeAPI(SecondStateAPI, () => ({
                 getValueTwo() {
-                    return shell.getStore<TestStateTwo>().getState().two.valueTwo
+                    return shell.getStore<SecondState>().getState().secondState.valueTwo
                 }
             }))
         }
     }
 
-    const entryPointThree: EntryPoint = {
+    const entryPointFirstObservable: EntryPoint = {
         name: 'THREE',
-        declareAPIs: () => [ThreeAPI],
+        declareAPIs: () => [FirstObservableAPI],
         attach(shell) {
-            const observableThree = shell.contributeObservableState<TestStateThree, ThreeAPISelectors>(
+            const observableThree = shell.contributeObservableState<FirstObservableState, FirstObservableSelectors>(
                 () => ({
-                    three: (state = { valueThree: 'init3' }, action) => {
-                        return action.type === 'SET_THREE' ? { valueThree: action.value } : state
+                    firstObservable: (state = { valueThree: 'init3' }, action) => {
+                        return action.type === 'SET_FIRST_OBSERVABLE' ? { valueThree: action.value } : state
                     }
                 }),
                 state => {
                     return {
-                        getValueThree: () => state.three.valueThree
+                        getValueThree: () => state.firstObservable.valueThree
                     }
                 }
             )
-            shell.contributeAPI(ThreeAPI, () => ({
+            shell.contributeAPI(FirstObservableAPI, () => ({
                 observables: {
                     three: observableThree
+                }
+            }))
+        }
+    }
+
+    const entryPointSecondObservable: EntryPoint = {
+        name: 'Four',
+        declareAPIs: () => [SecondObservableAPI],
+        attach(shell) {
+            const observableFour = shell.contributeObservableState<SecondObservableState, SecondObservableSelectors>(
+                () => ({
+                    secondObservable: (state = { valueFour: 'init4' }, action) => {
+                        return action.type === 'SET_SECOND_OBSERVABLE' ? { valueFour: action.value } : state
+                    }
+                }),
+                state => {
+                    return {
+                        getValueFour: () => state.secondObservable.valueFour
+                    }
+                }
+            )
+            shell.contributeAPI(SecondObservableAPI, () => ({
+                observables: {
+                    four: observableFour
                 }
             }))
         }
@@ -512,11 +553,11 @@ describe('connectWithShell-useCases', () => {
             </div>
         )
     }
-    const mapStateToProps = (shell: Shell, state: TestStateOne): CompProps => {
+    const mapStateToProps = (shell: Shell, state: FirstState): CompProps => {
         mapStateToPropsSpy()
         return {
-            valueOne: state.one.valueOne,
-            valueTwo: shell.getAPI(TwoAPI).getValueTwo(),
+            valueOne: state.firstState.valueOne,
+            valueTwo: shell.getAPI(SecondStateAPI).getValueTwo(),
             valueThree: ''
         }
     }
@@ -526,40 +567,34 @@ describe('connectWithShell-useCases', () => {
         mapStateToPropsSpy.mockClear()
     })
 
-    const handleAction = (action: AnyAction, dom: ReactWrapper, { getStore }: AppHost) => {
-        getStore().dispatch(action)
-        getStore().flush()
-        //dom.update()
-    }
-
     it('should include observable state in store', () => {
-        const { shell } = createMocks(entryPointThree)
+        const { shell } = createMocks(entryPointFirstObservable)
 
-        const state = shell.getStore<TestStateThree>().getState()
+        const state = shell.getStore<FirstObservableState>().getState()
 
         expect(state).toBeDefined()
-        expect(state.three.valueThree).toBe('init3')
+        expect(state.firstObservable.valueThree).toBe('init3')
     })
 
     it('should dispatch actions to observable reducers', () => {
-        const { shell } = createMocks(entryPointThree)
+        const { shell } = createMocks(entryPointFirstObservable)
 
-        shell.getStore<TestStateThree>().dispatch({ type: 'SET_THREE', value: 'updated_by_test' })
+        shell.getStore<FirstObservableState>().dispatch({ type: 'SET_FIRST_OBSERVABLE', value: 'updated_by_test' })
 
-        const state = shell.getStore<TestStateThree>().getState()
-        expect(state.three.valueThree).toEqual('updated_by_test')
+        const state = shell.getStore<FirstObservableState>().getState()
+        expect(state.firstObservable.valueThree).toEqual('updated_by_test')
     })
 
     it('should invoke subscribed callback when observed state changes', () => {
-        const { shell } = createMocks(entryPointThree)
+        const { shell } = createMocks(entryPointFirstObservable)
 
-        const receivedSelectors: ThreeAPISelectors[] = []
-        shell.getAPI(ThreeAPI).observables.three.subscribe(shell, next => {
+        const receivedSelectors: FirstObservableSelectors[] = []
+        shell.getAPI(FirstObservableAPI).observables.three.subscribe(shell, next => {
             receivedSelectors.push(next)
         })
 
-        const { dispatch, flush } = shell.getStore<TestStateThree>()
-        dispatch({ type: 'SET_THREE', value: 'updated_by_test' })
+        const { dispatch, flush } = shell.getStore<FirstObservableState>()
+        dispatch({ type: 'SET_FIRST_OBSERVABLE', value: 'updated_by_test' })
         flush()
 
         expect(receivedSelectors.length).toBe(1)
@@ -578,7 +613,7 @@ describe('connectWithShell-useCases', () => {
     })
 
     it('should not mount connected component on props update', () => {
-        const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
         const { root } = renderInShellContext(<ConnectedComp />)
         if (!root) {
@@ -588,14 +623,14 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(1)
         expect(mountSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
         expect(renderSpy).toHaveBeenCalledTimes(2)
         expect(mountSpy).toHaveBeenCalledTimes(1)
     })
 
     it('should update component on change in regular state', () => {
-        const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo])
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
@@ -608,21 +643,21 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({ type: 'SET_TWO', value: 'update2' }, root, host)
+        dispatchAndFlush({ type: 'SET_SECOND_STATE', value: 'update2' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({ type: 'SOME_OTHER_ACTION' }, root, host)
+        dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('update2')
@@ -631,7 +666,10 @@ describe('connectWithShell-useCases', () => {
     })
 
     it('should not update uninterested component on change in observable state', () => {
-        const { host, shell, renderInShellContext } = createMocks(entryPointOne, [entryPointTwo, entryPointThree])
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [
+            entryPointSecondStateWithAPI,
+            entryPointFirstObservable
+        ])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { root } = renderInShellContext(<ConnectedComp />)
@@ -644,7 +682,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -652,7 +690,7 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         // this should not notify the uninterested component
-        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -661,20 +699,20 @@ describe('connectWithShell-useCases', () => {
     })
 
     it('should update component through observer', () => {
-        const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointOne, [ThreeAPI]), [
-            entryPointTwo,
-            entryPointThree
+        const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointWithState, [FirstObservableAPI]), [
+            entryPointSecondStateWithAPI,
+            entryPointFirstObservable
         ])
 
         const ConnectedComp = connectWithShellAndObserve(
             {
-                observedThree: host.getAPI(ThreeAPI).observables.three
+                observedThree: host.getAPI(FirstObservableAPI).observables.three
             },
-            (_shell, state: TestStateOne, ownProps): CompProps => {
+            (_shell, state: FirstState, ownProps): CompProps => {
                 mapStateToPropsSpy()
                 return {
-                    valueOne: state.one.valueOne,
-                    valueTwo: _shell.getAPI(TwoAPI).getValueTwo(),
+                    valueOne: state.firstState.valueOne,
+                    valueTwo: _shell.getAPI(SecondStateAPI).getValueTwo(),
                     valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
                 }
             },
@@ -695,7 +733,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        handleAction({ type: 'SET_ONE', value: 'update1' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -703,7 +741,7 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        handleAction({ type: 'SET_THREE', value: 'update3' }, root, host)
+        dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
@@ -711,12 +749,214 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
-        handleAction({ type: 'SOME_OTHER_ACTION' }, root, host)
+        dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
         expect(root.find(ConnectedComp).find('#ONE').text()).toBe('update1')
         expect(root.find(ConnectedComp).find('#TWO').text()).toBe('init2')
         expect(root.find(ConnectedComp).find('#THREE').text()).toBe('update3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
+    })
+
+    it('should update only the relevant observing components', () => {
+        const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointFirstObservable, [SecondObservableAPI]), [
+            entryPointSecondObservable
+        ])
+
+        const firstMapStateToPropsSpy = jest.fn()
+        const FirstConnectedComp = connectWithShellAndObserve(
+            {
+                observedThree: host.getAPI(FirstObservableAPI).observables.three
+            },
+            (_shell, state, ownProps): CompProps => {
+                firstMapStateToPropsSpy()
+                return {
+                    valueOne: 'one',
+                    valueTwo: 'two',
+                    valueThree: ownProps?.observedThree.getValueThree() || 'N/A'
+                }
+            },
+            undefined,
+            shell,
+            { allowOutOfEntryPoint: true }
+        )(PureComp)
+
+        const secondMapStateToPropsSpy = jest.fn()
+        const SecondConnectedComp = connectWithShellAndObserve(
+            {
+                observedFour: host.getAPI(SecondObservableAPI).observables.four
+            },
+            (_shell, state, ownProps): CompProps => {
+                secondMapStateToPropsSpy()
+                return {
+                    valueOne: 'one',
+                    valueTwo: 'two',
+                    valueThree: ownProps?.observedFour.getValueFour() || 'N/A'
+                }
+            },
+            undefined,
+            shell,
+            { allowOutOfEntryPoint: true }
+        )(PureComp)
+
+        const { root } = renderInShellContext(
+            <>
+                <FirstConnectedComp />
+                <SecondConnectedComp />
+            </>
+        )
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(root.find(FirstConnectedComp).find('#THREE').text()).toBe('init3')
+        expect(root.find(SecondConnectedComp).find('#THREE').text()).toBe('init4')
+
+        expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
+
+        dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
+
+        expect(root.find(FirstConnectedComp).find('#THREE').text()).toBe('update3')
+        expect(root.find(SecondConnectedComp).find('#THREE').text()).toBe('init4')
+
+        expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
+
+        dispatchAndFlush({ type: 'SET_SECOND_OBSERVABLE', value: 'update4' }, host)
+
+        expect(root.find(FirstConnectedComp).find('#THREE').text()).toBe('update3')
+        expect(root.find(SecondConnectedComp).find('#THREE').text()).toBe('update4')
+
+        expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(2)
+    })
+})
+
+describe('observeWithShellPureComponent', () => {
+    interface ObservableAPI {
+        observable: ObservableState<ObservableAPISelectors>
+    }
+    interface ObservableAPISelectors {
+        getStringValue(): string
+        getNumberValue(): number
+    }
+    const ObservableAPI: SlotKey<ObservableAPI> = { name: 'OBSERVABLE_API', public: true }
+    interface ActualObservableState {
+        stringValue: string
+        numberValue: number
+    }
+
+    const observableEntryPoint: EntryPoint = {
+        name: 'ObservableEntryPoint',
+        declareAPIs: () => [ObservableAPI],
+        attach(shell) {
+            const observableState = shell.contributeObservableState<ActualObservableState, ObservableAPISelectors>(
+                () => ({
+                    stringValue: (state = 'init', action) => {
+                        return action.type === 'SET_STRING' ? action.value : state
+                    },
+                    numberValue: (state = 1, action) => {
+                        return action.type === 'SET_NUMBER' ? action.value : state
+                    }
+                }),
+                state => {
+                    return {
+                        getStringValue: () => state.stringValue,
+                        getNumberValue: () => state.numberValue
+                    }
+                }
+            )
+            shell.contributeAPI(ObservableAPI, () => ({
+                observable: observableState
+            }))
+        }
+    }
+
+    const renderSpyFunc = jest.fn()
+
+    const ComponentToObserve: FunctionComponent<ObservedSelectorsMap<{ observable: ObservableState<ObservableAPISelectors> }>> = props => {
+        renderSpyFunc()
+        return (
+            <div>
+                <div id="OBSERVED_NUMBER">{props.observable.getNumberValue()}</div>
+                <div id="OBSERVED_STRING">{props.observable.getStringValue()}</div>
+            </div>
+        )
+    }
+
+    beforeEach(() => {
+        renderSpyFunc.mockClear()
+    })
+
+    it('should not render observing component on state update', () => {
+        interface TestState {
+            stateValue: string
+        }
+        const stateEntryPoint: EntryPoint = {
+            name: 'STATE_ENTRY_POINT',
+            attach(stateShell) {
+                stateShell.contributeState<TestState>(() => ({
+                    stateValue: (state = 'stateInit', action) => {
+                        return action.type === 'SET_STATE_VALUE' ? action.value : state
+                    }
+                }))
+            }
+        }
+
+        const { host, shell, renderInShellContext } = createMocks(observableEntryPoint, [stateEntryPoint])
+
+        const ObservingComponent = observeWithShell(
+            {
+                observable: host.getAPI(ObservableAPI).observable
+            },
+            shell
+        )(ComponentToObserve)
+
+        const { root } = renderInShellContext(<ObservingComponent />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(1)
+
+        host.getStore().dispatch({ type: 'SET_STATE_VALUE', value: 'newValue' })
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(1)
+    })
+
+    it('should update observing component', () => {
+        const { host, shell, renderInShellContext } = createMocks(observableEntryPoint)
+
+        const ObservingComponent = observeWithShell(
+            {
+                observable: host.getAPI(ObservableAPI).observable
+            },
+            shell
+        )(ComponentToObserve)
+
+        const { root } = renderInShellContext(<ObservingComponent />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(root.find(ObservingComponent).find('#OBSERVED_NUMBER').text()).toBe('1')
+        expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('init')
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(1)
+
+        dispatchAndFlush({ type: 'SET_STRING', value: 'update' }, host)
+
+        expect(root.find(ObservingComponent).find('#OBSERVED_NUMBER').text()).toBe('1')
+        expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('update')
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(2)
+
+        dispatchAndFlush({ type: 'SET_NUMBER', value: '2' }, host)
+
+        expect(root.find(ObservingComponent).find('#OBSERVED_NUMBER').text()).toBe('2')
+        expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('update')
+
+        expect(renderSpyFunc).toHaveBeenCalledTimes(3)
     })
 })
