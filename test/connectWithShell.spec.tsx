@@ -758,6 +758,37 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
 
+    it('should throw if observable is read though API in mapStateToProps', () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointFirstObservable)
+
+        const ConnectedComp = connectWithShellAndObserve(
+            {
+                observedThree: host.getAPI(FirstObservableAPI).observables.three
+            },
+            (_shell, state: FirstState, ownProps): CompProps => {
+                mapStateToPropsSpy()
+                return {
+                    valueOne: 'one',
+                    valueTwo: 'two',
+                    valueThree: host.getAPI(FirstObservableAPI).observables.three.current().getValueThree()
+                }
+            },
+            undefined,
+            shell,
+            { allowOutOfEntryPoint: true }
+        )(PureComp)
+
+        const { root } = renderInShellContext(<ConnectedComp />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+
+        expect(() => dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)).toThrowError()
+    })
+
     it('should update only the relevant observing components', () => {
         const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointFirstObservable, [SecondObservableAPI]), [
             entryPointSecondObservable

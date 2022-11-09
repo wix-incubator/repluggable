@@ -39,6 +39,7 @@ import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import {
     createObservable,
     createThrottledStore,
+    PrivateObservableState,
     PrivateThrottledStore,
     StateContribution,
     ThrottledStore,
@@ -124,6 +125,7 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
+    let IsStoreSubscribersNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -578,7 +580,15 @@ miss: ${memoizedWithMissHit.miss}
         if (store) {
             updateThrottledStore(store, contributedState)
         } else {
-            store = createThrottledStore(host, contributedState, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store = createThrottledStore(
+                host,
+                contributedState,
+                window.requestAnimationFrame,
+                window.cancelAnimationFrame,
+                isSubscriptionNotifyInProgress => {
+                    IsStoreSubscribersNotifyInProgress = isSubscriptionNotifyInProgress
+                }
+            )
             store.subscribe(() => {
                 flushMemoizedForState()
             })
@@ -944,13 +954,27 @@ miss: ${memoizedWithMissHit.miss}
                 observable.subscribe(shell, () => {
                     flushMemoizedForState()
                 })
+                const protectedObservable: PrivateObservableState<TState, TSelectorAPI> = {
+                    subscribe: observable.subscribe,
+                    current: () => {
+                        if (IsStoreSubscribersNotifyInProgress) {
+                            throw new Error(
+                                `Should not read observable value during subscribers notify. ` +
+                                    `If you wish to read the value, you component should be observing the value directly ` +
+                                    `(using observeWithShell or connectWithShellAndObserve)`
+                            )
+                        }
+                        return observable.current()
+                    },
+                    notify: observable.notify
+                }
                 const contribution: StateContribution = {
                     notificationScope: 'observable',
                     reducerFactory: contributor,
                     observable
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
-                return observable
+                return protectedObservable
             },
 
             getStore<TState>(): ScopedStore<TState> {
