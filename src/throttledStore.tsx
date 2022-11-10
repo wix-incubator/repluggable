@@ -2,11 +2,20 @@ import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAct
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, StateObserver, Shell, SlotKey } from './API'
+import {
+    AppHost,
+    ExtensionSlot,
+    ReducersMapObjectContributor,
+    ObservableState,
+    StateObserver,
+    Shell,
+    SlotKey,
+    ObservablesMap,
+    ObservedSelectorsMap
+} from './API'
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
-import { ObservablesMap, ObservedSelectorsMap } from './connectWithShell'
 
 type ReducerNotificationScope = 'broadcasting' | 'observable'
 interface ShellsReducersMap {

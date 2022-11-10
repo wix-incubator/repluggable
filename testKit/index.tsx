@@ -1,17 +1,8 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
-import {
-    AnySlotKey,
-    AppHost,
-    AppMainView,
-    createAppHost as _createAppHost,
-    EntryPointOrPackage,
-    ObservablesMap,
-    Shell,
-    SlotKey
-} from '../src/index'
+import { EntryPoint, ObservablesMap, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'

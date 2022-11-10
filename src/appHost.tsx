@@ -29,7 +29,9 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    ObservableState
+    ObservableState,
+    ObservablesMap,
+    ObservedSelectorsMap
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
@@ -49,7 +51,7 @@ import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
-import { ObservablesMap, ObservedSelectorsMap, ShellRenderer } from '.'
+import { ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
@@ -954,9 +956,9 @@ miss: ${memoizedWithMissHit.miss}
                 return observable
             },
 
-            contributeChainObservableState<TChainSelector, OM extends ObservablesMap>(
-                observablesDependencies: OM,
-                chainFunction: (observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+            contributeChainObservableState<TChainSelector, OBM extends ObservablesMap>(
+                observablesDependencies: OBM,
+                chainFunction: (observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
             ): ObservableState<TChainSelector> {
                 const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
                 const observable = createChainObservable(shell, observableUniqueName, observablesDependencies, chainFunction)

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 
-import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
+import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey, ObservedSelectorsMap } from '../src/API'
 import {
     createAppHost,
     mockPackage,
@@ -15,7 +15,7 @@ import {
 import { mount, ReactWrapper } from 'enzyme'
 import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
-import { ObservedSelectorsMap, observeWithShell } from '../src'
+import { observeWithShell } from '../src'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState

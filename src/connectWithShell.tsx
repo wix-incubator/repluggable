@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { AnyFunction, ObservableState, StateObserverUnsubscribe, PrivateShell, Shell } from './API'
+import { AnyFunction, StateObserverUnsubscribe, PrivateShell, Shell, ObservablesMap, ObservedSelectorsMap } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -164,14 +164,6 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
         }
         return wrappedWithShellContext
     }
-}
-
-export interface ObservablesMap {
-    [key: string]: ObservableState<any>
-}
-
-export type ObservedSelectorsMap<M> = {
-    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
 }
 
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
