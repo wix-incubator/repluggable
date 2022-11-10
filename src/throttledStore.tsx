@@ -6,6 +6,7 @@ import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, 
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
+import { ObservablesMap, ObservedSelectorsMap } from './connectWithShell'
 
 type ReducerNotificationScope = 'broadcasting' | 'observable'
 interface ShellsReducersMap {
@@ -266,5 +267,50 @@ export const createObservable = <TState, TSelector>(
             invokeSlotCallbacks(observersSlot, newSelector)
         },
         current: getOrCreateCachedSelector
+    }
+}
+
+export const createChainObservable = <TChainSelector, OM extends ObservablesMap>(
+    shell: Shell,
+    uniqueName: string,
+    observablesDependencies: OM,
+    chainFunction: (observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+): PrivateObservableState<any, TChainSelector> => {
+    const getDependenciesValues = (): ObservedSelectorsMap<OM> => {
+        return _.mapValues(observablesDependencies, observable => {
+            const selector = observable.current()
+            return selector
+        })
+    }
+    let currentValue: TChainSelector = chainFunction(getDependenciesValues())
+
+    const subscribersSlotKey: SlotKey<StateObserver<TChainSelector>> = {
+        name: uniqueName
+    }
+    const observersSlot = shell.declareSlot(subscribersSlotKey)
+
+    const notify = () => {
+        invokeSlotCallbacks(observersSlot, currentValue)
+    }
+
+    for (const key in observablesDependencies) {
+        observablesDependencies[key].subscribe(shell, () => {
+            currentValue = chainFunction(getDependenciesValues())
+            notify()
+        })
+    }
+
+    return {
+        subscribe(fromShell, callback) {
+            observersSlot.contribute(fromShell, callback)
+            return () => {
+                observersSlot.discardBy(item => item.contribution === callback)
+            }
+        },
+        notify,
+        current: () => {
+            currentValue = chainFunction(getDependenciesValues())
+            return currentValue
+        }
     }
 }

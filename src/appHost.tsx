@@ -37,6 +37,7 @@ import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import {
+    createChainObservable,
     createObservable,
     createThrottledStore,
     PrivateThrottledStore,
@@ -48,7 +49,7 @@ import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
-import { ShellRenderer } from '.'
+import { ObservablesMap, ObservedSelectorsMap, ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
@@ -950,6 +951,15 @@ miss: ${memoizedWithMissHit.miss}
                     observable
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
+                return observable
+            },
+
+            contributeChainObservableState<TChainSelector, OM extends ObservablesMap>(
+                observablesDependencies: OM,
+                chainFunction: (observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+            ): ObservableState<TChainSelector> {
+                const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
+                const observable = createChainObservable(shell, observableUniqueName, observablesDependencies, chainFunction)
                 return observable
             },
 

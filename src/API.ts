@@ -1,5 +1,6 @@
 import * as React from 'react'
 import * as Redux from 'redux'
+import { ObservablesMap, ObservedSelectorsMap } from '.'
 import { ThrottledStore } from './throttledStore'
 
 export { AppHostAPI } from './appHostServices'
@@ -416,6 +417,18 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
         contributor: ReducersMapObjectContributor<TState, TAction>,
         selectorFactory: (state: TState) => TSelector
     ): ObservableState<TSelector>
+
+    /**
+     * ????
+     *
+     * @template TState
+     * @param {ReducersMapObjectContributor<TState>} contributor
+     * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
+     */
+    contributeChainObservableState<TChainSelector, OM extends ObservablesMap>(
+        observablesDependencies: OM,
+        chainFunction: (observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+    ): ObservableState<TChainSelector>
 
     /**
      * Contribute the main view (root) of the application
