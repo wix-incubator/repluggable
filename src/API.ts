@@ -434,7 +434,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     contributeChainObservableState<TChainSelector, OBM extends ObservablesMap>(
         observablesDependencies: OBM,
-        chainFunction: (observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
+        chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
     ): ObservableState<TChainSelector>
 
     /**

@@ -283,7 +283,7 @@ export const createChainObservable = <TChainSelector, OM extends ObservablesMap>
     shell: Shell,
     uniqueName: string,
     observablesDependencies: OM,
-    chainFunction: (observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+    chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
 ): PrivateObservableState<any, TChainSelector> => {
     const getDependenciesValues = (): ObservedSelectorsMap<OM> => {
         return _.mapValues(observablesDependencies, observable => {
@@ -291,7 +291,7 @@ export const createChainObservable = <TChainSelector, OM extends ObservablesMap>
             return selector
         })
     }
-    let currentValue: TChainSelector = chainFunction(getDependenciesValues())
+    let currentValue: TChainSelector = chainFunction(shell, getDependenciesValues())
 
     const subscribersSlotKey: SlotKey<StateObserver<TChainSelector>> = {
         name: uniqueName
@@ -304,7 +304,7 @@ export const createChainObservable = <TChainSelector, OM extends ObservablesMap>
 
     for (const key in observablesDependencies) {
         observablesDependencies[key].subscribe(shell, () => {
-            currentValue = chainFunction(getDependenciesValues())
+            currentValue = chainFunction(shell, getDependenciesValues())
             notify()
         })
     }

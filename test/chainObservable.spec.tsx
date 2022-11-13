@@ -122,13 +122,16 @@ describe('chainObservable', () => {
         const firstObservable = shell.getAPI(FirstObservableAPI).observables.firstObservable
         const secondObservable = shell.getAPI(SecondObservableAPI).observables.secondObservable
 
-        return shell.contributeChainObservableState({ firstObservable, secondObservable }, (observedDependencies: ChainDependenciesMap) => {
-            return (
-                observedDependencies.firstObservable.getFirstObservableValue() +
-                separator +
-                observedDependencies.secondObservable.getSecondObservableValue()
-            )
-        })
+        return shell.contributeChainObservableState(
+            { firstObservable, secondObservable },
+            (chainShell: Shell, observedDependencies: ChainDependenciesMap) => {
+                return (
+                    observedDependencies.firstObservable.getFirstObservableValue() +
+                    separator +
+                    observedDependencies.secondObservable.getSecondObservableValue()
+                )
+            }
+        )
     }
 
     beforeEach(() => {
@@ -170,9 +173,12 @@ describe('chainObservable', () => {
         const newChainEnding = '#$%'
 
         const observablesChain = host.getAPI(ChainAPI).chainedObservable
-        const newChain = shell.contributeChainObservableState({ observablesChain }, (observedDependencies: ObservedChainMap) => {
-            return observedDependencies.observablesChain + newChainEnding
-        })
+        const newChain = shell.contributeChainObservableState(
+            { observablesChain },
+            (chainShell: Shell, observedDependencies: ObservedChainMap) => {
+                return observedDependencies.observablesChain + newChainEnding
+            }
+        )
 
         const newChainSpy = jest.fn()
         newChain.subscribe(shell, newValue => {
@@ -223,5 +229,42 @@ describe('chainObservable', () => {
 
         dispatchAndFlush({ type: 'NonExisting', value: 'UPDATE' }, host)
         expect(renderSpyFunc).toHaveBeenCalledTimes(2)
+    })
+
+    it('should allow using shell in chain function', () => {
+        interface BlaAPI {
+            addBla(str: string): string
+        }
+        const BlaAPI: SlotKey<BlaAPI> = { name: 'BlaAPI', public: true }
+
+        const blaEntryPoint: EntryPoint = {
+            name: 'bla entry point',
+            declareAPIs: () => [BlaAPI],
+            attach: (entryPointShell: Shell) => {
+                entryPointShell.contributeAPI(BlaAPI, () => ({
+                    addBla: (str: string) => str + 'Bla'
+                }))
+            }
+        }
+        const { host, shell } = createMocks(withDependencyAPIs(blaEntryPoint, [FirstObservableAPI]), [entryPointFirstObservable])
+
+        const firstObservable = shell.getAPI(FirstObservableAPI).observables.firstObservable
+
+        const blaChain = shell.contributeChainObservableState({ firstObservable }, (chainShell: Shell, observedDependencies) => {
+            const blaAPI = chainShell.getAPI(BlaAPI)
+            return blaAPI.addBla(observedDependencies.firstObservable.getFirstObservableValue())
+        })
+
+        blaChain.subscribe(shell, newChain => {
+            chainSpy(newChain)
+        })
+
+        expect(blaChain.current()).toBe(firstInitialValue + 'Bla')
+
+        dispatchAndFlush({ type: setFirstObservableType, value: 'update' }, host)
+
+        const expectedValue = 'update' + 'Bla'
+        expect(chainSpy).toHaveBeenCalledWith(expectedValue)
+        expect(blaChain.current()).toBe(expectedValue)
     })
 })
