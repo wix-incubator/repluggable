@@ -958,7 +958,7 @@ miss: ${memoizedWithMissHit.miss}
 
             contributeChainObservableState<TChainSelector, OBM extends ObservablesMap>(
                 observablesDependencies: OBM,
-                chainFunction: (observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
+                chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
             ): ObservableState<TChainSelector> {
                 const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
                 const observable = createChainObservable(shell, observableUniqueName, observablesDependencies, chainFunction)
