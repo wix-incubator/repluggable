@@ -955,7 +955,7 @@ miss: ${memoizedWithMissHit.miss}
 
             getStore<TState>(): ScopedStore<TState> {
                 return {
-                    dispatch: host.getStore().dispatch,
+                    dispatch: (host.getStore() as PrivateThrottledStore).dispatchWithShell(shell),
                     subscribe: host.getStore().subscribe,
                     getState: () => {
                         const entireStoreState = host.getStore().getState()

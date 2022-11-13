@@ -925,6 +925,53 @@ describe('App Host', () => {
             }
             expect(() => createAppHost([mockPackage, packageThatTriesToUninstallAPackage], testHostOptions)).toThrow()
         })
+
+        it('should not trigger other reducers by scoped dispatch', () => {
+            interface ScopedState {
+                value: number
+            }
+            interface State1 {
+                state1: ScopedState
+            }
+            const INITIAL_STATE: ScopedState = { value: 0 }
+            const SET_VALUE = 'SET_VALUE'
+            const setValue = (value: number) => ({ type: SET_VALUE, value })
+
+            const host = createAppHost([])
+            const shell1 = addMockShell(host, {
+                attach(shell) {
+                    shell.contributeState<State1>(() => ({
+                        state1: (state: ScopedState = INITIAL_STATE, action): ScopedState => {
+                            switch (action.type) {
+                                case SET_VALUE:
+                                    return { value: action.value }
+                            }
+                            return state
+                        }
+                    }))
+                }
+            })
+
+            // Initial state
+            const getState = () => shell1.getStore<State1>().getState().state1.value
+            expect(getState()).toBe(0)
+
+            // Scoped dispatch
+            shell1.getStore<State1>().dispatch(setValue(73))
+            expect(getState()).toBe(73)
+
+            // Unscoped dispatch
+            host.getStore().dispatch(setValue(1337))
+            expect(getState()).toBe(1337)
+
+            addMockShell(host, {
+                extend(shell) {
+                    // Scoped dispatch in a different scope
+                    shell.getStore().dispatch(setValue(42))
+                }
+            })
+            expect(getState()).toBe(1337)
+        })
     })
 
     describe('Entry Point HMR support', () => {

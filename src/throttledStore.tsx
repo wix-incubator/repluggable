@@ -1,4 +1,4 @@
-import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch } from 'redux'
+import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
@@ -10,6 +10,10 @@ import { invokeSlotCallbacks } from './invokeSlotCallbacks'
 type ReducerNotificationScope = 'broadcasting' | 'observable'
 interface ShellsReducersMap {
     [shellName: string]: ReducersMapObject
+}
+
+interface AnyShellAction extends AnyAction {
+    __shellName?: string
 }
 
 const curry = _.curry
@@ -49,6 +53,7 @@ export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     broadcastNotify(): void
     observableNotify(observer: AnyPrivateObservableState): void
     resetPendingNotifications(): void
+    dispatchWithShell(shell: Shell): Dispatch
 }
 
 export interface PrivateObservableState<TState, TSelector> extends ObservableState<TSelector> {
@@ -62,9 +67,16 @@ const buildStoreReducer = (
     broadcastNotify: PrivateThrottledStore['broadcastNotify'],
     observableNotify: PrivateThrottledStore['observableNotify']
 ): Reducer => {
-    function withNotifyAction(originalReducersMap: ReducersMapObject, notifyAction: () => void): ReducersMapObject {
+    function withNotifyAction(
+        originalReducersMap: ReducersMapObject,
+        notifyAction: () => void,
+        storeShellName?: string
+    ): ReducersMapObject {
         const decorateReducer = (originalReducer: Reducer): Reducer => {
-            return (state0, action) => {
+            return (state0, action: AnyShellAction) => {
+                if (state0 && storeShellName && action.__shellName && storeShellName !== action.__shellName) {
+                    return state0
+                }
                 const state1 = originalReducer(state0, action)
                 if (state1 !== state0) {
                     notifyAction()
@@ -81,15 +93,17 @@ const buildStoreReducer = (
 
     function withBroadcastOrObservableNotify(
         { notificationScope, reducerFactory, observable }: StateContribution,
-        shellName: string
+        storeShellName: string
     ): ReducersMapObject {
         const originalReducersMap = reducerFactory()
         if (notificationScope === 'broadcasting') {
-            return withNotifyAction(originalReducersMap, broadcastNotify)
+            return withNotifyAction(originalReducersMap, broadcastNotify, storeShellName)
         }
         if (!observable) {
             // should never happen; would be an internal bug
-            throw new Error(`getPerShellReducersMapObject: notificationScope=observable but 'observable' is falsy, in shell '${shellName}'`)
+            throw new Error(
+                `getPerShellReducersMapObject: notificationScope=observable but 'observable' is falsy, in shell '${storeShellName}'`
+            )
         }
         return withNotifyAction(originalReducersMap, () => observableNotify(observable))
     }
@@ -218,10 +232,13 @@ export const createThrottledStore = (
         return dispatchResult
     }
 
+    const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({ ...action, __shellName: shell.name })
+
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
         dispatch,
+        dispatchWithShell: shell => action => dispatch(toShellAction(shell, action)),
         flush,
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
