@@ -1,21 +1,12 @@
 import _ from 'lodash'
-import React, { FunctionComponent, ReactElement, useEffect } from 'react'
+import React, { FunctionComponent, useEffect } from 'react'
 
 import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey, ObservedSelectorsMap } from '../src/API'
-import {
-    createAppHost,
-    mockPackage,
-    mockShellStateKey,
-    MockState,
-    renderInHost,
-    connectWithShell,
-    connectWithShellAndObserve,
-    withThrowOnError
-} from '../testKit'
+import { mockPackage, mockShellStateKey, MockState, renderInHost, connectWithShell, connectWithShellAndObserve } from '../testKit'
 import { mount, ReactWrapper } from 'enzyme'
-import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
 import { observeWithShell } from '../src'
+import { createMocks, dispatchAndFlush } from './utils'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -23,31 +14,6 @@ interface MockPackageState {
 
 const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name], null)
 const getValueFromState = (state: MockPackageState) => `${state[mockShellStateKey].mockValue}`
-
-const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = []) => {
-    let cachedShell: Shell | null = null
-    const wrappedPackage: EntryPoint = {
-        ...entryPoint,
-        attach(shell) {
-            _.invoke(entryPoint, 'attach', shell)
-            cachedShell = shell
-        }
-    }
-
-    const host = createAppHost([wrappedPackage, ...moreEntryPoints], withThrowOnError())
-    const getShell = () => cachedShell as Shell
-
-    return {
-        host,
-        shell: getShell(),
-        renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
-    }
-}
-
-const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
-    getStore().dispatch(action)
-    getStore().flush()
-}
 
 describe('connectWithShell', () => {
     it('should pass exact shell to mapStateToProps', () => {

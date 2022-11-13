@@ -318,7 +318,6 @@ export const createChainObservable = <TChainSelector, OM extends ObservablesMap>
         },
         notify,
         current: () => {
-            currentValue = chainFunction(getDependenciesValues())
             return currentValue
         }
     }
