@@ -60,7 +60,7 @@ describe('connectWithShell', () => {
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
-        expect(comp && comp.text()).toBe(mockPackage.name)
+        expect(comp && comp.text()).not.toBe(mockPackage.name)
     })
 
     it('should have shell context outside of main view with renderOutsideProvider option', () => {

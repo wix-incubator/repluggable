@@ -62,7 +62,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
 
     public render() {
-        if (this.state.hasErrors) {
+        if (this.state.hasError) {
             const { shell } = this.props
             const { enableStickyErrorBoundaries } = getHostOptions(shell)
             const qualifiedName = getQualifiedName(shell.name, this.props.componentName)
