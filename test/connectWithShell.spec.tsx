@@ -759,13 +759,44 @@ describe('connectWithShell-useCases', () => {
     })
 
     it('should throw if observable is read in store subscription', async () => {
-        const { host } = createMocks(withDependencyAPIs(entryPointSecondStateWithAPI, []), [entryPointFirstObservable])
+        const { host, shell, renderInShellContext } = createMocks(withDependencyAPIs(entryPointSecondStateWithAPI, [FirstObservableAPI]), [
+            entryPointFirstObservable
+        ])
 
-        host.getStore().subscribe(() => {
-            host.getAPI(FirstObservableAPI).observables.three.current().getValueThree()
-        })
+        const throwSpy = jest.fn()
 
-        expect(() => dispatchAndFlush({ type: 'SET_SECOND_STATE', value: 'update2' }, host)).toThrowError()
+        const ConnectedComp = connectWithShellAndObserve(
+            {
+                observedThree: host.getAPI(FirstObservableAPI).observables.three
+            },
+            (_shell, state: FirstState, ownProps): CompProps => {
+                let valueThree = 'three'
+                try {
+                    valueThree = _shell.getAPI(FirstObservableAPI).observables.three.current().getValueThree()
+                } catch (e) {
+                    throwSpy(e)
+                }
+                return {
+                    valueOne: 'one',
+                    valueTwo: 'two',
+                    valueThree
+                }
+            },
+            undefined,
+            shell,
+            { allowOutOfEntryPoint: true }
+        )(PureComp)
+
+        const { root } = renderInShellContext(<ConnectedComp />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        expect(throwSpy).toHaveBeenCalledTimes(0)
+
+        dispatchAndFlush({ type: 'SET_SECOND_STATE', value: 'update2' }, host)
+        expect(throwSpy).toHaveBeenCalledTimes(1)
     })
 
     it('should update only the relevant observing components', () => {
