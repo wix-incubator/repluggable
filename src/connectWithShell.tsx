@@ -182,9 +182,9 @@ export type ObservedSelectorsMap<M> = {
 
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
 
-export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
+function mapObservablesToSelectors<M extends ObservablesMap>(map: M, allowUnsafeReading?: boolean): ObservedSelectorsMap<M> {
     const result = _.mapValues(map, observable => {
-        const selector = observable.current()
+        const selector = observable.current(allowUnsafeReading)
         return selector
     })
     return result
@@ -222,14 +222,14 @@ function createObservableConnectedComponentFactory<
             constructor(props: OwnProps) {
                 super(props)
                 this.unsubscribes = []
-                this.state = mapObservablesToSelectors(observables)
+                this.state = mapObservablesToSelectors(observables, true)
                 this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : ({} as ShellStaticProps)
             }
 
             public componentDidMount() {
                 for (const key in observables) {
                     const unsubscribe = observables[key].subscribe(boundShell, () => {
-                        const newState = mapObservablesToSelectors(observables)
+                        const newState = mapObservablesToSelectors(observables, true)
                         this.setState(newState)
                     })
                     this.unsubscribes.push(unsubscribe)
@@ -252,7 +252,7 @@ function createObservableConnectedComponentFactory<
         }
 
         const hoc = (props: WithChildren<OmitObservedSelectors<OwnProps, MappedObservables>>) => {
-            return <ObservableWrapperComponent {...props} {...mapObservablesToSelectors(observables)} />
+            return <ObservableWrapperComponent {...props} {...mapObservablesToSelectors(observables, true)} />
         }
 
         return hoc
