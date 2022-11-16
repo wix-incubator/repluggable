@@ -182,7 +182,7 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
     boundShell: Shell,
     mapShellToStaticProps: MapShellToStaticProps<SSP, OP>,
     innerFactory?: ConnectedComponentFactory<S, OP, SP, DP>
-): ConnectedComponentFactory<S, OmitObservedSelectors<OP & SSP, OM>, SP, DP, OP> {
+): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
     type ObservableWrapperProps = OmitObservedSelectors<OP, OM>
     type ObservableWrapperState = ObservedSelectorsMap<OM>
 
@@ -247,7 +247,7 @@ export function observeWithShell<OM extends ObservablesMap, OP extends ObservedS
     observables: OM,
     boundShell: Shell,
     mapShellToStaticProps?: MapShellToStaticProps<SSP, OP>
-): ConnectedComponentFactory<{}, OmitObservedSelectors<OP & SSP, OM>, {}, {}, OP> {
+): ConnectedComponentFactory<{}, OmitObservedSelectors<OP, OM>, SSP, {}, OP> {
     return createObservableConnectedComponentFactory(observables, boundShell, mapShellToStaticProps)
 }
 

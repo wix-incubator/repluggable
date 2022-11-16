@@ -875,7 +875,7 @@ describe('observeWithShellPureComponent', () => {
 
     const renderSpyFunc = jest.fn()
 
-    const ComponentToObserve: FunctionComponent<ObservedSelectorsMap<{ observable: ObservableState<ObservableAPISelectors> }>> = props => {
+    const ComponentToObserve: FunctionComponent<ObservedSelectorsMap<ObservableAPI>> = props => {
         renderSpyFunc()
         return (
             <div>
@@ -958,5 +958,72 @@ describe('observeWithShellPureComponent', () => {
         expect(root.find(ObservingComponent).find('#OBSERVED_STRING').text()).toBe('update')
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(3)
+    })
+
+    it('should add props using mapShellToStaticProps', () => {
+        interface MyAPI {
+            myFunction(num: number): void
+        }
+        const MyAPI: SlotKey<MyAPI> = { name: 'MY API', public: true }
+        const myFunctionSpy = jest.fn()
+
+        const myAPIEntryPoint: EntryPoint = {
+            name: 'My API Entry Point',
+            getDependencyAPIs: () => [ObservableAPI],
+            declareAPIs: () => [MyAPI],
+            attach(boundShell) {
+                boundShell.contributeAPI(MyAPI, () => ({
+                    myFunction: num => {
+                        myFunctionSpy(num)
+                    }
+                }))
+            }
+        }
+
+        interface ComponentShellStaticProps {
+            onClick(num: number): void
+        }
+        type ComponentProps = ObservedSelectorsMap<ObservableAPI> & ComponentShellStaticProps
+
+        const PureComponent: FunctionComponent<ComponentProps> = props => {
+            return (
+                <div>
+                    <button onClick={() => props.onClick(props.observable.getNumberValue())} />
+                </div>
+            )
+        }
+
+        const { host, shell, renderInShellContext } = createMocks(myAPIEntryPoint, [observableEntryPoint])
+
+        const ObservingComponent = observeWithShell<
+            { observable: ObservableState<ObservableAPISelectors> },
+            ObservedSelectorsMap<ObservableAPI>,
+            ComponentShellStaticProps
+        >(
+            {
+                observable: host.getAPI(ObservableAPI).observable
+            },
+            shell,
+            (funcShell, ownProps?: ObservedSelectorsMap<ObservableAPI>): ComponentShellStaticProps => {
+                const myAPI = funcShell.getAPI(MyAPI)
+                return {
+                    onClick: (num: number) => {
+                        myAPI.myFunction(num)
+                    }
+                }
+            }
+        )(PureComponent)
+
+        const { root } = renderInShellContext(<ObservingComponent />)
+        if (!root) {
+            throw new Error('Connected component failed to render')
+        }
+
+        root.find('button').simulate('click')
+        expect(myFunctionSpy).toHaveBeenCalledWith(1)
+
+        dispatchAndFlush({ type: 'SET_NUMBER', value: 2 }, host)
+        root.find('button').simulate('click')
+        expect(myFunctionSpy).toHaveBeenCalledWith(2)
     })
 })
