@@ -18,6 +18,7 @@ type Maybe<T> = T | undefined
 type Returns<T> = () => T
 type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
 type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
+type MapShellToStaticProps<SSP, OP> = Maybe<(shell: Shell, ownProps?: OP) => SSP>
 type WithChildren<OP> = OP & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
 
@@ -176,19 +177,12 @@ export type ObservedSelectorsMap<M> = {
 
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
 
-export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
-    const result = _.mapValues(map, observable => {
-        const selector = observable.current()
-        return selector
-    })
-    return result
-}
-
-function createObservableConnectedComponentFactory<S, OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SP, DP>(
+function createObservableConnectedComponentFactory<S, OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SP, DP, SSP = {}>(
     observables: OM,
     boundShell: Shell,
+    mapShellToStaticProps: MapShellToStaticProps<SSP, OP>,
     innerFactory?: ConnectedComponentFactory<S, OP, SP, DP>
-): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
+): ConnectedComponentFactory<S, OmitObservedSelectors<OP & SSP, OM>, SP, DP, OP> {
     type ObservableWrapperProps = OmitObservedSelectors<OP, OM>
     type ObservableWrapperState = ObservedSelectorsMap<OM>
 
@@ -197,11 +191,13 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
 
         class ObservableWrapperComponent extends React.Component<ObservableWrapperProps, ObservableWrapperState> {
             public unsubscribes: StateObserverUnsubscribe[]
+            public staticShellProps: SSP
 
             constructor(props: OP) {
                 super(props)
                 this.unsubscribes = []
                 this.state = mapObservablesToSelectors(observables)
+                this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : (_.stubObject as Returns<SSP>)()
             }
 
             public componentDidMount() {
@@ -222,7 +218,8 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
             public render() {
                 const connectedComponentProps: OP = {
                     ...this.props, // OP excluding observed selectors
-                    ...this.state // observed selectors
+                    ...this.state, // observed selectors
+                    ...this.staticShellProps // shell static props
                 } as OP // TypeScript doesn't get it
                 return <ConnectedComponent {...connectedComponentProps} />
             }
@@ -238,11 +235,20 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
     return observableConnectedComponentFactory
 }
 
-export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
+export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
+    const result = _.mapValues(map, observable => {
+        const selector = observable.current()
+        return selector
+    })
+    return result
+}
+
+export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SSP = {}>(
     observables: OM,
-    boundShell: Shell
-): ConnectedComponentFactory<{}, OmitObservedSelectors<OP, OM>, {}, {}, OP> {
-    return createObservableConnectedComponentFactory(observables, boundShell)
+    boundShell: Shell,
+    mapShellToStaticProps?: MapShellToStaticProps<SSP, OP>
+): ConnectedComponentFactory<{}, OmitObservedSelectors<OP & SSP, OM>, {}, {}, OP> {
+    return createObservableConnectedComponentFactory(observables, boundShell, mapShellToStaticProps)
 }
 
 export function connectWithShellAndObserve<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, S = {}, SP = {}, DP = {}>(
@@ -264,6 +270,6 @@ function observeConnectedComponentWithShell<OM extends ObservablesMap, OP extend
     innerFactory: ConnectedComponentFactory<S, OP, SP, DP>
 ) => ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
     return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OP, SP, DP>) => {
-        return createObservableConnectedComponentFactory(observables, boundShell, innerFactory)
+        return createObservableConnectedComponentFactory(observables, boundShell, undefined, innerFactory)
     }
 }
