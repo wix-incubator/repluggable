@@ -956,8 +956,8 @@ miss: ${memoizedWithMissHit.miss}
                 })
                 const protectedObservable: PrivateObservableState<TState, TSelectorAPI> = {
                     subscribe: observable.subscribe,
-                    current: () => {
-                        if (IsStoreSubscribersNotifyInProgress) {
+                    current: (allowUnsafeReading?: boolean) => {
+                        if (IsStoreSubscribersNotifyInProgress && !allowUnsafeReading) {
                             throw new Error(
                                 `Should not read observable value during subscribers notify. ` +
                                     `If you wish to read the value, you component should be observing the value directly ` +
