@@ -2,7 +2,6 @@ import { AppHostOptions, HostLogger, LogSeverity, ShellLoggerSpan } from '../src
 
 export function withThrowOnError(options: AppHostOptions = { monitoring: {} }): AppHostOptions {
     const throwError = (error: Error, keyValuePairs?: Object) => {
-        console.error()
         throw new Error(`${error} ${keyValuePairs ? JSON.stringify(keyValuePairs) : ''}`)
     }
 
@@ -30,7 +29,6 @@ export function withThrowOnError(options: AppHostOptions = { monitoring: {} }): 
 
     return {
         ...options,
-        enableStickyErrorBoundaries: false,
         logger
     }
 }
