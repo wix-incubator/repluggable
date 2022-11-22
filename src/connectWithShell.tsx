@@ -193,13 +193,13 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
     type ObservableWrapperState = ObservedSelectorsMap<OM>
 
     const observableConnectedComponentFactory: ConnectedComponentFactory<S, ObservableWrapperProps, SP, DP, OP> = pureComponent => {
+        const ConnectedComponent: React.ComponentType<any> = innerFactory ? innerFactory(pureComponent) : pureComponent
+
         class ObservableWrapperComponent extends React.Component<ObservableWrapperProps, ObservableWrapperState> {
-            public connectedComponent: React.ComponentType<any>
             public unsubscribes: StateObserverUnsubscribe[]
 
             constructor(props: OP) {
                 super(props)
-                this.connectedComponent = innerFactory ? innerFactory(pureComponent) : pureComponent
                 this.unsubscribes = []
                 this.state = mapObservablesToSelectors(observables)
             }
@@ -220,7 +220,6 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
             }
 
             public render() {
-                const ConnectedComponent = this.connectedComponent
                 const connectedComponentProps: OP = {
                     ...this.props, // OP excluding observed selectors
                     ...this.state // observed selectors
