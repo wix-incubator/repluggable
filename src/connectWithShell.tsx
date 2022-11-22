@@ -177,6 +177,14 @@ export type ObservedSelectorsMap<M> = {
 
 export type OmitObservedSelectors<T, M> = Omit<T, keyof M>
 
+export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
+    const result = _.mapValues(map, observable => {
+        const selector = observable.current()
+        return selector
+    })
+    return result
+}
+
 function createObservableConnectedComponentFactory<S, OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SP, DP, SSP = {}>(
     observables: OM,
     boundShell: Shell,
@@ -197,7 +205,7 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
                 super(props)
                 this.unsubscribes = []
                 this.state = mapObservablesToSelectors(observables)
-                this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : (_.stubObject as Returns<SSP>)()
+                this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : ({} as SSP)
             }
 
             public componentDidMount() {
@@ -233,14 +241,6 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
     }
 
     return observableConnectedComponentFactory
-}
-
-export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): ObservedSelectorsMap<M> {
-    const result = _.mapValues(map, observable => {
-        const selector = observable.current()
-        return selector
-    })
-    return result
 }
 
 export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SSP = {}>(
