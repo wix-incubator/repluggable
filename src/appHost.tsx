@@ -125,7 +125,7 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
-    let IsStoreSubscribersNotifyInProgress = false
+    let isStoreSubscribersNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -585,8 +585,8 @@ miss: ${memoizedWithMissHit.miss}
                 contributedState,
                 window.requestAnimationFrame,
                 window.cancelAnimationFrame,
-                isSubscriptionNotifyInProgress => {
-                    IsStoreSubscribersNotifyInProgress = isSubscriptionNotifyInProgress
+                notifySubscribersIsRunning => {
+                    isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
                 }
             )
             store.subscribe(() => {
@@ -957,11 +957,12 @@ miss: ${memoizedWithMissHit.miss}
                 const protectedObservable: PrivateObservableState<TState, TSelectorAPI> = {
                     subscribe: observable.subscribe,
                     current: (allowUnsafeReading?: boolean) => {
-                        if (IsStoreSubscribersNotifyInProgress && !allowUnsafeReading) {
+                        if (isStoreSubscribersNotifyInProgress && !allowUnsafeReading) {
                             throw new Error(
-                                `Should not read observable value during subscribers notify. ` +
-                                    `If you wish to read the value, you component should be observing the value directly ` +
-                                    `(using observeWithShell or connectWithShellAndObserve)`
+                                `Observer created by ${shell.name} current() function: ` +
+                                    'Should not read observable value during subscribers notify. ' +
+                                    'If you wish to read the value, you component should be observing the value directly ' +
+                                    '(using observeWithShell or connectWithShellAndObserve)'
                             )
                         }
                         return observable.current()
