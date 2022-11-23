@@ -8,18 +8,19 @@ import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
 
-interface WrapperMembers<S, OP, SP, DP> {
+interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
-    mapStateToProps(state: S, ownProps?: OP): SP
-    mapDispatchToProps(dispatch: Dispatch<Action>, ownProps?: OP): DP
+    mapStateToProps(state: State, ownProps?: OwnProps): StateProps
+    mapDispatchToProps(dispatch: Dispatch<Action>, ownProps?: OwnProps): DispatchProps
 }
 
 type Maybe<T> = T | undefined
 type Returns<T> = () => T
-type MapStateToProps<S, OP, SP> = Maybe<(shell: Shell, state: S, ownProps?: OP) => SP>
-type MapDispatchToProps<OP, DP> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OP) => DP>
-type WithChildren<OP> = OP & { children?: React.ReactNode }
-type WrappedComponentOwnProps<OP> = OP & { shell: Shell }
+type MapStateToProps<State, OwnProps, StateProps> = Maybe<(shell: Shell, state: State, ownProps?: OwnProps) => StateProps>
+type MapDispatchToProps<OwnProps, DispatchProps> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OwnProps) => DispatchProps>
+type MapShellToStaticProps<ShellStaticProps, OwnProps> = Maybe<(shell: Shell, ownProps?: OwnProps) => ShellStaticProps>
+type WithChildren<OwnProps> = OwnProps & { children?: React.ReactNode }
+type WrappedComponentOwnProps<OwnProps> = OwnProps & { shell: Shell }
 
 const reduxConnectOptions = {
     context: StoreContext,
@@ -31,34 +32,36 @@ function wrapWithShouldUpdate<F extends AnyFunction>(shouldUpdate: Maybe<(shell:
     return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell) ? true : func(...args))) as F
 }
 
-function wrapWithShellContext<S, OP, SP, DP>(
-    component: React.ComponentType<OP & SP & DP>,
-    mapStateToProps: MapStateToProps<S, OP, SP>,
-    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
+    component: React.ComponentType<OwnProps & StateProps & DispatchProps>,
+    mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
+    mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-): ComponentWithChildrenProps<OP> {
-    class ConnectedComponent extends React.Component<WrappedComponentOwnProps<OP>> implements WrapperMembers<S, OP, SP, DP> {
-        public connectedComponent: React.ComponentType<OP>
-        public mapStateToProps: (state: S, ownProps?: OP) => SP
-        public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OP) => DP
+): ComponentWithChildrenProps<OwnProps> {
+    class ConnectedComponent
+        extends React.Component<WrappedComponentOwnProps<OwnProps>>
+        implements WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
+        public connectedComponent: React.ComponentType<OwnProps>
+        public mapStateToProps: (state: State, ownProps?: OwnProps) => StateProps
+        public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OwnProps) => DispatchProps
 
-        constructor(props: WrappedComponentOwnProps<OP>) {
+        constructor(props: WrappedComponentOwnProps<OwnProps>) {
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
                       return this.props.shell.log.monitor(`connectWithShell.mapStateToProps ${this.props.shell.name}`, {}, () =>
-                          mapStateToProps(this.props.shell, this.props.shell.getStore<S>().getState(), ownProps)
+                          mapStateToProps(this.props.shell, this.props.shell.getStore<State>().getState(), ownProps)
                       )
                   }
-                : (_.stubObject as Returns<SP>)
+                : (_.stubObject as Returns<StateProps>)
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => {
                       return this.props.shell.log.monitor(`connectWithShell.mapDispatchToProps ${this.props.shell.name}`, {}, () =>
                           mapDispatchToProps(this.props.shell, dispatch, ownProps)
                       )
                   }
-                : (_.stubObject as Returns<DP>)
+                : (_.stubObject as Returns<DispatchProps>)
 
             const shouldComponentUpdate =
                 options.shouldComponentUpdate && this.props.shell.memoizeForState(options.shouldComponentUpdate, () => '*')
@@ -74,7 +77,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
                 }) as F
             }
 
-            this.connectedComponent = reduxConnect<SP, DP, OP, S>(
+            this.connectedComponent = reduxConnect<StateProps, DispatchProps, OwnProps, State>(
                 memoWithShouldUpdate(this.mapStateToProps),
                 this.mapDispatchToProps,
                 undefined,
@@ -94,12 +97,12 @@ function wrapWithShellContext<S, OP, SP, DP>(
 
         public render() {
             const Component = this.connectedComponent
-            const props = _.omit(this.props, 'shell') as OP
+            const props = _.omit(this.props, 'shell') as OwnProps
             return <Component {...props} />
         }
     }
 
-    const wrapChildrenIfNeeded = (props: WithChildren<OP>, originalShell: Shell): WithChildren<OP> =>
+    const wrapChildrenIfNeeded = (props: WithChildren<OwnProps>, originalShell: Shell): WithChildren<OwnProps> =>
         props.children
             ? {
                   ...props,
@@ -107,7 +110,7 @@ function wrapWithShellContext<S, OP, SP, DP>(
               }
             : props
 
-    return (props: WithChildren<OP>) => (
+    return (props: WithChildren<OwnProps>) => (
         <ShellContext.Consumer>
             {shell => {
                 return (
@@ -120,8 +123,11 @@ function wrapWithShellContext<S, OP, SP, DP>(
     )
 }
 
-function wrapWithShellRenderer<OP>(boundShell: Shell, component: ComponentWithChildrenProps<OP>): ComponentWithChildrenProps<OP> {
-    return (props: WithChildren<OP>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
+function wrapWithShellRenderer<OwnProps>(
+    boundShell: Shell,
+    component: ComponentWithChildrenProps<OwnProps>
+): ComponentWithChildrenProps<OwnProps> {
+    return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
 }
 
 export interface ConnectWithShellOptions {
@@ -131,18 +137,18 @@ export interface ConnectWithShellOptions {
     renderOutsideProvider?: boolean
 }
 
-type ComponentWithChildrenProps<OP> = (props: WithChildren<OP>) => JSX.Element
+type ComponentWithChildrenProps<OwnProps> = (props: WithChildren<OwnProps>) => JSX.Element
 
-export type ConnectedComponentFactory<S = {}, OP = {}, SP = {}, DP = {}, OPPure = OP> = (
-    component: React.ComponentType<OPPure & SP & DP>
-) => ComponentWithChildrenProps<OP>
+export type ConnectedComponentFactory<State = {}, OwnProps = {}, StateProps = {}, DispatchProps = {}, OwnPropsPure = OwnProps> = (
+    component: React.ComponentType<OwnPropsPure & StateProps & DispatchProps>
+) => ComponentWithChildrenProps<OwnProps>
 
-export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
-    mapStateToProps: MapStateToProps<S, OP, SP>,
-    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, DispatchProps = {}>(
+    mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
+    mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-): ConnectedComponentFactory<S, OP, SP, DP> {
+): ConnectedComponentFactory<State, OwnProps, StateProps, DispatchProps> {
     const validateLifecycle = (component: React.ComponentType<any>) => {
         if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
             const componentText = component.displayName || component.name || component
@@ -156,7 +162,7 @@ export function connectWithShell<S = {}, OP = {}, SP = {}, DP = {}>(
         }
     }
 
-    return (component: React.ComponentType<OP & SP & DP>) => {
+    return (component: React.ComponentType<OwnProps & StateProps & DispatchProps>) => {
         validateLifecycle(component)
         const wrappedWithShellContext = wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
         if (options.renderOutsideProvider) {
@@ -184,24 +190,40 @@ export function mapObservablesToSelectors<M extends ObservablesMap>(map: M): Obs
     return result
 }
 
-function createObservableConnectedComponentFactory<S, OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, SP, DP>(
-    observables: OM,
+function createObservableConnectedComponentFactory<
+    State,
+    MappedObservables extends ObservablesMap,
+    OwnProps extends ObservedSelectorsMap<MappedObservables>,
+    StateProps,
+    DispatchProps,
+    ShellStaticProps = {}
+>(
+    observables: MappedObservables,
     boundShell: Shell,
-    innerFactory?: ConnectedComponentFactory<S, OP, SP, DP>
-): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
-    type ObservableWrapperProps = OmitObservedSelectors<OP, OM>
-    type ObservableWrapperState = ObservedSelectorsMap<OM>
+    mapShellToStaticProps: MapShellToStaticProps<ShellStaticProps, OwnProps>,
+    innerFactory?: ConnectedComponentFactory<State, OwnProps, StateProps, DispatchProps>
+): ConnectedComponentFactory<State, OmitObservedSelectors<OwnProps, MappedObservables>, StateProps, DispatchProps, OwnProps> {
+    type ObservableWrapperProps = OmitObservedSelectors<OwnProps, MappedObservables>
+    type ObservableWrapperState = ObservedSelectorsMap<MappedObservables>
 
-    const observableConnectedComponentFactory: ConnectedComponentFactory<S, ObservableWrapperProps, SP, DP, OP> = pureComponent => {
+    const observableConnectedComponentFactory: ConnectedComponentFactory<
+        State,
+        ObservableWrapperProps,
+        StateProps,
+        DispatchProps,
+        OwnProps
+    > = pureComponent => {
         const ConnectedComponent: React.ComponentType<any> = innerFactory ? innerFactory(pureComponent) : pureComponent
 
         class ObservableWrapperComponent extends React.Component<ObservableWrapperProps, ObservableWrapperState> {
             public unsubscribes: StateObserverUnsubscribe[]
+            public staticShellProps: ShellStaticProps
 
-            constructor(props: OP) {
+            constructor(props: OwnProps) {
                 super(props)
                 this.unsubscribes = []
                 this.state = mapObservablesToSelectors(observables)
+                this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : ({} as ShellStaticProps)
             }
 
             public componentDidMount() {
@@ -220,15 +242,16 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
             }
 
             public render() {
-                const connectedComponentProps: OP = {
+                const connectedComponentProps: OwnProps = {
                     ...this.props, // OP excluding observed selectors
-                    ...this.state // observed selectors
-                } as OP // TypeScript doesn't get it
+                    ...this.state, // observed selectors
+                    ...this.staticShellProps // shell static props
+                } as OwnProps // TypeScript doesn't get it
                 return <ConnectedComponent {...connectedComponentProps} />
             }
         }
 
-        const hoc = (props: WithChildren<OmitObservedSelectors<OP, OM>>) => {
+        const hoc = (props: WithChildren<OmitObservedSelectors<OwnProps, MappedObservables>>) => {
             return <ObservableWrapperComponent {...props} {...mapObservablesToSelectors(observables)} />
         }
 
@@ -238,32 +261,46 @@ function createObservableConnectedComponentFactory<S, OM extends ObservablesMap,
     return observableConnectedComponentFactory
 }
 
-export function observeWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
-    observables: OM,
-    boundShell: Shell
-): ConnectedComponentFactory<{}, OmitObservedSelectors<OP, OM>, {}, {}, OP> {
-    return createObservableConnectedComponentFactory(observables, boundShell)
+export function observeWithShell<
+    MappedObservables extends ObservablesMap,
+    OwnProps extends ObservedSelectorsMap<MappedObservables>,
+    ShellStaticProps = {}
+>(
+    observables: MappedObservables,
+    boundShell: Shell,
+    mapShellToStaticProps?: MapShellToStaticProps<ShellStaticProps, OwnProps>
+): ConnectedComponentFactory<{}, OmitObservedSelectors<OwnProps, MappedObservables>, ShellStaticProps, {}, OwnProps> {
+    return createObservableConnectedComponentFactory(observables, boundShell, mapShellToStaticProps)
 }
 
-export function connectWithShellAndObserve<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>, S = {}, SP = {}, DP = {}>(
-    observables: OM,
-    mapStateToProps: MapStateToProps<S, OP, SP>,
-    mapDispatchToProps: MapDispatchToProps<OP, DP>,
+export function connectWithShellAndObserve<
+    MappedObservables extends ObservablesMap,
+    OwnProps extends ObservedSelectorsMap<MappedObservables>,
+    State = {},
+    StateProps = {},
+    DispatchProps = {}
+>(
+    observables: MappedObservables,
+    mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
+    mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
     options: ConnectWithShellOptions = {}
-): ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
+): ConnectedComponentFactory<State, OmitObservedSelectors<OwnProps, MappedObservables>, StateProps, DispatchProps, OwnProps> {
     const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
-    const wrapperFactory = observeConnectedComponentWithShell<OM, OP>(observables, boundShell)(innerFactory)
+    const wrapperFactory = observeConnectedComponentWithShell<MappedObservables, OwnProps>(observables, boundShell)(innerFactory)
     return wrapperFactory
 }
 
-function observeConnectedComponentWithShell<OM extends ObservablesMap, OP extends ObservedSelectorsMap<OM>>(
-    observables: OM,
+function observeConnectedComponentWithShell<
+    MappedObservables extends ObservablesMap,
+    OwnProps extends ObservedSelectorsMap<MappedObservables>
+>(
+    observables: MappedObservables,
     boundShell: Shell
 ): <S, SP, DP>(
-    innerFactory: ConnectedComponentFactory<S, OP, SP, DP>
-) => ConnectedComponentFactory<S, OmitObservedSelectors<OP, OM>, SP, DP, OP> {
-    return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OP, SP, DP>) => {
-        return createObservableConnectedComponentFactory(observables, boundShell, innerFactory)
+    innerFactory: ConnectedComponentFactory<S, OwnProps, SP, DP>
+) => ConnectedComponentFactory<S, OmitObservedSelectors<OwnProps, MappedObservables>, SP, DP, OwnProps> {
+    return <S, SP, DP>(innerFactory: ConnectedComponentFactory<S, OwnProps, SP, DP>) => {
+        return createObservableConnectedComponentFactory(observables, boundShell, undefined, innerFactory)
     }
 }
