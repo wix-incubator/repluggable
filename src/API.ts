@@ -324,7 +324,7 @@ export type StateObserverUnsubscribe = () => void
 export type StateObserver<TSelectorAPI> = (next: TSelectorAPI) => void
 export interface ObservableState<TSelectorAPI> {
     subscribe(fromShell: Shell, callback: StateObserver<TSelectorAPI>): StateObserverUnsubscribe
-    current(): TSelectorAPI
+    current(allowUnsafeReading?: boolean): TSelectorAPI
 }
 
 export type AnyFunction = (...args: any[]) => any
