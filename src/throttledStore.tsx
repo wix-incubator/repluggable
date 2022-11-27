@@ -65,7 +65,8 @@ export type AnyPrivateObservableState = PrivateObservableState<any, any>
 const buildStoreReducer = (
     contributedState: ExtensionSlot<StateContribution>,
     broadcastNotify: PrivateThrottledStore['broadcastNotify'],
-    observableNotify: PrivateThrottledStore['observableNotify']
+    observableNotify: PrivateThrottledStore['observableNotify'],
+    shouldScopeReducers?: boolean
 ): Reducer => {
     function withNotifyAction(
         originalReducersMap: ReducersMapObject,
@@ -74,7 +75,7 @@ const buildStoreReducer = (
     ): ReducersMapObject {
         const decorateReducer = (originalReducer: Reducer): Reducer => {
             return (state0, action: AnyShellAction) => {
-                if (state0 && storeShellName && action.__shellName && storeShellName !== action.__shellName) {
+                if (shouldScopeReducers && state0 && storeShellName && action.__shellName && storeShellName !== action.__shellName) {
                     return state0
                 }
                 const state1 = originalReducer(state0, action)
@@ -138,8 +139,12 @@ const buildStoreReducer = (
     return combinedReducer
 }
 
-export const updateThrottledStore = (store: PrivateThrottledStore, contributedState: ExtensionSlot<StateContribution>): void => {
-    const newReducer = buildStoreReducer(contributedState, store.broadcastNotify, store.observableNotify)
+export const updateThrottledStore = (
+    host: AppHost & AppHostServicesProvider,
+    store: PrivateThrottledStore,
+    contributedState: ExtensionSlot<StateContribution>
+): void => {
+    const newReducer = buildStoreReducer(contributedState, store.broadcastNotify, store.observableNotify, host.options.shouldScopeReducers)
     store.replaceReducer(newReducer)
     store.resetPendingNotifications()
 }
@@ -174,7 +179,7 @@ export const createThrottledStore = (
         pendingObservableNotifications = undefined
     }
 
-    const reducer = buildStoreReducer(contributedState, onBroadcastNotify, onObservableNotify)
+    const reducer = buildStoreReducer(contributedState, onBroadcastNotify, onObservableNotify, host.options.shouldScopeReducers)
     const store: Store = host.options.enableReduxDevtoolsExtension
         ? createStore(reducer, devToolsEnhancer({ name: 'repluggable' }))
         : createStore(reducer)
