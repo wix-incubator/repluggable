@@ -299,6 +299,7 @@ export interface AppHostOptions {
     readonly enableStickyErrorBoundaries?: boolean
     readonly enableReduxDevtoolsExtension?: boolean
     readonly experimentalCyclicMode?: boolean
+    readonly shouldScopeReducers?: boolean
 }
 
 export interface MemoizeMissHit {

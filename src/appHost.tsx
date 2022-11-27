@@ -578,7 +578,7 @@ miss: ${memoizedWithMissHit.miss}
         const contributedState = getSlot(stateSlotKey)
 
         if (store) {
-            updateThrottledStore(store, contributedState)
+            updateThrottledStore(host, store, contributedState)
         } else {
             store = createThrottledStore(
                 host,

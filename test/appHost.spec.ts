@@ -937,7 +937,7 @@ describe('App Host', () => {
             const SET_VALUE = 'SET_VALUE'
             const setValue = (value: number) => ({ type: SET_VALUE, value })
 
-            const host = createAppHost([])
+            const host = createAppHost([], { shouldScopeReducers: true, monitoring: {} })
             const shell1 = addMockShell(host, {
                 attach(shell) {
                     shell.contributeState<State1>(() => ({
