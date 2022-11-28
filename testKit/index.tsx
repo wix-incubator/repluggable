@@ -1,7 +1,7 @@
 import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
+import { EntryPoint, ObservablesMap, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
@@ -227,6 +227,7 @@ function createShell(host: AppHost): PrivateShell {
         },
         contributeState: _.noop,
         contributeObservableState: <TState, TSelectors, TAction>() => mockObservable<TSelectors>(undefined as any),
+        contributeChainObservableState: <TChainSelector, OM extends ObservablesMap>() => mockObservable<TChainSelector>(undefined as any),
         contributeMainView: _.noop,
         flushMemoizedForState: _.noop,
         memoizeForState: _.identity,

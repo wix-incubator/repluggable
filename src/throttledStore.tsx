@@ -2,7 +2,17 @@ import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAct
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, StateObserver, Shell, SlotKey } from './API'
+import {
+    AppHost,
+    ExtensionSlot,
+    ReducersMapObjectContributor,
+    ObservableState,
+    StateObserver,
+    Shell,
+    SlotKey,
+    ObservablesMap,
+    ObservedSelectorsMap
+} from './API'
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
@@ -291,5 +301,49 @@ export const createObservable = <TState, TSelector>(
             invokeSlotCallbacks(observersSlot, newSelector)
         },
         current: getOrCreateCachedSelector
+    }
+}
+
+export const createChainObservable = <TChainSelector, OM extends ObservablesMap>(
+    shell: Shell,
+    uniqueName: string,
+    observablesDependencies: OM,
+    chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OM>) => TChainSelector
+): PrivateObservableState<any, TChainSelector> => {
+    const getDependenciesValues = (): ObservedSelectorsMap<OM> => {
+        return _.mapValues(observablesDependencies, observable => {
+            const selector = observable.current()
+            return selector
+        })
+    }
+    let currentValue: TChainSelector = chainFunction(shell, getDependenciesValues())
+
+    const subscribersSlotKey: SlotKey<StateObserver<TChainSelector>> = {
+        name: uniqueName
+    }
+    const observersSlot = shell.declareSlot(subscribersSlotKey)
+
+    const notify = () => {
+        invokeSlotCallbacks(observersSlot, currentValue)
+    }
+
+    for (const key in observablesDependencies) {
+        observablesDependencies[key].subscribe(shell, () => {
+            currentValue = chainFunction(shell, getDependenciesValues())
+            notify()
+        })
+    }
+
+    return {
+        subscribe(fromShell, callback) {
+            observersSlot.contribute(fromShell, callback)
+            return () => {
+                observersSlot.discardBy(item => item.contribution === callback)
+            }
+        },
+        notify,
+        current: () => {
+            return currentValue
+        }
     }
 }

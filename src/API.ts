@@ -328,6 +328,14 @@ export interface ObservableState<TSelectorAPI> {
     current(allowUnsafeReading?: boolean): TSelectorAPI
 }
 
+export interface ObservablesMap {
+    [key: string]: ObservableState<any>
+}
+
+export type ObservedSelectorsMap<M> = {
+    [K in keyof M]: M[K] extends ObservableState<infer S> ? S : undefined
+}
+
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 
@@ -417,6 +425,18 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
         contributor: ReducersMapObjectContributor<TState, TAction>,
         selectorFactory: (state: TState) => TSelector
     ): ObservableState<TSelector>
+
+    /**
+     * ????
+     *
+     * @template TState
+     * @param {ReducersMapObjectContributor<TState>} contributor
+     * @return {TAPI} Observer object for subscribing to state changes. The observer can also be passed to {connectWithShell}.
+     */
+    contributeChainObservableState<TChainSelector, OBM extends ObservablesMap>(
+        observablesDependencies: OBM,
+        chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
+    ): ObservableState<TChainSelector>
 
     /**
      * Contribute the main view (root) of the application

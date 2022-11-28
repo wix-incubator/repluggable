@@ -29,7 +29,9 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    ObservableState
+    ObservableState,
+    ObservablesMap,
+    ObservedSelectorsMap
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
@@ -37,6 +39,7 @@ import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { dependentAPIs, declaredAPIs } from './appHostUtils'
 import {
+    createChainObservable,
     createObservable,
     createThrottledStore,
     PrivateObservableState,
@@ -976,6 +979,15 @@ miss: ${memoizedWithMissHit.miss}
                 }
                 getSlot(stateSlotKey).contribute(shell, contribution)
                 return protectedObservable
+            },
+
+            contributeChainObservableState<TChainSelector, OBM extends ObservablesMap>(
+                observablesDependencies: OBM,
+                chainFunction: (shell: Shell, observedDependencies: ObservedSelectorsMap<OBM>) => TChainSelector
+            ): ObservableState<TChainSelector> {
+                const observableUniqueName = `${entryPoint.name}/observable_${nextObservableId++}`
+                const observable = createChainObservable(shell, observableUniqueName, observablesDependencies, chainFunction)
+                return observable
             },
 
             getStore<TState>(): ScopedStore<TState> {
