@@ -165,12 +165,8 @@ export const createThrottledStore = (
         pendingObservableNotifications.add(observable)
     }
 
-    const resetPendingBroadcastNotifications = () => {
-        pendingBroadcastNotification = false
-    }
-
     const resetAllPendingNotifications = () => {
-        resetPendingBroadcastNotifications()
+        pendingBroadcastNotification = false
         pendingObservableNotifications = undefined
     }
 
@@ -230,7 +226,6 @@ export const createThrottledStore = (
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        resetPendingBroadcastNotifications()
         const dispatchResult = store.dispatch(action)
         return dispatchResult
     }
