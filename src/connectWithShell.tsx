@@ -132,8 +132,17 @@ function wrapWithShellRenderer<OwnProps>(
 
 export interface ConnectWithShellOptions {
     readonly componentName?: string
+    /**
+     * Allow connecting the component outside of Entry Point lifecycle (use only when you really have no choice)
+     */
     readonly allowOutOfEntryPoint?: boolean
+    /**
+     * Update the component only when this function returns true
+     */
     shouldComponentUpdate?(shell: Shell): boolean
+    /**
+     * Wraps the component with host and shell contexts, to allow valid connection outside AppHost
+     */
     renderOutsideProvider?: boolean
 }
 
@@ -147,11 +156,8 @@ export type ConnectedComponentFactory<State = {}, OwnProps = {}, StateProps = {}
  * Connect the component as a subscriber to any state updates
  * @param mapStateToProps - Map the state to component props
  * @param mapDispatchToProps - Map the state dispatch function to component functional props
- * @param boundShell - the connecting shell
- * @param options - Optional extra settings like -
- *  shouldComponentUpdate - Update the component only when this function returns true
- *  allowOutOfEntrypoint - Allow connecting the component outside of Entry Point lifecycle (use only when you really have no choice)
- *  renderOutsideProvider - Wraps the component with host and shell contexts, to allow valid connection outside AppHost
+ * @param boundShell - The connecting shell
+ * @param options - Optional extra settings
  */
 export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, DispatchProps = {}>(
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
