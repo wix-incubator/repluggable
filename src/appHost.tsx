@@ -587,11 +587,9 @@ miss: ${memoizedWithMissHit.miss}
                 window.cancelAnimationFrame,
                 notifySubscribersIsRunning => {
                     isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
-                }
+                },
+                () => flushMemoizedForState()
             )
-            store.subscribe(() => {
-                flushMemoizedForState()
-            })
         }
 
         return store

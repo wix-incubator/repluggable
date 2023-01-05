@@ -154,7 +154,8 @@ export const createThrottledStore = (
     contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame'],
-    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void
+    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
+    onSubscribe?: () => void
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -224,6 +225,12 @@ export const createThrottledStore = (
     store.subscribe(() => {
         cancelRender = notifyAllOnAnimationFrame()
     })
+
+    if (onSubscribe) {
+        store.subscribe(() => {
+            onSubscribe()
+        })
+    }
 
     const flush = () => {
         cancelRender()
