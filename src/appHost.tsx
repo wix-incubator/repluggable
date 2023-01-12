@@ -556,21 +556,36 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
-        const graph = new Graph()
+        const dependentGraph: { [key: string]: string[] } = {}
         entryPoints.forEach(x => {
             const declaredApis = declaredAPIs(x)
-            const dependencies = dependentAPIs(x).map(child => slotKeyToName(child))
-            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(slotKeyToName(d), y)))
+            const dependencies = dependentAPIs(x).map(child => child.name)
+            declaredApis.forEach(d => {
+                dependentGraph[d.name] = dependencies
+            })
         })
 
-        const tarjan = new Tarjan(graph)
-        const sccs = tarjan.run()
-
-        for (const scc of sccs) {
-            if (scc.length > 1) {
-                host.log.log('error', `Circular API dependency found: ${scc.map(x => slotKeyToName(x)).join(' -> ')}`)
-                throw new Error(`Circular API dependency found`)
+        function getCycle() {
+            let queue = Object.keys(dependentGraph).map(node => [node])
+            while (queue.length) {
+                const batch = []
+                for (const path of queue) {
+                    const parents = dependentGraph[path[0]] || []
+                    for (const node of parents) {
+                        if (node === path[path.length - 1]) {
+                            return [node, ...path]
+                        }
+                        batch.push([node, ...path])
+                    }
+                }
+                queue = batch
             }
+        }
+
+        const circle = getCycle()
+        if (circle) {
+            host.log.log('debug', `Circular API dependency found: ${circle.join(' -> ')}`)
+            throw new Error(`Circular API dependency found`)
         }
     }
 
