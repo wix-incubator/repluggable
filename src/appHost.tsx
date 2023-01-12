@@ -579,7 +579,7 @@ miss: ${memoizedWithMissHit.miss}
 
                 const circle = getCycle(dependentGraph)
                 if (circle) {
-                    host.log.log('debug', `Circular API dependency found: ${circle.join(' -> ')}`)
+                    host.log.log('error', `Circular API dependency found: ${circle.join(' -> ')}`)
                     throw new Error(`Circular API dependency found`)
                 }
             }
