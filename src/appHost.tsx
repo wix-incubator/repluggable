@@ -47,7 +47,7 @@ import {
 } from './throttledStore'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
-import { Graph, Tarjan } from './tarjanGraph'
+import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
 import { ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
@@ -556,36 +556,33 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
-        const dependentGraph: { [key: string]: string[] } = {}
+        const graph = new Graph()
         entryPoints.forEach(x => {
             const declaredApis = declaredAPIs(x)
-            const dependencies = dependentAPIs(x).map(child => child.name)
-            declaredApis.forEach(d => {
-                dependentGraph[d.name] = dependencies
-            })
+            const dependencies = dependentAPIs(x).map(child => slotKeyToName(child))
+            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(slotKeyToName(d), y)))
         })
 
-        function getCycle() {
-            let queue = Object.keys(dependentGraph).map(node => [node])
-            while (queue.length) {
-                const batch = []
-                for (const path of queue) {
-                    const parents = dependentGraph[path[0]] || []
-                    for (const node of parents) {
-                        if (node === path[path.length - 1]) {
-                            return [node, ...path]
-                        }
-                        batch.push([node, ...path])
-                    }
-                }
-                queue = batch
-            }
-        }
+        const tarjan = new Tarjan(graph)
+        const sccs = tarjan.run()
 
-        const circle = getCycle()
-        if (circle) {
-            host.log.log('debug', `Circular API dependency found: ${circle.join(' -> ')}`)
-            throw new Error(`Circular API dependency found`)
+        for (const scc of sccs) {
+            if (scc.length > 1) {
+                const dependentGraph: { [key: string]: string[] } = {}
+                entryPoints.forEach(x => {
+                    const declaredApis = declaredAPIs(x)
+                    const dependencies = dependentAPIs(x).map(child => child.name)
+                    declaredApis.forEach(d => {
+                        dependentGraph[d.name] = dependencies
+                    })
+                })
+
+                const circle = getCycle(dependentGraph)
+                if (circle) {
+                    host.log.log('debug', `Circular API dependency found: ${circle.join(' -> ')}`)
+                    throw new Error(`Circular API dependency found`)
+                }
+            }
         }
     }
 

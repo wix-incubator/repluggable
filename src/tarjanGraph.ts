@@ -31,6 +31,23 @@ class Vertex {
     constructor(public name: string) {}
 }
 
+export function getCycle(dependentGraph: { [key: string]: string[] }) {
+    let queue = Object.keys(dependentGraph).map(node => [node])
+    while (queue.length) {
+        const batch = []
+        for (const path of queue) {
+            const parents = dependentGraph[path[0]] || []
+            for (const node of parents) {
+                if (node === path[path.length - 1]) {
+                    return [node, ...path]
+                }
+                batch.push([node, ...path])
+            }
+        }
+        queue = batch
+    }
+}
+
 export class Tarjan {
     private index = 0
     private readonly stack: Vertex[] = []
