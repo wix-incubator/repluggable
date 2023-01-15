@@ -556,11 +556,27 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
+        const allDeclaredAPIs = new Map<string, AnyEntryPoint>()
+        for (const ep of entryPoints) {
+            const apis = declaredAPIs(ep)
+            for (const api of apis) {
+                const existingDeclaration = allDeclaredAPIs.get(api.name)
+                if (existingDeclaration) {
+                    host.log.log(
+                        'warning',
+                        `The API: ${api.name} is declared in multiple endpoints: ${existingDeclaration.name} and ${ep.name}`
+                    )
+                } else {
+                    allDeclaredAPIs.set(api.name, ep)
+                }
+            }
+        }
+
         const graph = new Graph()
-        entryPoints.forEach(x => {
-            const declaredApis = declaredAPIs(x)
-            const dependencies = dependentAPIs(x).map(child => slotKeyToName(child))
-            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(slotKeyToName(d), y)))
+        entryPoints.forEach(ep => {
+            const declaredApis = declaredAPIs(ep).map(x => slotKeyToName(x))
+            const dependencies = dependentAPIs(ep).map(x => slotKeyToName(x))
+            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(d, y)))
         })
 
         const tarjan = new Tarjan(graph)
@@ -569,11 +585,11 @@ miss: ${memoizedWithMissHit.miss}
         for (const scc of sccs) {
             if (scc.length > 1) {
                 const dependentGraph: { [key: string]: string[] } = {}
-                entryPoints.forEach(x => {
-                    const declaredApis = declaredAPIs(x)
-                    const dependencies = dependentAPIs(x).map(child => child.name)
+                entryPoints.forEach(ep => {
+                    const declaredApis = declaredAPIs(ep).map(child => child.name)
+                    const dependencies = dependentAPIs(ep).map(child => child.name)
                     declaredApis.forEach(d => {
-                        dependentGraph[d.name] = dependencies
+                        dependentGraph[d] = dependencies
                     })
                 })
 
