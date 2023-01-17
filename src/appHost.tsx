@@ -125,7 +125,6 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
-    let isStoreSubscribersNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -580,16 +579,15 @@ miss: ${memoizedWithMissHit.miss}
         if (store) {
             updateThrottledStore(host, store, contributedState)
         } else {
-            store = createThrottledStore(
-                host,
-                contributedState,
-                window.requestAnimationFrame,
-                window.cancelAnimationFrame,
-                notifySubscribersIsRunning => {
-                    isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
-                },
-                () => flushMemoizedForState()
-            )
+            store = createThrottledStore(host, contributedState, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store.subscribe(() => {
+                flushMemoizedForState()
+            })
+            store.syncSubscribe(() => {
+                if (store?.isNotifyInProgress()) {
+                    flushMemoizedForState()
+                }
+            })
         }
 
         return store
@@ -955,7 +953,7 @@ miss: ${memoizedWithMissHit.miss}
                 const protectedObservable: PrivateObservableState<TState, TSelectorAPI> = {
                     subscribe: observable.subscribe,
                     current: (allowUnsafeReading?: boolean) => {
-                        if (isStoreSubscribersNotifyInProgress && !allowUnsafeReading) {
+                        if (store?.isNotifyInProgress() && !allowUnsafeReading) {
                             throw new Error(
                                 `Observer created by ${shell.name} current() function: ` +
                                     'Should not read observable value during subscribers notify. ' +

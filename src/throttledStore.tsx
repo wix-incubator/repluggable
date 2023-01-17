@@ -1,4 +1,4 @@
-import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action } from 'redux'
+import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action, Unsubscribe } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
@@ -47,12 +47,15 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
     flush(): void
+    isNotifyInProgress(): boolean
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     broadcastNotify(): void
     observableNotify(observer: AnyPrivateObservableState): void
     resetPendingNotifications(): void
+    isNotifyInProgress(): boolean
+    syncSubscribe(listener: () => void): Unsubscribe
     dispatchWithShell(shell: Shell): Dispatch
 }
 
@@ -153,9 +156,7 @@ export const createThrottledStore = (
     host: AppHost & AppHostServicesProvider,
     contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
-    cancelAnimationFrame: Window['cancelAnimationFrame'],
-    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
-    onSubscribe?: () => void
+    cancelAnimationFrame: Window['cancelAnimationFrame']
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -191,6 +192,9 @@ export const createThrottledStore = (
         }
     }
 
+    let isStoreSubscribersNotifyInProgress = false
+    const isNotifyInProgress = () => isStoreSubscribersNotifyInProgress
+
     const notifySubscribers = () => {
         if (pendingBroadcastNotification || !pendingObservableNotifications) {
             host.getAppHostServicesShell().log.monitor('ThrottledStore.notifySubscribers', {}, () =>
@@ -210,11 +214,13 @@ export const createThrottledStore = (
     const notifyAll = () => {
         try {
             notifyObservers()
-            updateIsSubscriptionNotifyInProgress(true)
+            isStoreSubscribersNotifyInProgress = true
             notifySubscribers()
         } finally {
-            resetAllPendingNotifications()
-            updateIsSubscriptionNotifyInProgress(false)
+            if (!isStoreSubscribersNotifyInProgress) {
+                resetAllPendingNotifications()
+            }
+            isStoreSubscribersNotifyInProgress = false
         }
     }
 
@@ -226,19 +232,15 @@ export const createThrottledStore = (
         cancelRender = notifyAllOnAnimationFrame()
     })
 
-    if (onSubscribe) {
-        store.subscribe(() => {
-            onSubscribe()
-        })
-    }
-
     const flush = () => {
         cancelRender()
         notifyAll()
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        const dispatchResult = store.dispatch(action)
+        // start reducer
+        const dispatchResult = store.dispatch(action) // store.subscribe
+
         return dispatchResult
     }
 
@@ -247,13 +249,15 @@ export const createThrottledStore = (
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
+        syncSubscribe: store.subscribe,
         dispatch,
         dispatchWithShell: shell => action => dispatch(toShellAction(shell, action)),
         flush,
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
-        hasPendingSubscribers: () => pendingBroadcastNotification
+        hasPendingSubscribers: () => pendingBroadcastNotification,
+        isNotifyInProgress
     }
 
     resetAllPendingNotifications()
