@@ -217,9 +217,7 @@ export const createThrottledStore = (
             isStoreSubscribersNotifyInProgress = true
             notifySubscribers()
         } finally {
-            if (!isStoreSubscribersNotifyInProgress) {
-                resetAllPendingNotifications()
-            }
+            resetAllPendingNotifications()
             isStoreSubscribersNotifyInProgress = false
         }
     }
@@ -238,10 +236,7 @@ export const createThrottledStore = (
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        // start reducer
-        const dispatchResult = store.dispatch(action) // store.subscribe
-
-        return dispatchResult
+        return store.dispatch(action)
     }
 
     const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({ ...action, __shellName: shell.name })
