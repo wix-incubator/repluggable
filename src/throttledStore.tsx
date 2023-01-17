@@ -47,14 +47,12 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
     flush(): void
-    isNotifyInProgress(): boolean
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     broadcastNotify(): void
     observableNotify(observer: AnyPrivateObservableState): void
     resetPendingNotifications(): void
-    isNotifyInProgress(): boolean
     syncSubscribe(listener: () => void): Unsubscribe
     dispatchWithShell(shell: Shell): Dispatch
 }
@@ -156,7 +154,8 @@ export const createThrottledStore = (
     host: AppHost & AppHostServicesProvider,
     contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
-    cancelAnimationFrame: Window['cancelAnimationFrame']
+    cancelAnimationFrame: Window['cancelAnimationFrame'],
+    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -192,9 +191,6 @@ export const createThrottledStore = (
         }
     }
 
-    let isStoreSubscribersNotifyInProgress = false
-    const isNotifyInProgress = () => isStoreSubscribersNotifyInProgress
-
     const notifySubscribers = () => {
         if (pendingBroadcastNotification || !pendingObservableNotifications) {
             host.getAppHostServicesShell().log.monitor('ThrottledStore.notifySubscribers', {}, () =>
@@ -214,11 +210,11 @@ export const createThrottledStore = (
     const notifyAll = () => {
         try {
             notifyObservers()
-            isStoreSubscribersNotifyInProgress = true
+            updateIsSubscriptionNotifyInProgress(true)
             notifySubscribers()
         } finally {
             resetAllPendingNotifications()
-            isStoreSubscribersNotifyInProgress = false
+            updateIsSubscriptionNotifyInProgress(false)
         }
     }
 
@@ -251,8 +247,7 @@ export const createThrottledStore = (
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
-        hasPendingSubscribers: () => pendingBroadcastNotification,
-        isNotifyInProgress
+        hasPendingSubscribers: () => pendingBroadcastNotification
     }
 
     resetAllPendingNotifications()

@@ -125,6 +125,7 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
+    let isStoreSubscribersNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -149,6 +150,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
     const memoizedFunctions: IterableWeakMap<AnyFunction, MemoizedFunctionData> = new IterableWeakMap()
+    let shouldFlushMemoization = false
 
     const hostAPI: AppHostAPI = {
         getAllEntryPoints: () => [...addedShells.entries()].map(([, { entryPoint }]) => entryPoint),
@@ -579,12 +581,25 @@ miss: ${memoizedWithMissHit.miss}
         if (store) {
             updateThrottledStore(host, store, contributedState)
         } else {
-            store = createThrottledStore(host, contributedState, window.requestAnimationFrame, window.cancelAnimationFrame)
+            store = createThrottledStore(
+                host,
+                contributedState,
+                window.requestAnimationFrame,
+                window.cancelAnimationFrame,
+                notifySubscribersIsRunning => {
+                    isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
+                }
+            )
             store.subscribe(() => {
-                flushMemoizedForState()
+                if (shouldFlushMemoization) {
+                    flushMemoizedForState()
+                    shouldFlushMemoization = false
+                }
             })
             store.syncSubscribe(() => {
-                if (store?.isNotifyInProgress()) {
+                shouldFlushMemoization = true
+                if (isStoreSubscribersNotifyInProgress) {
+                    shouldFlushMemoization = false
                     flushMemoizedForState()
                 }
             })
@@ -953,7 +968,7 @@ miss: ${memoizedWithMissHit.miss}
                 const protectedObservable: PrivateObservableState<TState, TSelectorAPI> = {
                     subscribe: observable.subscribe,
                     current: (allowUnsafeReading?: boolean) => {
-                        if (store?.isNotifyInProgress() && !allowUnsafeReading) {
+                        if (isStoreSubscribersNotifyInProgress && !allowUnsafeReading) {
                             throw new Error(
                                 `Observer created by ${shell.name} current() function: ` +
                                     'Should not read observable value during subscribers notify. ' +
