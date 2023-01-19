@@ -1,9 +1,29 @@
-import { render } from '@testing-library/react'
 import _ from 'lodash'
-import React, { ReactElement } from 'react'
+import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 
-import { EntryPoint, Shell } from '../src/API'
-import { createAppHost, mockPackage, renderInHost, connectWithShell, withThrowOnError } from '../testKit'
+import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
+import {
+    createAppHost,
+    mockPackage,
+    mockShellStateKey,
+    MockState,
+    renderInHost,
+    connectWithShell,
+    connectWithShellAndObserve,
+    withThrowOnError
+} from '../testKit'
+import { ReactWrapper } from 'enzyme'
+import { AnyAction } from 'redux'
+import { render } from '@testing-library/react'
+import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
+import { ObservedSelectorsMap, observeWithShell } from '../src'
+
+interface MockPackageState {
+    [mockShellStateKey]: MockState
+}
+
+const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name], null)
+const getValueFromState = (state: MockPackageState) => `${state[mockShellStateKey].mockValue}`
 
 const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = []) => {
     let cachedShell: Shell | null = null
@@ -23,6 +43,11 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
         shell: getShell(),
         renderInShellContext: (reactElement: ReactElement<any>) => renderInHost(reactElement, host, getShell())
     }
+}
+
+const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
+    getStore().dispatch(action)
+    getStore().flush()
 }
 
 describe('connectWithShell', () => {
