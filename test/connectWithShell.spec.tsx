@@ -1,28 +1,9 @@
+import { render } from '@testing-library/react'
 import _ from 'lodash'
-import React, { FunctionComponent, ReactElement, useEffect } from 'react'
+import React, { ReactElement } from 'react'
 
-import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
-import {
-    createAppHost,
-    mockPackage,
-    mockShellStateKey,
-    MockState,
-    renderInHost,
-    connectWithShell,
-    connectWithShellAndObserve,
-    withThrowOnError
-} from '../testKit'
-import { mount, ReactWrapper } from 'enzyme'
-import { AnyAction } from 'redux'
-import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
-import { ObservedSelectorsMap, observeWithShell } from '../src'
-
-interface MockPackageState {
-    [mockShellStateKey]: MockState
-}
-
-const getMockShellState = (host: AppHost) => _.get(host.getStore().getState(), [mockPackage.name], null)
-const getValueFromState = (state: MockPackageState) => `${state[mockShellStateKey].mockValue}`
+import { EntryPoint, Shell } from '../src/API'
+import { createAppHost, mockPackage, renderInHost, connectWithShell, withThrowOnError } from '../testKit'
 
 const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = []) => {
     let cachedShell: Shell | null = null
@@ -44,11 +25,6 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
     }
 }
 
-const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
-    getStore().dispatch(action)
-    getStore().flush()
-}
-
 describe('connectWithShell', () => {
     it('should pass exact shell to mapStateToProps', () => {
         const { shell, renderInShellContext } = createMocks(mockPackage)
@@ -59,8 +35,9 @@ describe('connectWithShell', () => {
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
+        const node = comp?.firstChild as HTMLElement
 
-        expect(comp && comp.text()).toBe(mockPackage.name)
+        expect(node?.innerHTML).toBe(mockPackage.name)
     })
 
     it('should have shell context outside of main view with renderOutsideProvider option', () => {
@@ -74,11 +51,11 @@ describe('connectWithShell', () => {
             allowOutOfEntryPoint: true
         })(PureComp)
 
-        const reactWrapper = mount(<ConnectedComp />)
-        const myWrapperDiv = reactWrapper.find('.my-wrapper')
+        const reactWrapper = render(<ConnectedComp />)
+        const myWrapperDiv = reactWrapper.container.getElementsByClassName('my-wrapper').item(0)
 
         expect(myWrapperDiv).toBeDefined()
-        expect(myWrapperDiv && myWrapperDiv.text()).toBe(mockPackage.name)
+        expect(myWrapperDiv && myWrapperDiv.innerHTML).toBe(mockPackage.name)
     })
 
     it('should pass exact shell to mapDispatchToProps', () => {

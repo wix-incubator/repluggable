@@ -1,6 +1,5 @@
 const config = {
   testMatch: ['<rootDir>/**/*.spec.ts?(x)'],
-  setupFilesAfterEnv: ['<rootDir>/__tests__/spec-setup.js'],
   transform: {
     '\\.tsx?$': 'ts-jest',
   },

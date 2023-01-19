@@ -1,4 +1,4 @@
-import { mount, ReactWrapper } from 'enzyme'
+import { render, RenderResult } from '@testing-library/react'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
@@ -116,53 +116,33 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
     return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
 
-export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
+export type RenderHostType = (host: AppHost) => { root: RenderResult | null; DOMNode: HTMLElement | null }
 export const renderHost: RenderHostType = (host: AppHost) => {
-    const root = mount(<AppMainView host={host} />) as ReactWrapper
-    return { root, DOMNode: root && (root.getDOMNode() as HTMLElement) }
+    const root = render(<AppMainView host={host} />)
+    return { root, DOMNode: root.container.firstChild as HTMLElement }
 }
 
 export interface WrappedComponent {
-    root: ReactWrapper | null
-    parentWrapper: ReactWrapper | null
-    DOMNode: HTMLElement | null
+    root: ReturnType<typeof render>
+    parentWrapper: HTMLElement | null
     host: AppHost
 }
 
 export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
     const shell = customShell || createShell(host)
 
-    const root = mount(
+    const root = render(
         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
 
-    const parentWrapper = root.find('[data-shell-in-host="true"]')
+    const parentWrapper = root.container.querySelector('[data-shell-in-host="true"]') as HTMLElement | null
 
     return {
         root,
-        DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
         parentWrapper,
         host
     }
 }
-
-// export const renderInHostV2 = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell) => {
-//     const shell = customShell || createShell(host)
-
-//     const root = renderer.create(
-//         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
-//     )
-
-//     root.root.find(node => node.)
-//     const parentWrapper = root.find('[data-shell-in-host="true"]')
-
-//     return {
-//         root,
-//         DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
-//         parentWrapper,
-//         host
-//     }
-// }
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
