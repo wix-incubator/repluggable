@@ -93,7 +93,7 @@ describe('connectWithShell', () => {
 
         const { parentWrapper: comp } = renderInShellContext(<ConnectedComp />)
 
-        expect(comp && comp.text()).toBe(mockPackage.name)
+        expect(comp && comp.innerHTML).toBe(mockPackage.name)
     })
 
     it('should optimize props comparison', () => {
