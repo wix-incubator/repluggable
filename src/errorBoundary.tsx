@@ -23,7 +23,7 @@ function getHostOptions(shell: Shell): AppHostOptions {
     return (shell as PrivateShell).getHostOptions()
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<React.PropsWithChildren<ErrorBoundaryProps>, ErrorBoundaryState> {
     readonly throttledResetError: () => void
 
     public static getDerivedStateFromError(error: Error): ErrorBoundaryState {

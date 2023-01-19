@@ -146,6 +146,24 @@ export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = cr
     }
 }
 
+// export const renderInHostV2 = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell) => {
+//     const shell = customShell || createShell(host)
+
+//     const root = renderer.create(
+//         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
+//     )
+
+//     root.root.find(node => node.)
+//     const parentWrapper = root.find('[data-shell-in-host="true"]')
+
+//     return {
+//         root,
+//         DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
+//         parentWrapper,
+//         host
+//     }
+// }
+
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
     name?: EntryPoint['name']

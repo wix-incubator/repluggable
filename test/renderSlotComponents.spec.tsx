@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { FunctionComponent } from 'react'
+import React, { FunctionComponent, PropsWithChildren } from 'react'
 import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
 import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer } from '../testKit'
 import { ReactWrapper, mount } from 'enzyme'
@@ -243,7 +243,7 @@ describe('SlotRenderer', () => {
                 }
             })
 
-            const ForeignComponent: FunctionComponent = props => (
+            const ForeignComponent: FunctionComponent<PropsWithChildren> = props => (
                 <Provider store={createStore(() => ({ test: { num: FOREIGN_STORE_INITIAL_NUM } }))}>{props.children}</Provider>
             )
 
@@ -302,7 +302,7 @@ describe('SlotRenderer', () => {
                 }
             })
 
-            const ForeignComponent: FunctionComponent = props => (
+            const ForeignComponent: FunctionComponent<PropsWithChildren> = props => (
                 <Provider store={createStore(foreignStoreReducer, { num: FOREIGN_STORE_INITIAL_NUM })}>{props.children}</Provider>
             )
 
