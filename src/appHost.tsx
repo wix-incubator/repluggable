@@ -126,6 +126,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
     let isStoreSubscribersNotifyInProgress = false
+    let isObserversNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -588,6 +589,9 @@ miss: ${memoizedWithMissHit.miss}
                 window.cancelAnimationFrame,
                 notifySubscribersIsRunning => {
                     isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
+                },
+                notifyObserversIsRunning => {
+                    isObserversNotifyInProgress = notifyObserversIsRunning
                 }
             )
             store.subscribe(() => {
@@ -598,7 +602,7 @@ miss: ${memoizedWithMissHit.miss}
             })
             store.syncSubscribe(() => {
                 shouldFlushMemoization = true
-                if (isStoreSubscribersNotifyInProgress) {
+                if (isStoreSubscribersNotifyInProgress || isObserversNotifyInProgress) {
                     shouldFlushMemoization = false
                     flushMemoizedForState()
                 }
