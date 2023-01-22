@@ -1,5 +1,5 @@
 import { AppHostOptions, Shell, enrichedMemoizationFunction, ContributeAPIOptions } from './API'
-import { AnyObject, interceptAnyObject } from './interceptAnyObject'
+import { interceptAnyObject } from './interceptAnyObject'
 
 function isEnrichedMemoizationFunction(func: any): func is enrichedMemoizationFunction {
     return func.hasOwnProperty('cache') && func.hasOwnProperty('hit')
