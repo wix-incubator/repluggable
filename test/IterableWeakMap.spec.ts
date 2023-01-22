@@ -200,7 +200,7 @@ describe('IterableWeakMap', () => {
         runCommonTests()
 
         describe('memory', () => {
-            let originalFinalizationRegistry: FinalizationRegistry
+            let originalFinalizationRegistry: FinalizationRegistry<any>
             let cleanupMemory = (ref: any) => {}
 
             beforeEach(() => {
@@ -214,12 +214,12 @@ describe('IterableWeakMap', () => {
                         cleanupCb(heldValue)
                     }
 
-                    return ({
+                    return {
                         register(target: object, heldValue: any, unregisterToken?: object) {
                             heldValueSet.set(target, heldValue)
                         },
                         unregister() {}
-                    } as unknown) as FinalizationRegistry
+                    } as unknown as FinalizationRegistry<any>
                 } as any
             })
 

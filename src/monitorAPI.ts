@@ -1,5 +1,5 @@
 import { AppHostOptions, Shell, enrichedMemoizationFunction, ContributeAPIOptions } from './API'
-import { interceptAnyObject } from './interceptAnyObject'
+import { AnyObject, interceptAnyObject } from './interceptAnyObject'
 
 function isEnrichedMemoizationFunction(func: any): func is enrichedMemoizationFunction {
     return func.hasOwnProperty('cache') && func.hasOwnProperty('hit')
@@ -9,7 +9,7 @@ function isMemberNamesArray<TAPI>(value: boolean | (keyof TAPI)[] | undefined): 
     return Array.isArray(value)
 }
 
-export function monitorAPI<TAPI>(
+export function monitorAPI<TAPI extends AnyObject>(
     shell: Shell,
     hostOptions: AppHostOptions,
     apiName: string,

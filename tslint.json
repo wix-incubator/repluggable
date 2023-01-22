@@ -54,7 +54,6 @@
     "ban-comma-operator": true,
     "callable-types": true,
     "curly": true,
-    "deprecation": true,
     "encoding": true,
     "interface-over-type-literal": true,
     "jsx-boolean-value": false,

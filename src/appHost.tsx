@@ -51,6 +51,7 @@ import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
 import { ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
+import { AnyObject } from './interceptAnyObject'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -911,7 +912,7 @@ miss: ${memoizedWithMissHit.miss}
                 )
             },
 
-            contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
+            contributeAPI<TAPI extends AnyObject>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
                 host.log.log('debug', `Contributing API ${slotKeyToName(key)}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
