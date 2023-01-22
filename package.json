@@ -32,6 +32,9 @@
     "posttest": "tslint --project .",
     "lintfix": "tslint --fix --project ."
   },
+  "dependencies": {
+    "react-test-renderer": "^18.0.0"
+  },
   "devDependencies": {
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.162",
