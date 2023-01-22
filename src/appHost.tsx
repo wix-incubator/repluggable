@@ -912,7 +912,7 @@ miss: ${memoizedWithMissHit.miss}
                 )
             },
 
-            contributeAPI<TAPI extends AnyObject>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
+            contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
                 host.log.log('debug', `Contributing API ${slotKeyToName(key)}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {

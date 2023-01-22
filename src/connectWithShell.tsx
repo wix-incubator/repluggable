@@ -32,7 +32,7 @@ function wrapWithShouldUpdate<F extends AnyFunction>(shouldUpdate: Maybe<(shell:
     return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell) ? true : func(...args))) as F
 }
 
-function wrapWithShellContext<State, OwnProps extends JSX.IntrinsicAttributes, StateProps, DispatchProps>(
+function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     component: React.ComponentType<OwnProps & StateProps & DispatchProps>,
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
     mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
@@ -160,7 +160,7 @@ export type ConnectedComponentFactory<State = {}, OwnProps = {}, StateProps = {}
  * @param boundShell - The connecting shell
  * @param options - Optional extra settings
  */
-export function connectWithShell<State = {}, OwnProps extends JSX.IntrinsicAttributes = {}, StateProps = {}, DispatchProps = {}>(
+export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, DispatchProps = {}>(
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
     mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,

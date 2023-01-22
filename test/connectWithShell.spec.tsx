@@ -285,7 +285,7 @@ describe('connectWithShell', () => {
         await host.addShells([otherEntryPoint])
 
         const PureComp = ({ value }: { value: string }) => <div>{value}</div>
-        interface PureCompWithChildrenOwnProps extends JSX.IntrinsicAttributes {
+        interface PureCompWithChildrenOwnProps {
             children?: React.ReactNode
             id: string
         }

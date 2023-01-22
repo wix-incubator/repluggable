@@ -1,6 +1,5 @@
 import * as React from 'react'
 import * as Redux from 'redux'
-import { AnyObject } from './interceptAnyObject'
 import { ThrottledStore } from './throttledStore'
 
 export { AppHostAPI } from './appHostServices'
@@ -392,7 +391,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @param {ContributeAPIOptions<TAPI>} [options] Contribution options {ContributeAPIOptions}
      * @return {TAPI} Result of the factory execution
      */
-    contributeAPI<TAPI extends AnyObject>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
+    contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, options?: ContributeAPIOptions<TAPI>): TAPI
     /**
      * Contribute a Redux reducer that will be added to the host store.
      * Use it for slowly changing state (e.g. not changing because of mouse movement)
