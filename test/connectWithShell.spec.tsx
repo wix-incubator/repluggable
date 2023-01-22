@@ -10,11 +10,7 @@ import {
     renderInHost,
     connectWithShell,
     connectWithShellAndObserve,
-    withThrowOnError,
-    text,
-    find,
-    findAll,
-    isNode
+    withThrowOnError
 } from '../testKit'
 import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'

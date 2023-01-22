@@ -1,4 +1,4 @@
-import { create, act, ReactTestRenderer } from 'react-test-renderer'
+import { create, act, ReactTestRenderer, ReactTestInstance } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
@@ -129,6 +129,7 @@ export interface WrappedComponent {
     testKit: ReturnType<typeof create>
     host: AppHost
     rootComponent: JSX.Element
+    parentWrapper: ReactTestInstance | undefined
 }
 
 export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
@@ -142,10 +143,13 @@ export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = cr
         root = create(Component)
     })
 
+    const parentWrapper = root?.root.find(x => x.props['data-shell-in-host'])
+
     return {
         testKit: root as unknown as ReactTestRenderer,
-        host,
-        rootComponent: Component
+        rootComponent: Component,
+        parentWrapper,
+        host
     }
 }
 
