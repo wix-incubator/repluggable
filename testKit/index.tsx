@@ -122,7 +122,7 @@ export const renderHost = (host: AppHost): ReactTestRenderer => {
         renderer = create(<AppMainView host={host} />)
     })
 
-    return (renderer as unknown) as ReactTestRenderer
+    return renderer as unknown as ReactTestRenderer
 }
 
 export interface WrappedComponent {
@@ -143,7 +143,7 @@ export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = cr
     })
 
     return {
-        root: (root as unknown) as ReactTestRenderer,
+        root: root as unknown as ReactTestRenderer,
         host,
         rootComponent: Component
     }
