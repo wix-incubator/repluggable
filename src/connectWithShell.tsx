@@ -41,7 +41,8 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
 ): ComponentWithChildrenProps<OwnProps> {
     class ConnectedComponent
         extends React.Component<WrappedComponentOwnProps<OwnProps>>
-        implements WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
+        implements WrapperMembers<State, OwnProps, StateProps, DispatchProps>
+    {
         public connectedComponent: React.ComponentType<OwnProps>
         public mapStateToProps: (state: State, ownProps?: OwnProps) => StateProps
         public mapDispatchToProps: (dispatch: Dispatch<Action>, ownProps?: OwnProps) => DispatchProps
@@ -97,7 +98,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
 
         public render() {
             const Component = this.connectedComponent
-            const props = _.omit(this.props, 'shell') as OwnProps
+            const props = _.omit(this.props, 'shell') as OwnProps & JSX.IntrinsicAttributes
             return <Component {...props} />
         }
     }

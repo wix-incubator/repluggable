@@ -19,7 +19,7 @@ interface SfcProps {
 }
 
 const sfc: FunctionComponent<SfcProps> = props => {
-    const appHostServicesShell = ((props.host as unknown) as AppHostServicesProvider).getAppHostServicesShell()
+    const appHostServicesShell = (props.host as unknown as AppHostServicesProvider).getAppHostServicesShell()
 
     return (
         <ShellContext.Provider value={appHostServicesShell}>

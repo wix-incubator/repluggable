@@ -39,7 +39,7 @@ export function monitorAPI<TAPI>(
             : () => true
 
     return interceptAnyObject(
-        api,
+        api as any,
         (funcName, originalFunc) => {
             if (!shouldMonitor(funcName)) {
                 console.log('DISABLED MONITORING>', funcName)

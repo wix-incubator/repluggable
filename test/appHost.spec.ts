@@ -779,7 +779,7 @@ describe('App Host', () => {
         })
 
         describe('memory cleanup:', () => {
-            let originalFinalizationRegistry: FinalizationRegistry
+            let originalFinalizationRegistry: FinalizationRegistry<any>
             let cleanupMemory = (ref: any) => {}
 
             beforeEach(() => {
@@ -793,12 +793,12 @@ describe('App Host', () => {
                         cleanupCb(heldValue)
                     }
 
-                    return ({
+                    return {
                         register(target: object, heldValue: any, unregisterToken?: object) {
                             heldValueSet.set(target, heldValue)
                         },
                         unregister() {}
-                    } as unknown) as FinalizationRegistry
+                    } as unknown as FinalizationRegistry<any>
                 } as any
             })
 
