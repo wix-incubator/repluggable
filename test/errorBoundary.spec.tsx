@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React from 'react'
-import { createAppHost, addMockShell, renderInHost, withConsoleErrors, isNode } from '../testKit'
+import { createAppHost, addMockShell, renderInHost, withConsoleErrors } from '../testKit'
 import { ErrorBoundary } from '../src'
 import { act } from 'react-test-renderer'
 
@@ -44,9 +44,8 @@ describe('ErrorBoundary', () => {
         )
 
         const node = testKit.toJSON()
-
-        if (!isNode(node)) {
-            fail('Expected node')
+        if (!node || !('type' in node)) {
+            fail('Expecting object')
         }
 
         expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
