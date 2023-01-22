@@ -1,4 +1,4 @@
-import { create, act, ReactTestRenderer } from 'react-test-renderer'
+import { create, act, ReactTestRenderer, ReactTestRendererJSON, ReactTestRendererNode } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
@@ -250,4 +250,73 @@ export function mockObservable<T>(value: T): ObservableState<T> {
             return value
         }
     }
+}
+
+export function find(
+    node: undefined | null | ReactTestRendererNode | ReactTestRendererNode[],
+    criteria: (n: ReactTestRendererNode) => boolean
+): ReactTestRendererNode | undefined {
+    if (!node) {
+        return
+    }
+
+    const nodes = _.isArray(node) ? node : [node]
+    for (const n of nodes) {
+        if (criteria(n)) {
+            return n
+        }
+
+        if (typeof n !== 'string') {
+            for (const child of n.children || []) {
+                const value = find(child, criteria)
+                if (value) {
+                    return value
+                }
+            }
+        }
+    }
+}
+
+export function findAll(
+    rootNode: null | ReactTestRendererNode | ReactTestRendererNode[],
+    rootCriteria: (n: ReactTestRendererNode) => boolean
+): ReactTestRendererJSON[] {
+    const result: ReactTestRendererJSON[] = []
+
+    function findAllInternal(
+        node: null | ReactTestRendererNode | ReactTestRendererNode[],
+        criteria: (n: ReactTestRendererNode) => boolean
+    ): ReactTestRendererNode | undefined {
+        if (!node) {
+            return
+        }
+
+        const nodes = _.isArray(node) ? node : [node]
+        for (const n of nodes) {
+            if (typeof n !== 'string') {
+                if (criteria(n)) {
+                    result.push(n)
+                }
+
+                for (const child of n.children || []) {
+                    findAllInternal(child, criteria)
+                }
+            }
+        }
+    }
+
+    findAllInternal(rootNode, rootCriteria)
+
+    return result
+}
+
+export function text(root: undefined | null | ReactTestRendererNode | ReactTestRendererNode[]): string | undefined {
+    const result = find(root, n => typeof n === 'string')
+    if (typeof result === 'string') {
+        return result
+    }
+}
+
+export function isNode(obj: undefined | null | ReactTestRendererNode | ReactTestRendererNode[]): obj is ReactTestRendererJSON {
+    return !!obj && typeof obj === 'object' && 'type' in obj
 }

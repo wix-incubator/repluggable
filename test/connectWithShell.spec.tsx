@@ -10,9 +10,13 @@ import {
     renderInHost,
     connectWithShell,
     connectWithShellAndObserve,
-    withThrowOnError
+    withThrowOnError,
+    text,
+    find,
+    findAll,
+    isNode
 } from '../testKit'
-import { ReactTestRenderer, ReactTestRendererJSON, ReactTestRendererNode, act, create } from 'react-test-renderer'
+import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
 import { ObservedSelectorsMap, observeWithShell } from '../src'
@@ -49,75 +53,6 @@ const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
         getStore().dispatch(action)
         getStore().flush()
     })
-}
-
-function find(
-    node: undefined | null | ReactTestRendererNode | ReactTestRendererNode[],
-    criteria: (n: ReactTestRendererNode) => boolean
-): ReactTestRendererNode | undefined {
-    if (!node) {
-        return
-    }
-
-    const nodes = _.isArray(node) ? node : [node]
-    for (const n of nodes) {
-        if (criteria(n)) {
-            return n
-        }
-
-        if (typeof n !== 'string') {
-            for (const child of n.children || []) {
-                const value = find(child, criteria)
-                if (value) {
-                    return value
-                }
-            }
-        }
-    }
-}
-
-function findAll(
-    rootNode: null | ReactTestRendererNode | ReactTestRendererNode[],
-    rootCriteria: (n: ReactTestRendererNode) => boolean
-): ReactTestRendererJSON[] {
-    const result: ReactTestRendererJSON[] = []
-
-    function findAllInternal(
-        node: null | ReactTestRendererNode | ReactTestRendererNode[],
-        criteria: (n: ReactTestRendererNode) => boolean
-    ): ReactTestRendererNode | undefined {
-        if (!node) {
-            return
-        }
-
-        const nodes = _.isArray(node) ? node : [node]
-        for (const n of nodes) {
-            if (typeof n !== 'string') {
-                if (criteria(n)) {
-                    result.push(n)
-                }
-
-                for (const child of n.children || []) {
-                    findAllInternal(child, criteria)
-                }
-            }
-        }
-    }
-
-    findAllInternal(rootNode, rootCriteria)
-
-    return result
-}
-
-function text(root: undefined | null | ReactTestRendererNode | ReactTestRendererNode[]): string | undefined {
-    const result = find(root, n => typeof n === 'string')
-    if (typeof result === 'string') {
-        return result
-    }
-}
-
-function isNode(obj: undefined | null | ReactTestRendererNode | ReactTestRendererNode[]): obj is ReactTestRendererJSON {
-    return !!obj && typeof obj === 'object' && 'type' in obj
 }
 
 describe('connectWithShell', () => {
