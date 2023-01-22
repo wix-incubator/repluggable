@@ -10,7 +10,8 @@ import {
     renderInHost,
     connectWithShell,
     connectWithShellAndObserve,
-    withThrowOnError
+    withThrowOnError,
+    collectAllTexts
 } from '../testKit'
 import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'
@@ -44,7 +45,7 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
     }
 }
 
-const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
+export const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
     act(() => {
         getStore().dispatch(action)
         getStore().flush()
@@ -60,9 +61,8 @@ describe('connectWithShell', () => {
 
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
-        const { testKit } = renderInShellContext(<ConnectedComp />)
-        const json = testKit.toJSON()
-        expect(text(json)).toEqual(mockPackage.name)
+        const { parentWrapper } = renderInShellContext(<ConnectedComp />)
+        expect(collectAllTexts(parentWrapper)).toContain(mockPackage.name)
     })
 
     it('should have shell context outside of main view with renderOutsideProvider option', () => {
@@ -76,14 +76,9 @@ describe('connectWithShell', () => {
             allowOutOfEntryPoint: true
         })(PureComp)
 
-        const reactWrapper = create(<ConnectedComp />)
-        const json = reactWrapper.toJSON()
-        if (!isNode(json)) {
-            fail('Should be node')
-        }
-
-        expect(json.props.className).toEqual('my-wrapper')
-        expect(text(json)).toEqual(mockPackage.name)
+        const testKit = create(<ConnectedComp />)
+        const node = testKit.root.findByProps({ className: 'my-wrapper' })
+        expect(node.children[0]).toEqual(mockPackage.name)
     })
 
     it('should pass exact shell to mapDispatchToProps', () => {
@@ -94,9 +89,8 @@ describe('connectWithShell', () => {
 
         const ConnectedComp = connectWithShell(undefined, mapDispatchToProps, shell, { allowOutOfEntryPoint: true })(PureComp)
 
-        const { testKit } = renderInShellContext(<ConnectedComp />)
-        const json = testKit.toJSON()
-        expect(text(json)).toEqual(mockPackage.name)
+        const { parentWrapper } = renderInShellContext(<ConnectedComp />)
+        expect(collectAllTexts(parentWrapper)).toContain(mockPackage.name)
     })
 
     it('should optimize props comparison', () => {
@@ -138,9 +132,8 @@ describe('connectWithShell', () => {
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
         const { testKit, rootComponent } = renderInShellContext(<ConnectedComp />)
-        const tree = testKit.toTree()
 
-        if (!testKit || !tree) {
+        if (!testKit) {
             throw new Error('Connected component fail to render')
         }
 
@@ -210,9 +203,8 @@ describe('connectWithShell', () => {
         })(PureComp)
 
         const { testKit, rootComponent } = renderInShellContext(<ConnectedComp />)
-        const tree = testKit.toTree()
 
-        if (!testKit || !tree) {
+        if (!testKit) {
             throw new Error('Connected component fail to render')
         }
 
@@ -250,10 +242,8 @@ describe('connectWithShell', () => {
 
         const ConnectedWithState = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureCompNeedsState)
 
-        const { testKit } = renderInShellContext(<ConnectedWithState />)
-
-        const json = testKit.toJSON()
-        expect(text(json)).toEqual(getValueFromState(getMockShellState(host)))
+        const { parentWrapper } = renderInShellContext(<ConnectedWithState />)
+        expect(collectAllTexts(parentWrapper)).toContain(getValueFromState(getMockShellState(host)))
     })
 
     it('should bind shell context', async () => {
@@ -281,10 +271,8 @@ describe('connectWithShell', () => {
 
         const ConnectedWithState = connectWithShell(mapStateToProps, undefined, getBoundShell(), { allowOutOfEntryPoint: true })(PureComp)
 
-        const { testKit } = renderInShellContext(<ConnectedWithState />)
-
-        const json = testKit.toJSON()
-        expect(text(json)).toEqual(boundShellState.mockValue)
+        const { parentWrapper } = renderInShellContext(<ConnectedWithState />)
+        expect(collectAllTexts(parentWrapper)).toContain(boundShellState.mockValue)
     })
 
     it('should re-provide shell context for children of bound component', async () => {
@@ -346,13 +334,9 @@ describe('connectWithShell', () => {
             </ConnectedUnboundCompWithChildren>
         )
 
-        const json = testKit.toJSON()
-        const first = find(json, x => isNode(x) && x.props.className === 'A')
-        const second = find(json, x => isNode(x) && x.props.className === 'B')
-
-        expect(isNode(first) && first.props['data-value']).toBe(getValueFromState(getMockShellState(host)))
-        expect(isNode(second) && second.props['data-value']).toBe(boundShellState.mockValue)
-        expect(text(json)).toEqual(getValueFromState(getMockShellState(host)))
+        expect(testKit.root.findByProps({ className: 'A' }).props['data-value']).toBe(getValueFromState(getMockShellState(host)))
+        expect(testKit.root.findByProps({ className: 'B' }).props['data-value']).toBe(boundShellState.mockValue)
+        expect(collectAllTexts(testKit.root)).toContain(getValueFromState(getMockShellState(host)))
     })
 
     it('should render contributed boundary aspect', () => {
@@ -370,9 +354,8 @@ describe('connectWithShell', () => {
         const { testKit } = renderInHost(<ConnectedComp />, host, shell)
 
         // assert
-        const json = testKit.toJSON()
-        expect(findAll(json, x => isNode(x) && x.props.className === 'TEST-ASPECT').length).toBe(1)
-        expect(findAll(json, x => isNode(x) && x.props.className === 'TEST-PURE-COMP').length).toBe(1)
+        expect(testKit.root.findAllByProps({ className: 'TEST-ASPECT' }).length).toBe(1)
+        expect(testKit.root.findAllByProps({ className: 'TEST-PURE-COMP' }).length).toBe(1)
     })
 
     it('should render multiple contributed boundary aspects', () => {
@@ -393,10 +376,9 @@ describe('connectWithShell', () => {
         const { testKit } = renderInHost(<ConnectedComp />, host, shell)
 
         // assert
-        const json = testKit.toJSON()
-        expect(findAll(json, x => isNode(x) && x.props.className === 'TEST-ASPECT-A').length).toBe(1)
-        expect(findAll(json, x => isNode(x) && x.props.className === 'TEST-ASPECT-B').length).toBe(1)
-        expect(findAll(json, x => isNode(x) && x.props.className === 'TEST-PURE-COMP').length).toBe(1)
+        expect(testKit.root.findAllByProps({ className: 'TEST-ASPECT-A' }).length).toBe(1)
+        expect(testKit.root.findAllByProps({ className: 'TEST-ASPECT-B' }).length).toBe(1)
+        expect(testKit.root.findAllByProps({ className: 'TEST-PURE-COMP' }).length).toBe(1)
     })
 
     it('should handle boundary aspect contexts', () => {
@@ -424,10 +406,8 @@ describe('connectWithShell', () => {
         const { testKit } = renderInHost(<ConnectedComp />, host, shell)
 
         // assert
-        const json = testKit.toJSON()
-        const nodes = findAll(json, x => isNode(x) && x.props.className === 'TEST-PURE-COMP')
-        expect(nodes.length).toBe(1)
-        expect(text(nodes)).toBe('123')
+        expect(testKit.root.findAllByProps({ className: 'TEST-PURE-COMP' }).length).toBe(1)
+        expect(collectAllTexts(testKit.root)).toContain('123')
     })
 })
 
@@ -658,29 +638,29 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('init1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         dispatchAndFlush({ type: 'SET_SECOND_STATE', value: 'update2' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('update2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
         dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('update2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
@@ -697,23 +677,23 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('init1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         // this should not notify the uninterested component
         dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
@@ -746,34 +726,34 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('init1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE'))).toBe('init3')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('init3')
 
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE'))).toBe('init3')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('init3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE'))).toBe('update3')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('update3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
         dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'ONE'))).toBe('update1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'TWO'))).toBe('init2')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE'))).toBe('update3')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('update3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
@@ -870,27 +850,27 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        let nodes = findAll(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE')
-        expect(text(nodes[0])).toBe('init3')
-        expect(text(nodes[1])).toBe('init4')
+        let nodes = testKit.root.findAllByProps({ className: 'THREE' })
+        expect(nodes[0].children[0]).toBe('init3')
+        expect(nodes[1].children[0]).toBe('init4')
 
         expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
-        nodes = findAll(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE')
-        expect(text(nodes[0])).toBe('update3')
-        expect(text(nodes[1])).toBe('init4')
+        nodes = testKit.root.findAllByProps({ className: 'THREE' })
+        expect(nodes[0].children[0]).toBe('update3')
+        expect(nodes[1].children[0]).toBe('init4')
 
         expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_SECOND_OBSERVABLE', value: 'update4' }, host)
 
-        nodes = findAll(testKit.toJSON(), x => isNode(x) && x.props.className === 'THREE')
-        expect(text(nodes[0])).toBe('update3')
-        expect(text(nodes[1])).toBe('update4')
+        nodes = testKit.root.findAllByProps({ className: 'THREE' })
+        expect(nodes[0].children[0]).toBe('update3')
+        expect(nodes[1].children[0]).toBe('update4')
 
         expect(firstMapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(secondMapStateToPropsSpy).toHaveBeenCalledTimes(2)
@@ -1004,22 +984,22 @@ describe('observeWithShellPureComponent', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_NUMBER'))).toBe('1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_STRING'))).toBe('init')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_NUMBER' }).children[0]).toBe('1')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_STRING' }).children[0]).toBe('init')
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_STRING', value: 'update' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_NUMBER'))).toBe('1')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_STRING'))).toBe('update')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_NUMBER' }).children[0]).toBe('1')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_STRING' }).children[0]).toBe('update')
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(2)
 
         dispatchAndFlush({ type: 'SET_NUMBER', value: '2' }, host)
 
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_NUMBER'))).toBe('2')
-        expect(text(find(testKit.toJSON(), x => isNode(x) && x.props.id === 'OBSERVED_STRING'))).toBe('update')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_NUMBER' }).children[0]).toBe('2')
+        expect(testKit.root.findByProps({ id: 'OBSERVED_STRING' }).children[0]).toBe('update')
 
         expect(renderSpyFunc).toHaveBeenCalledTimes(3)
     })
