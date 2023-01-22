@@ -256,8 +256,8 @@ export function mockObservable<T>(value: T): ObservableState<T> {
     }
 }
 
-export function collectAllTexts(parentWrapper: ReactTestInstance | undefined) {
-    return (parentWrapper
+export function collectAllTexts(instance: ReactTestInstance | undefined) {
+    return (instance
         ?.findAll(x => x.children?.some(child => typeof child === 'string'))
         .flatMap(x => x.children.filter(child => typeof child === 'string')) || []) as string[]
 }
