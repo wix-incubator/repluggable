@@ -181,6 +181,7 @@ describe('SlotRenderer', () => {
         const slot = shell.declareSlot(slotKey)
 
         const onDidMount = jest.fn()
+        const onRender = jest.fn()
 
         let isCompAEnabled = true
 
@@ -194,7 +195,8 @@ describe('SlotRenderer', () => {
                 this.state = { counter: 1 }
             }
             render() {
-                return this.props.children()
+                onRender()
+                return <div onClick={() => this.setState({ counter: 2 })}>{this.props.children()}</div>
             }
         }
 
@@ -217,10 +219,10 @@ describe('SlotRenderer', () => {
         }
 
         isCompAEnabled = false
-        // root.find(Container).setState({ counter: 2 })
-        // root.find(Container).update()
+        testKit.root.findByType(Container).findByType('div').props.onClick()
 
         expect(onDidMount).toHaveBeenCalledTimes(1)
+        expect(onRender).toHaveBeenCalledTimes(2)
     })
 
     describe('Bound Props', function () {
