@@ -33,9 +33,9 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, () => <CompA />)
         slot.contribute(shell, () => <CompB />)
 
-        const { root } = renderInHost(<SlotRenderer slot={slot} />, host, shell)
-        expect(root.root.findAllByType(CompA).length).toBe(1)
-        expect(root.root.findAllByType(CompB).length).toBe(1)
+        const { testKit } = renderInHost(<SlotRenderer slot={slot} />, host, shell)
+        expect(testKit.root.findAllByType(CompA).length).toBe(1)
+        expect(testKit.root.findAllByType(CompB).length).toBe(1)
     })
 
     it('should map items by map function', () => {
@@ -50,10 +50,10 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, { comp: () => <CompA /> })
         slot.contribute(shell, { comp: () => <CompB /> })
 
-        const { root } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
+        const { testKit } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
 
-        expect(root.root.findAllByType(CompA).length).toBe(1)
-        expect(root.root.findAllByType(CompB).length).toBe(1)
+        expect(testKit.root.findAllByType(CompA).length).toBe(1)
+        expect(testKit.root.findAllByType(CompB).length).toBe(1)
     })
 
     it('should not render filtered out slot items', () => {
@@ -68,14 +68,14 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, { comp: () => <CompA />, shouldRender: false })
         slot.contribute(shell, { comp: () => <CompB />, shouldRender: true })
 
-        const { root } = renderInHost(
+        const { testKit } = renderInHost(
             <SlotRenderer slot={slot} mapFunc={item => item.comp} filterFunc={item => item.shouldRender} />,
             host,
             shell
         )
 
-        expect(root.root.findAllByType(CompA).length).toBe(0)
-        expect(root.root.findAllByType(CompB).length).toBe(1)
+        expect(testKit.root.findAllByType(CompA).length).toBe(0)
+        expect(testKit.root.findAllByType(CompB).length).toBe(1)
     })
 
     it('should not render non enabled slot items', () => {
@@ -90,10 +90,10 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, { comp: () => <CompA /> })
         slot.contribute(shell, { comp: () => <CompB /> }, () => false)
 
-        const { root } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
+        const { testKit } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
 
-        expect(root.root.findAllByType(CompA).length).toBe(1)
-        expect(root.root.findAllByType(CompB).length).toBe(0)
+        expect(testKit.root.findAllByType(CompA).length).toBe(1)
+        expect(testKit.root.findAllByType(CompB).length).toBe(0)
     })
 
     it('should sort slot items by sort function', () => {
@@ -108,7 +108,7 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, { comp: () => <CompA />, order: 2 })
         slot.contribute(shell, { comp: () => <CompB />, order: 1 })
 
-        const { root } = renderInHost(
+        const { testKit } = renderInHost(
             <SlotRenderer
                 slot={slot}
                 mapFunc={item => item.comp}
@@ -118,8 +118,8 @@ describe('SlotRenderer', () => {
             shell
         )
 
-        expect(getCompId(root, 0)).toBe('B')
-        expect(getCompId(root, 1)).toBe('A')
+        expect(getCompId(testKit, 0)).toBe('B')
+        expect(getCompId(testKit, 1)).toBe('A')
     })
 
     it('should not mutate slot item order by sort function', () => {
@@ -165,10 +165,10 @@ describe('SlotRenderer', () => {
         slot.contribute(shell, { comp: () => <CompA />, order: 2 })
         slot.contribute(shell, { comp: () => <CompB />, order: 1 })
 
-        const { root } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
+        const { testKit } = renderInHost(<SlotRenderer slot={slot} mapFunc={item => item.comp} />, host, shell)
 
-        expect(getCompId(root, 0)).toBe('A')
-        expect(getCompId(root, 1)).toBe('B')
+        expect(getCompId(testKit, 0)).toBe('A')
+        expect(getCompId(testKit, 1)).toBe('B')
     })
 
     it('should not remount component when slot items changed', () => {
@@ -198,7 +198,7 @@ describe('SlotRenderer', () => {
             }
         }
 
-        const { root } = renderInHost(
+        const { testKit } = renderInHost(
             <Container>
                 {() => (
                     <SlotRenderer
@@ -212,7 +212,7 @@ describe('SlotRenderer', () => {
             shell
         )
 
-        if (!root) {
+        if (!testKit) {
             fail('could not render extension slot')
         }
 
@@ -258,14 +258,14 @@ describe('SlotRenderer', () => {
                 { allowOutOfEntryPoint: true }
             )(nativeComponentPure)
 
-            const { root } = renderInHost(
+            const { testKit } = renderInHost(
                 <ForeignComponent>
                     <NativeComponent />
                 </ForeignComponent>,
                 host
             )
 
-            const hostComponent = root.root.find(x => x.props.className === 'native-component')
+            const hostComponent = testKit.root.find(x => x.props.className === 'native-component')
             expect(hostComponent.children[0]).toBe(`${NATIVE_STORE_INITIAL_NUM}`)
         })
 
@@ -329,22 +329,22 @@ describe('SlotRenderer', () => {
                 { allowOutOfEntryPoint: true }
             )(nativeComponentPure)
 
-            const { root, rootComponent } = renderInHost(
+            const { testKit, rootComponent } = renderInHost(
                 <ForeignComponent>
                     <NativeComponent />
                 </ForeignComponent>,
                 host
             )
 
-            let component = root.root.find(x => x.props.className === 'native-component')
+            let component = testKit.root.find(x => x.props.className === 'native-component')
 
             component.props.onClick()
             act(() => {
                 host.getStore().flush()
-                root.update(rootComponent)
+                testKit.update(rootComponent)
             })
 
-            component = root.root.find(x => x.props.className === 'native-component')
+            component = testKit.root.find(x => x.props.className === 'native-component')
             expect(component.children[0]).toBe(`${NATIVE_STORE_NEW_NUM}`)
         })
     })

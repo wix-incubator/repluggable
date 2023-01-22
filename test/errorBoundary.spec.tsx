@@ -19,7 +19,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = false
-        const { root } = renderInHost(
+        const { testKit } = renderInHost(
             <ErrorBoundary shell={shell}>
                 <TestComponent />
             </ErrorBoundary>,
@@ -27,7 +27,7 @@ describe('ErrorBoundary', () => {
             shell
         )
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
     })
 
     it('should render empty on error', () => {
@@ -35,7 +35,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { root } = renderInHost(
+        const { testKit } = renderInHost(
             <ErrorBoundary shell={shell}>
                 <TestComponent />
             </ErrorBoundary>,
@@ -43,13 +43,13 @@ describe('ErrorBoundary', () => {
             shell
         )
 
-        const node = root.toJSON()
+        const node = testKit.toJSON()
 
         if (!isNode(node)) {
             fail('Expected node')
         }
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
         expect(node.children).toBeNull()
     })
 
@@ -58,7 +58,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { root, rootComponent } = renderInHost(
+        const { testKit, rootComponent } = renderInHost(
             <ErrorBoundary shell={shell}>
                 <TestComponent />
             </ErrorBoundary>,
@@ -66,16 +66,16 @@ describe('ErrorBoundary', () => {
             shell
         )
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
 
         renderShouldThrow = false
         act(() => {
             host.getStore().dispatch({ type: 'TEST' })
             host.getStore().flush()
-            root.update(rootComponent)
+            testKit.update(rootComponent)
         })
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
     })
 
     it('should show sticky error', () => {
@@ -83,7 +83,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { root } = withConsoleErrors(() =>
+        const { testKit } = withConsoleErrors(() =>
             renderInHost(
                 <ErrorBoundary shell={shell} componentName="test_comp">
                     <TestComponent />
@@ -92,8 +92,8 @@ describe('ErrorBoundary', () => {
                 shell
             )
         )
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
-        const errors = root.root.findAll(x => x.props.className?.includes('component-error'))
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
+        const errors = testKit.root.findAll(x => x.props.className?.includes('component-error'))
 
         expect(errors.length).toBe(1)
         expect(errors[0].children[0]).toBe('error in ')
@@ -106,7 +106,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { root, rootComponent } = withConsoleErrors(() =>
+        const { testKit, rootComponent } = withConsoleErrors(() =>
             renderInHost(
                 <ErrorBoundary shell={shell} componentName="test_comp">
                     <TestComponent />
@@ -120,11 +120,11 @@ describe('ErrorBoundary', () => {
         act(() => {
             host.getStore().dispatch({ type: 'TEST' })
             host.getStore().flush()
-            root.update(rootComponent)
+            testKit.update(rootComponent)
         })
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
-        const errors = root.root.findAll(x => x.props.className?.includes('component-error'))
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
+        const errors = testKit.root.findAll(x => x.props.className?.includes('component-error'))
 
         expect(errors.length).toBe(1)
         expect(errors[0].children[0]).toBe('error in ')
@@ -137,7 +137,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { root, rootComponent } = withConsoleErrors(() =>
+        const { testKit, rootComponent } = withConsoleErrors(() =>
             renderInHost(
                 <ErrorBoundary shell={shell} componentName="test_comp">
                     <TestComponent />
@@ -147,16 +147,16 @@ describe('ErrorBoundary', () => {
             )
         )
 
-        const button = root.root.findByType('button')
+        const button = testKit.root.findByType('button')
         expect(button).toBeDefined()
 
         renderShouldThrow = false
         button.props.onClick()
         act(() => {
-            root.update(rootComponent)
+            testKit.update(rootComponent)
         })
 
-        expect(root.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
-        expect(root.root.findAll(x => x.props.className?.includes('component-error')).length).toBe(0)
+        expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
+        expect(testKit.root.findAll(x => x.props.className?.includes('component-error')).length).toBe(0)
     })
 })
