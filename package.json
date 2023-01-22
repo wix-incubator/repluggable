@@ -33,8 +33,6 @@
     "lintfix": "tslint --fix --project ."
   },
   "devDependencies": {
-    "@types/enzyme": "^3.10.7",
-    "@testing-library/react": "^13.4.0",
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.162",
     "@types/react": "^18.0.0",
@@ -42,8 +40,6 @@
     "@types/react-test-renderer": "^18.0.0",
     "@types/webpack-env": "^1.15.3",
     "case-sensitive-paths-webpack-plugin": "^2.3.0",
-    "enzyme": "^3.11.0",
-    "enzyme-adapter-react-16": "^1.15.5",
     "husky": "^4.3.0",
     "jest": "^26.6.0",
     "jest-teamcity-reporter": "^0.9.0",

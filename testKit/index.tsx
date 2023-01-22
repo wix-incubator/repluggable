@@ -1,4 +1,4 @@
-import { render, RenderResult } from '@testing-library/react'
+import { create, act, ReactTestRenderer } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
@@ -116,31 +116,36 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
     return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
 
-export type RenderHostType = (host: AppHost) => { root: RenderResult | null; DOMNode: HTMLElement | null }
-export const renderHost: RenderHostType = (host: AppHost) => {
-    const root = render(<AppMainView host={host} />)
-    return { root, DOMNode: root.container.firstChild as HTMLElement }
+export const renderHost = (host: AppHost): ReactTestRenderer => {
+    let renderer: ReactTestRenderer | undefined
+    act(() => {
+        renderer = create(<AppMainView host={host} />)
+    })
+
+    return (renderer as unknown) as ReactTestRenderer
 }
 
 export interface WrappedComponent {
-    root: ReturnType<typeof render>
-    parentWrapper: HTMLElement | null
+    root: ReturnType<typeof create>
     host: AppHost
+    rootComponent: JSX.Element
 }
 
 export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
     const shell = customShell || createShell(host)
 
-    const root = render(
+    const Component = (
         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
-
-    const parentWrapper = root.container.querySelector('[data-shell-in-host="true"]') as HTMLElement | null
+    let root: ReactTestRenderer | undefined
+    act(() => {
+        root = create(Component)
+    })
 
     return {
-        root,
-        parentWrapper,
-        host
+        root: (root as unknown) as ReactTestRenderer,
+        host,
+        rootComponent: Component
     }
 }
 
