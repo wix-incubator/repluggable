@@ -51,7 +51,6 @@ import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
 import { ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
-import { AnyObject } from './interceptAnyObject'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)

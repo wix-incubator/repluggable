@@ -1,5 +1,5 @@
 import { AppHostOptions, Shell, enrichedMemoizationFunction, ContributeAPIOptions } from './API'
-import { interceptAnyObject } from './interceptAnyObject'
+import { AnyObject, interceptAnyObject } from './interceptAnyObject'
 
 function isEnrichedMemoizationFunction(func: any): func is enrichedMemoizationFunction {
     return func.hasOwnProperty('cache') && func.hasOwnProperty('hit')
@@ -39,7 +39,7 @@ export function monitorAPI<TAPI>(
             : () => true
 
     return interceptAnyObject(
-        api,
+        api as any,
         (funcName, originalFunc) => {
             if (!shouldMonitor(funcName)) {
                 console.log('DISABLED MONITORING>', funcName)

@@ -98,7 +98,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
 
         public render() {
             const Component = this.connectedComponent
-            const props = _.omit(this.props, 'shell') as OwnProps
+            const props = _.omit(this.props, 'shell') as OwnProps & JSX.IntrinsicAttributes
             return <Component {...props} />
         }
     }
