@@ -1349,7 +1349,7 @@ describe('App Host', () => {
                     }
                 })
             }).toThrowError(
-                new RegExp(`Error: Extension slot with key '${SecondMockAPIv2.name}\\\(v${SecondMockAPIv2.version}\\\)' already exists`)
+                new RegExp(`Extension slot with key '${SecondMockAPIv2.name}\\\(v${SecondMockAPIv2.version}\\\)' already exists`)
             )
         })
     })
