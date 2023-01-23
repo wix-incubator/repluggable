@@ -1,4 +1,4 @@
-import { create, act, ReactTestRenderer, ReactTestInstance } from 'react-test-renderer'
+import { mount, ReactWrapper } from 'enzyme'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
@@ -116,38 +116,31 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
     return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
 
-export const renderHost = (host: AppHost): ReactTestRenderer => {
-    let renderer: ReactTestRenderer | undefined
-    act(() => {
-        renderer = create(<AppMainView host={host} />)
-    })
-
-    return renderer as unknown as ReactTestRenderer
+export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
+export const renderHost: RenderHostType = (host: AppHost) => {
+    const root = mount(<AppMainView host={host} />) as ReactWrapper
+    return { root, DOMNode: root && (root.getDOMNode() as HTMLElement) }
 }
 
 export interface WrappedComponent {
-    testKit: ReturnType<typeof create>
+    root: ReactWrapper | null
+    parentWrapper: ReactWrapper | null
+    DOMNode: HTMLElement | null
     host: AppHost
-    rootComponent: JSX.Element
-    parentWrapper: ReactTestInstance | undefined
 }
 
 export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
     const shell = customShell || createShell(host)
 
-    const Component = (
+    const root = mount(
         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
-    let root: ReactTestRenderer | undefined
-    act(() => {
-        root = create(Component)
-    })
 
-    const parentWrapper = root?.root.find(x => x.props['data-shell-in-host'])
+    const parentWrapper = root.find('[data-shell-in-host="true"]')
 
     return {
-        testKit: root as unknown as ReactTestRenderer,
-        rootComponent: Component,
+        root,
+        DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
         parentWrapper,
         host
     }
@@ -254,10 +247,4 @@ export function mockObservable<T>(value: T): ObservableState<T> {
             return value
         }
     }
-}
-
-export function collectAllTexts(instance: ReactTestInstance | undefined) {
-    return (instance
-        ?.findAll(x => x.children?.some(child => typeof child === 'string'))
-        .flatMap(x => x.children.filter(child => typeof child === 'string')) || []) as string[]
 }
