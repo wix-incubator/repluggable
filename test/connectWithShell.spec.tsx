@@ -11,11 +11,11 @@ import {
     connectWithShell,
     connectWithShellAndObserve,
     withThrowOnError,
+    TOGGLE_MOCK_VALUE,
     collectAllTexts
 } from '../testKit/v2'
 import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'
-import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
 import { ObservedSelectorsMap, observeWithShell } from '../src'
 
 interface MockPackageState {
@@ -45,7 +45,7 @@ const createMocks = (entryPoint: EntryPoint, moreEntryPoints: EntryPoint[] = [])
     }
 }
 
-export const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
+const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
     act(() => {
         getStore().dispatch(action)
         getStore().flush()
@@ -629,7 +629,7 @@ describe('connectWithShell-useCases', () => {
         expect(mountSpy).toHaveBeenCalledTimes(1)
     })
 
-    it('should update component on change in regular state', async () => {
+    it('should update component on change in regular state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 

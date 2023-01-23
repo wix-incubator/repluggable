@@ -7,6 +7,7 @@ import { ShellRenderer } from '../../src/renderSlotComponents'
 import { createShellLogger } from '../../src/loggers'
 import { emptyLoggerOptions } from '../emptyLoggerOptions'
 
+export { emptyLoggerOptions }
 export { AppHost } from '../../src/index'
 export { connectWithShell, connectWithShellAndObserve } from '../../src/connectWithShell'
 export { SlotRenderer } from '../../src/renderSlotComponents'

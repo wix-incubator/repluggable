@@ -9,14 +9,14 @@ import {
     mockPackageWithPublicAPI,
     MockPublicAPI,
     mockShellInitialState,
-    mockShellStateKey
-} from '../testKit/mockPackage'
+    mockShellStateKey,
+    addMockShell,
+    emptyLoggerOptions
+} from '../testKit/v2'
 
 import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
-import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
-import { addMockShell } from '../testKit/v2'
 
 const testHostOptions: AppHostOptions = {
     monitoring: { disableMonitoring: true }
