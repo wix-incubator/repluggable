@@ -16,7 +16,7 @@ import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } fr
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
 import { emptyLoggerOptions } from '../testKit/emptyLoggerOptions'
-import { addMockShell } from '../testKit'
+import { addMockShell } from '../testKit/v2'
 
 const testHostOptions: AppHostOptions = {
     monitoring: { disableMonitoring: true }

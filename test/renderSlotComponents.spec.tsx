@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import React, { FunctionComponent, PropsWithChildren } from 'react'
 import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
-import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer } from '../testKit'
+import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer } from '../testKit/v2'
 import { Provider } from 'react-redux'
 import { AnyAction, createStore } from 'redux'
 import { act, create, ReactTestRenderer } from 'react-test-renderer'

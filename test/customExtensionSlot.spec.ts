@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { EntryPoint, SlotKey, Shell, CustomExtensionSlot, CustomExtensionSlotHandler, ExtensionItem } from '../src'
-import { createAppHost, addMockShell } from '../testKit'
+import { createAppHost, addMockShell } from '../testKit/v2'
 
 interface TestItem {
     value: string

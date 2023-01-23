@@ -12,7 +12,7 @@ import {
     connectWithShellAndObserve,
     withThrowOnError,
     collectAllTexts
-} from '../testKit'
+} from '../testKit/v2'
 import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'
 import { TOGGLE_MOCK_VALUE } from '../testKit/mockPackage'
