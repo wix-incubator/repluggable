@@ -1,9 +1,19 @@
 import _ from 'lodash'
 import { EntryPoint, EntryPointOrPackage, SlotKey } from '../src/API'
 import { AnyExtensionSlot } from '../src/extensionSlot'
-import { getPackagesDependencies, createAppHost, addMockShell, MockAPI, mockPackage, createAppHostWithPacts, PactAPI } from '../testKit'
-import { asyncLoadMockPackage, dependsOnMockPackageEntryPoint, MockPublicAPI } from '../testKit/mockPackage'
-import { createAppHostAndWaitForLoading } from '../testKit/index'
+import {
+    getPackagesDependencies,
+    createAppHost,
+    addMockShell,
+    MockAPI,
+    mockPackage,
+    createAppHostWithPacts,
+    PactAPI,
+    asyncLoadMockPackage,
+    dependsOnMockPackageEntryPoint,
+    MockPublicAPI,
+    createAppHostAndWaitForLoading
+} from '../testKit/v2'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot

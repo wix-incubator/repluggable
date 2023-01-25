@@ -16,7 +16,7 @@ export interface EntryPointTags {
 }
 export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
-export type ShellBoundaryAspect = React.FunctionComponent
+export type ShellBoundaryAspect = React.FunctionComponent<React.PropsWithChildren>
 
 export interface LazyEntryPointDescriptor {
     readonly name: string
