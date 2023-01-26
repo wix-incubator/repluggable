@@ -735,17 +735,17 @@ describe('App Host', () => {
                 host.getStore().subscribe(() => {
                     // cache was flushing, so call memoized API in order to create new cache
                     const res2 = host.getAPI(memoizedAPI).getNewObject()
-                    expect(Object.is(res1, res2)).toBe(false)
-                    expect(Object.is(res2, host.getAPI(memoizedAPI).getNewObject())).toBe(true)
+                    expect(res1).not.toBe(res2)
+                    expect(res2).toBe(host.getAPI(memoizedAPI).getNewObject())
                     // dispatch new action for sync cache flushing
                     host.getStore().dispatch({ type: 'MOCK_ACTION' })
 
                     res3 = host.getAPI(memoizedAPI).getNewObject()
-                    expect(Object.is(res2, res3)).toBe(false)
+                    expect(res2).not.toBe(res3)
                 })
 
                 host.getStore().flush()
-                expect(Object.is(res3, host.getAPI(memoizedAPI).getNewObject())).toBe(true)
+                expect(res3).toBe(host.getAPI(memoizedAPI).getNewObject())
             })
 
             it('should clear memoized functions on observable dispatch', () => {
