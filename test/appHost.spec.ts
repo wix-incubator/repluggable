@@ -723,6 +723,31 @@ describe('App Host', () => {
                 expect(objForStateA).not.toBe(host.getAPI(memoizedAPI).getNewObject())
             })
 
+            it('should clear memoized functions on store dispatch when synchronous code is executing', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+
+                contributeMemoizedAPI(host)
+
+                const res1 = host.getAPI(memoizedAPI).getNewObject()
+                expect(res1).toBe(host.getAPI(memoizedAPI).getNewObject())
+
+                let res3
+                host.getStore().subscribe(() => {
+                    // cache was flushing, so call memoized API in order to create new cache
+                    const res2 = host.getAPI(memoizedAPI).getNewObject()
+                    expect(Object.is(res1, res2)).toBe(false)
+                    expect(Object.is(res2, host.getAPI(memoizedAPI).getNewObject())).toBe(true)
+                    // dispatch new action for sync cache flushing
+                    host.getStore().dispatch({ type: 'MOCK_ACTION' })
+
+                    res3 = host.getAPI(memoizedAPI).getNewObject()
+                    expect(Object.is(res2, res3)).toBe(false)
+                })
+
+                host.getStore().flush()
+                expect(Object.is(res3, host.getAPI(memoizedAPI).getNewObject())).toBe(true)
+            })
+
             it('should clear memoized functions on observable dispatch', () => {
                 const host = createAppHost([mockPackage], testHostOptions)
 
