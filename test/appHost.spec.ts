@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger, PrivateShell } from '../src/API'
+import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger, PrivateShell, ObservableState } from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -73,6 +73,13 @@ const createHostWithDependantPackages = (DependencyAPI: AnySlotKey) => {
         deeplyDependentPackage,
         helperShell: getHelperShell()
     }
+}
+
+interface ObservableValueState {
+    stateValue: number
+}
+interface ObservableValueSelector {
+    getStateValue(): number
 }
 
 interface EntryPointStateSnapshot {
@@ -698,6 +705,39 @@ describe('App Host', () => {
                 return mockShell
             }
 
+            const createMockShell = (host: AppHost) => {
+                let observableState: ObservableState<ObservableValueSelector> = {} as any;
+                const mockShell = addMockShell(host, {
+                    declareAPIs: () => [memoizedAPI],
+                    attach(shell) {
+                        observableState = shell.contributeObservableState<ObservableValueState, ObservableValueSelector>(
+                            () => ({
+                                stateValue: (state = 1, action) => {
+                                    return action.type === 'increase' ? state + 1 : state
+                                }
+                            }),
+                            state => {
+                                return {
+                                    getStateValue: () => state.stateValue
+                                }
+                            }
+                        )
+
+                        shell.contributeAPI(memoizedAPI, () => ({
+                            getNewObject: shell.memoizeForState(
+                                () => ({ value: observableState.current(true).getStateValue() }),
+                                _.stubTrue
+                            )
+                        }))
+                    }
+                })
+
+                return {
+                    mockShell,
+                    observableState
+                }
+            }
+
             it('should memoize functions upon demand', () => {
                 const host = createAppHost([mockPackage], testHostOptions)
                 const getObj = () => host.getAPI(MockAPI).getNewObject()
@@ -750,34 +790,7 @@ describe('App Host', () => {
 
             it('should clear memoized functions on observable dispatch', () => {
                 const host = createAppHost([mockPackage], testHostOptions)
-
-                interface ObservableValueState {
-                    stateValue: number
-                }
-                interface ObservableValueSelector {
-                    getStateValue(): number
-                }
-                const mockShell = addMockShell(host, {
-                    declareAPIs: () => [memoizedAPI],
-                    attach(shell) {
-                        shell.contributeObservableState<ObservableValueState, ObservableValueSelector>(
-                            () => ({
-                                stateValue: (state = 1, action) => {
-                                    return action.type === 'increase' ? state + 1 : state
-                                }
-                            }),
-                            state => {
-                                return {
-                                    getStateValue: () => state.stateValue
-                                }
-                            }
-                        )
-
-                        shell.contributeAPI(memoizedAPI, () => ({
-                            getNewObject: shell.memoizeForState(() => ({}), _.stubTrue)
-                        }))
-                    }
-                })
+                const { mockShell } = createMockShell(host)
 
                 const objForStateA = host.getAPI(memoizedAPI).getNewObject()
                 expect(objForStateA).toBe(host.getAPI(memoizedAPI).getNewObject())
@@ -787,6 +800,33 @@ describe('App Host', () => {
                 flush()
 
                 expect(objForStateA).not.toBe(host.getAPI(memoizedAPI).getNewObject())
+            })
+
+            it('should clear memoized functions on observable dispatch when synchronous code is executing', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const { mockShell, observableState } = createMockShell(host)
+
+                const { dispatch, flush } = mockShell.getStore<ObservableValueState>()
+
+                const res1 = host.getAPI(memoizedAPI).getNewObject()
+                expect(res1).toBe(host.getAPI(memoizedAPI).getNewObject())
+
+                let res3
+                observableState.subscribe(mockShell, () => {
+                    // cache was flushing, so call memoized API in order to create new cache
+                    const res2 = host.getAPI(memoizedAPI).getNewObject()
+                    expect(res1).not.toBe(res2)
+                    expect(res2).toBe(host.getAPI(memoizedAPI).getNewObject())
+                    // dispatch new action for sync cache flushing
+                    dispatch({ type: 'increase' })
+
+                    res3 = host.getAPI(memoizedAPI).getNewObject()
+                    expect(res2).not.toBe(res3)
+                })
+
+                dispatch({ type: 'increase' })
+                flush()
+                expect(res3).toBe(host.getAPI(memoizedAPI).getNewObject())
             })
 
             it('should not clear memoized functions if not needed', () => {
