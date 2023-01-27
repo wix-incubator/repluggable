@@ -706,7 +706,7 @@ describe('App Host', () => {
             }
 
             const createMockShell = (host: AppHost) => {
-                let observableState: ObservableState<ObservableValueSelector> = {} as any;
+                let observableState: ObservableState<ObservableValueSelector> = {} as any
                 const mockShell = addMockShell(host, {
                     declareAPIs: () => [memoizedAPI],
                     attach(shell) {
