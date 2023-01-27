@@ -1,4 +1,4 @@
-import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action } from 'redux'
+import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action, Unsubscribe } from 'redux'
 import { devToolsEnhancer } from 'redux-devtools-extension'
 import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
@@ -53,6 +53,7 @@ export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     broadcastNotify(): void
     observableNotify(observer: AnyPrivateObservableState): void
     resetPendingNotifications(): void
+    syncSubscribe(listener: () => void): Unsubscribe
     dispatchWithShell(shell: Shell): Dispatch
 }
 
@@ -154,7 +155,8 @@ export const createThrottledStore = (
     contributedState: ExtensionSlot<StateContribution>,
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame'],
-    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void
+    updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
+    updateIsObserversNotifyInProgress: (isObserversNotifyInProgress: boolean) => void
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -208,12 +210,14 @@ export const createThrottledStore = (
 
     const notifyAll = () => {
         try {
+            updateIsObserversNotifyInProgress(true)
             notifyObservers()
             updateIsSubscriptionNotifyInProgress(true)
             notifySubscribers()
         } finally {
             resetAllPendingNotifications()
             updateIsSubscriptionNotifyInProgress(false)
+            updateIsObserversNotifyInProgress(false)
         }
     }
 
@@ -231,8 +235,7 @@ export const createThrottledStore = (
     }
 
     const dispatch: Dispatch<AnyAction> = action => {
-        const dispatchResult = store.dispatch(action)
-        return dispatchResult
+        return store.dispatch(action)
     }
 
     const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({ ...action, __shellName: shell.name })
@@ -240,6 +243,7 @@ export const createThrottledStore = (
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
+        syncSubscribe: store.subscribe,
         dispatch,
         dispatchWithShell: shell => action => dispatch(toShellAction(shell, action)),
         flush,

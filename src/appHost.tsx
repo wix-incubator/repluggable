@@ -126,6 +126,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     let store: PrivateThrottledStore | null = null
     let canInstallReadyEntryPoints: boolean = true
     let isStoreSubscribersNotifyInProgress = false
+    let isObserversNotifyInProgress = false
 
     verifyLayersUniqueness(options.layers)
 
@@ -150,6 +151,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
     const memoizedFunctions: IterableWeakMap<AnyFunction, MemoizedFunctionData> = new IterableWeakMap()
+    let shouldFlushMemoization = false
 
     const hostAPI: AppHostAPI = {
         getAllEntryPoints: () => [...addedShells.entries()].map(([, { entryPoint }]) => entryPoint),
@@ -615,10 +617,23 @@ miss: ${memoizedWithMissHit.miss}
                 window.cancelAnimationFrame,
                 notifySubscribersIsRunning => {
                     isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
+                },
+                notifyObserversIsRunning => {
+                    isObserversNotifyInProgress = notifyObserversIsRunning
                 }
             )
             store.subscribe(() => {
-                flushMemoizedForState()
+                if (shouldFlushMemoization) {
+                    shouldFlushMemoization = false
+                    flushMemoizedForState()
+                }
+            })
+            store.syncSubscribe(() => {
+                shouldFlushMemoization = true
+                if (isStoreSubscribersNotifyInProgress || isObserversNotifyInProgress) {
+                    shouldFlushMemoization = false
+                    flushMemoizedForState()
+                }
             })
         }
 
