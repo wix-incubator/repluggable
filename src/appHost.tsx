@@ -596,8 +596,8 @@ miss: ${memoizedWithMissHit.miss}
             )
             store.subscribe(() => {
                 if (shouldFlushMemoization) {
-                    flushMemoizedForState()
                     shouldFlushMemoization = false
+                    flushMemoizedForState()
                 }
             })
             store.syncSubscribe(() => {
