@@ -112,7 +112,7 @@ describe('connectWithShell', () => {
             counter: ++counter
         }))
 
-        const update = (r: ReactTestRenderer, comp: JSX.Element, newProps?: CompProps) => {
+        const update = (r: ReactTestRenderer, newProps?: CompProps) => {
             if (newProps) {
                 props = newProps
             }
@@ -120,7 +120,6 @@ describe('connectWithShell', () => {
             act(() => {
                 host.getStore().dispatch({ type: '' })
                 host.getStore().flush()
-                r.update(comp)
             })
         }
 
@@ -131,7 +130,7 @@ describe('connectWithShell', () => {
 
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
-        const { testKit, rootComponent } = renderInShellContext(<ConnectedComp />)
+        const { testKit } = renderInShellContext(<ConnectedComp />)
 
         if (!testKit) {
             throw new Error('Connected component fail to render')
@@ -140,14 +139,14 @@ describe('connectWithShell', () => {
         expect(testKit.root.findByType(ConnectedComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('{"a":1}')
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        update(testKit, rootComponent, _.cloneDeep(props))
+        update(testKit, _.cloneDeep(props))
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        update(testKit, rootComponent, { ...props, obj: { a: 2 } })
+        update(testKit, { ...props, obj: { a: 2 } })
         expect(testKit.root.findByType(ConnectedComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('{"a":2}')
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
-        update(testKit, rootComponent, { ...props, func: func2 })
+        update(testKit, { ...props, func: func2 })
         testKit.root
             .findByType(PureComp)
             .find(x => x.type === 'div')
@@ -180,7 +179,7 @@ describe('connectWithShell', () => {
             counter: ++counter
         }))
 
-        const update = (r: ReactTestRenderer, comp: JSX.Element, newProps?: CompProps) => {
+        const update = (r: ReactTestRenderer, newProps?: CompProps) => {
             if (newProps) {
                 props = newProps
             }
@@ -188,7 +187,6 @@ describe('connectWithShell', () => {
             act(() => {
                 host.getStore().dispatch({ type: '' })
                 host.getStore().flush()
-                r.update(comp)
             })
         }
 
@@ -202,7 +200,7 @@ describe('connectWithShell', () => {
             allowOutOfEntryPoint: true
         })(PureComp)
 
-        const { testKit, rootComponent } = renderInShellContext(<ConnectedComp />)
+        const { testKit } = renderInShellContext(<ConnectedComp />)
 
         if (!testKit) {
             throw new Error('Connected component fail to render')
@@ -212,16 +210,16 @@ describe('connectWithShell', () => {
         expect(renderSpy).toHaveBeenCalledTimes(1)
         expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
-        update(testKit, rootComponent, _.cloneDeep(props))
+        update(testKit, _.cloneDeep(props))
         expect(renderSpy).toHaveBeenCalledTimes(1)
         expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
-        update(testKit, rootComponent, { ...props, obj: { a: 2 } })
+        update(testKit, { ...props, obj: { a: 2 } })
         expect(testKit.root.findByType(ConnectedComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('{"a":1}')
         expect(renderSpy).toHaveBeenCalledTimes(1)
         expect(mapStateSpy).toHaveBeenCalledTimes(1)
 
-        update(testKit, rootComponent, { ...props, func: func2 })
+        update(testKit, { ...props, func: func2 })
         testKit.root
             .findByType(PureComp)
             .find(x => x.type === 'div')

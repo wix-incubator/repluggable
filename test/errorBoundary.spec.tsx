@@ -57,7 +57,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { testKit, rootComponent } = renderInHost(
+        const { testKit } = renderInHost(
             <ErrorBoundary shell={shell}>
                 <TestComponent />
             </ErrorBoundary>,
@@ -71,7 +71,6 @@ describe('ErrorBoundary', () => {
         act(() => {
             host.getStore().dispatch({ type: 'TEST' })
             host.getStore().flush()
-            testKit.update(rootComponent)
         })
 
         expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
@@ -105,7 +104,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { testKit, rootComponent } = withConsoleErrors(() =>
+        const { testKit } = withConsoleErrors(() =>
             renderInHost(
                 <ErrorBoundary shell={shell} componentName="test_comp">
                     <TestComponent />
@@ -119,7 +118,6 @@ describe('ErrorBoundary', () => {
         act(() => {
             host.getStore().dispatch({ type: 'TEST' })
             host.getStore().flush()
-            testKit.update(rootComponent)
         })
 
         expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(0)
@@ -136,7 +134,7 @@ describe('ErrorBoundary', () => {
         const shell = addMockShell(host)
 
         renderShouldThrow = true
-        const { testKit, rootComponent } = withConsoleErrors(() =>
+        const { testKit } = withConsoleErrors(() =>
             renderInHost(
                 <ErrorBoundary shell={shell} componentName="test_comp">
                     <TestComponent />
@@ -151,9 +149,6 @@ describe('ErrorBoundary', () => {
 
         renderShouldThrow = false
         button.props.onClick()
-        act(() => {
-            testKit.update(rootComponent)
-        })
 
         expect(testKit.root.findAll(x => x.props.className === 'test-comp').length).toBe(1)
         expect(testKit.root.findAll(x => x.props.className?.includes('component-error')).length).toBe(0)

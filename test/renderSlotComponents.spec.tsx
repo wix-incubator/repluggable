@@ -331,7 +331,7 @@ describe('SlotRenderer', () => {
                 { allowOutOfEntryPoint: true }
             )(nativeComponentPure)
 
-            const { testKit, rootComponent } = renderInHost(
+            const { testKit } = renderInHost(
                 <ForeignComponent>
                     <NativeComponent />
                 </ForeignComponent>,
@@ -343,7 +343,6 @@ describe('SlotRenderer', () => {
             component.props.onClick()
             act(() => {
                 host.getStore().flush()
-                testKit.update(rootComponent)
             })
 
             component = testKit.root.find(x => x.props.className === 'native-component')
