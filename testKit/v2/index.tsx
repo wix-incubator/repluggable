@@ -1,6 +1,7 @@
 import { create, act, ReactTestRenderer, ReactTestInstance, TestRendererOptions } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
+import ReactDOM from 'react-dom'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../../src/index'
 import { ShellRenderer } from '../../src/renderSlotComponents'
@@ -130,6 +131,16 @@ export interface WrappedComponent {
     testKit: ReturnType<typeof create>
     host: AppHost
     parentWrapper: ReactTestInstance | undefined
+}
+
+export const renderDOMInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell) => {
+    const shell = customShell || createShell(host)
+
+    const Component = (
+        <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
+    )
+
+    ReactDOM.render(Component, document.body.querySelector('div'))
 }
 
 export const renderInHost = (
