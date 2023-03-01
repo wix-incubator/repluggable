@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useEffect, useState } from 'react'
 import { connect, Provider } from 'react-redux'
 import { ExtensionItem, ExtensionSlot, PrivateShell, ReactComponentContributor, Shell, AppHost } from './API'
 import { ErrorBoundary } from './errorBoundary'
@@ -87,7 +87,7 @@ interface SlotRendererConnectedProps<T> extends SlotRendererIterators<T> {
 }
 
 const ConnectedSlot = connect(
-    (state, { slot }: SlotRendererConnectedProps<any>) => ({
+    (state, { slot }: SlotRendererConnectedProps<any> & { renderCount: number }) => ({
         items: slot.getItems()
     }),
     undefined,
@@ -96,7 +96,11 @@ const ConnectedSlot = connect(
 )(SlotRendererPure)
 
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
-    return <ConnectedSlot {...props} />
+    const [renderCount, setRenderCount] = useState(0)
+    useEffect(() => {
+        props.slot.subscribe(() => setRenderCount(count => count + 1))
+    }, [])
+    return <ConnectedSlot {...props} renderCount={renderCount} />
 }
 
 interface PredicateHocProps {

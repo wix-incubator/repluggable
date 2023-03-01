@@ -159,6 +159,12 @@ export interface ExtensionSlot<T> {
      * @param {ExtensionItemFilter<T> | undefined} predicate Remove all items matching this predicate
      */
     discardBy(predicate: ExtensionItemFilter<T>): void
+
+    /**
+     * Subscribe to slot changes.
+     * The subscriber will be called every time an item is added or removed from the slot
+     */
+    subscribe(callback: () => void): () => void
 }
 
 export interface CustomExtensionSlotHandler<T> {
