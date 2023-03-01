@@ -3,7 +3,7 @@ import {
     ContributionPredicate,
     ExtensionItem,
     ExtensionItemFilter,
-    ExtensionSlot,
+    PrivateExtensionSlot,
     Shell,
     SlotKey,
     CustomExtensionSlot,
@@ -20,7 +20,7 @@ const alwaysTrue = () => true
 
 type Unsubscribe = () => void
 
-export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): ExtensionSlot<T> & AnyExtensionSlot {
+export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): PrivateExtensionSlot<T> & AnyExtensionSlot {
     let items: ExtensionItem<T>[] = []
     let subscribers: (() => void)[] = []
 
