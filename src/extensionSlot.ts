@@ -37,16 +37,13 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
     }
 
     function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
-        const originalContributionCount = items.length
         items.push({
             shell: fromShell,
             contribution: item,
             condition: condition || alwaysTrue,
             uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
         })
-        if (items.length !== originalContributionCount) {
-            subscribers.forEach(func => func())
-        }
+        subscribers.forEach(func => func())
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
