@@ -225,6 +225,51 @@ describe('SlotRenderer', () => {
         expect(onRender).toHaveBeenCalledTimes(2)
     })
 
+    describe('re-render when slot contributions change', () => {
+        it('should re-render when a new item is contributed', () => {
+            const slotKey: SlotKey<ReactComponentContributor> = {
+                name: 'mock_key'
+            }
+            const host = createAppHost([])
+            const shell = addMockShell(host)
+
+            const slot = shell.declareSlot(slotKey)
+
+            slot.contribute(shell, () => <CompA />)
+
+            const { testKit } = renderInHost(<SlotRenderer slot={slot} />, host, shell)
+            act(() => {
+                slot.contribute(shell, () => <CompB />)
+            })
+
+            expect(testKit.root.findAllByType(CompA).length).toBe(1)
+            expect(testKit.root.findAllByType(CompB).length).toBe(1)
+        })
+        it('should re-render when an item is removed', () => {
+            const slotKey: SlotKey<ReactComponentContributor> = {
+                name: 'mock_key'
+            }
+            const host = createAppHost([])
+            const shell = addMockShell(host)
+
+            const slot = shell.declareSlot(slotKey)
+
+            const secondContribution = () => <CompB />
+            slot.contribute(shell, () => <CompA />)
+            slot.contribute(shell, secondContribution)
+
+            const { testKit } = renderInHost(<SlotRenderer slot={slot} />, host, shell)
+
+            expect(testKit.root.findAllByType(CompA).length).toBe(1)
+            expect(testKit.root.findAllByType(CompB).length).toBe(1)
+
+            act(() => {
+                slot.discardBy(({ contribution }) => contribution === secondContribution)
+            })
+            expect(testKit.root.findAllByType(CompB).length).toBe(0)
+        })
+    })
+
     describe('Bound Props', function () {
         const NATIVE_STORE_INITIAL_NUM = 1
         const FOREIGN_STORE_INITIAL_NUM = 2

@@ -161,6 +161,10 @@ export interface ExtensionSlot<T> {
     discardBy(predicate: ExtensionItemFilter<T>): void
 }
 
+export interface PrivateExtensionSlot<T> extends ExtensionSlot<T> {
+    subscribe(callback: () => void): () => void
+}
+
 export interface CustomExtensionSlotHandler<T> {
     contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void
     discardBy(predicate: ExtensionItemFilter<T>): void

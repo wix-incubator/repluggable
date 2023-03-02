@@ -3,7 +3,7 @@ import {
     ContributionPredicate,
     ExtensionItem,
     ExtensionItemFilter,
-    ExtensionSlot,
+    PrivateExtensionSlot,
     Shell,
     SlotKey,
     CustomExtensionSlot,
@@ -18,8 +18,11 @@ export interface AnyExtensionSlot {
 
 const alwaysTrue = () => true
 
-export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): ExtensionSlot<T> & AnyExtensionSlot {
+type Unsubscribe = () => void
+
+export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): PrivateExtensionSlot<T> & AnyExtensionSlot {
     let items: ExtensionItem<T>[] = []
+    let subscribers: (() => void)[] = []
 
     return {
         host,
@@ -29,7 +32,8 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
         getItems,
         getSingleItem,
         getItemByName,
-        discardBy
+        discardBy,
+        subscribe
     }
 
     function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
@@ -39,6 +43,7 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
             condition: condition || alwaysTrue,
             uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
         })
+        subscribers.forEach(func => func())
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
@@ -54,7 +59,18 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
     }
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
+        const originalContributionCount = items.length
         items = items.filter(v => !predicate(v))
+        if (items.length !== originalContributionCount) {
+            subscribers.forEach(func => func())
+        }
+    }
+
+    function subscribe(callback: () => void): Unsubscribe {
+        subscribers.push(callback)
+        return () => {
+            subscribers = subscribers.filter(func => func !== callback)
+        }
     }
 }
 
