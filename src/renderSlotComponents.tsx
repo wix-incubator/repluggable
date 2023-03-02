@@ -98,7 +98,7 @@ const ConnectedSlot = connect(
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
     const [renderCount, setRenderCount] = useState(0)
     useEffect(() => {
-        const unsubscribe = (props.slot as PrivateExtensionSlot<T>).subscribe(() => setRenderCount(count => count + 1))
+        const unsubscribe = (props.slot as PrivateExtensionSlot<T>).subscribe(() => setRenderCount(count => (count + 1) % 100))
         return unsubscribe
     }, [])
     return <ConnectedSlot {...props} renderCount={renderCount} />
