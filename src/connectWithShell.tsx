@@ -31,14 +31,10 @@ const reduxConnectOptions = {
 function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, prev: Props) => void>(
     shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
     func: F,
-    shell: Shell,
-    addPropsToShouldUpdate: boolean
+    getOwnProps: () => Props,
+    shell: Shell
 ): F {
-    return ((...args: Parameters<F>) => {
-        const props = addPropsToShouldUpdate ? args[0] : undefined
-
-        return shouldUpdate && !shouldUpdate(shell, props) ? true : func(args[0], args[1])
-    }) as F
+    return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell, getOwnProps()) ? true : func(args[0], args[1]))) as F
 }
 
 function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
@@ -79,7 +75,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             const memoWithShouldUpdate = <F extends AnyFunction>(f: F): F => {
                 let last: ReturnType<F> | null = null
                 return ((...args) => {
-                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell, args[1])) {
+                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell, this.getOwnProps())) {
                         return last
                     }
                     last = f(...args)
@@ -97,23 +93,26 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                           areStatePropsEqual: wrapWithShouldUpdate(
                               shouldComponentUpdate,
                               reduxConnectOptions.areStatePropsEqual,
-                              boundShell,
-                              false
+                              this.getOwnProps,
+                              boundShell
                           ),
                           areOwnPropsEqual: wrapWithShouldUpdate(
                               shouldComponentUpdate,
                               reduxConnectOptions.areOwnPropsEqual,
-                              boundShell,
-                              true
+                              this.getOwnProps,
+                              boundShell
                           )
                       }
                     : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
         }
 
+        private readonly getOwnProps = () =>
+            _.omit(this.props, 'shell') as unknown as React.PropsWithChildren<OwnProps> & JSX.IntrinsicAttributes
+
         public render() {
             const Component = this.connectedComponent
-            const props = _.omit(this.props, 'shell') as unknown as React.PropsWithChildren<OwnProps> & JSX.IntrinsicAttributes
+            const props = this.getOwnProps()
             return <Component {...props} />
         }
     }
