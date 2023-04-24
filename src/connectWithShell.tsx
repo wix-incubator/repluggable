@@ -28,12 +28,17 @@ const reduxConnectOptions = {
     areOwnPropsEqual: propsDeepEqual
 }
 
-function wrapWithShouldUpdate<F extends (next: any, prev: any) => void>(
-    shouldUpdate: Maybe<(shell: Shell, nextProps: Parameters<F>[1]) => boolean>,
+function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, prev: Props) => void>(
+    shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
     func: F,
-    shell: Shell
+    shell: Shell,
+    addPropsToShouldUpdate: boolean
 ): F {
-    return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell, args[1]) ? true : func(args[0], args[1]))) as F
+    return ((...args: Parameters<F>) => {
+        const props = addPropsToShouldUpdate ? args[0] : undefined
+
+        return shouldUpdate && !shouldUpdate(shell, props) ? true : func(args[0], args[1])
+    }) as F
 }
 
 function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
@@ -92,9 +97,15 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                           areStatePropsEqual: wrapWithShouldUpdate(
                               shouldComponentUpdate,
                               reduxConnectOptions.areStatePropsEqual,
-                              boundShell
+                              boundShell,
+                              false
                           ),
-                          areOwnPropsEqual: wrapWithShouldUpdate(shouldComponentUpdate, reduxConnectOptions.areOwnPropsEqual, boundShell)
+                          areOwnPropsEqual: wrapWithShouldUpdate(
+                              shouldComponentUpdate,
+                              reduxConnectOptions.areOwnPropsEqual,
+                              boundShell,
+                              true
+                          )
                       }
                     : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
@@ -144,7 +155,7 @@ export interface ConnectWithShellOptions<OwnProps, StateProps> {
     /**
      * Update the component only when this function returns true
      */
-    shouldComponentUpdate?(shell: Shell, nextProps?: OwnProps | StateProps): boolean
+    shouldComponentUpdate?(shell: Shell, ownProps?: OwnProps): boolean
     /**
      * Wraps the component with host and shell contexts, to allow valid connection outside AppHost
      */

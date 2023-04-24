@@ -230,6 +230,32 @@ describe('connectWithShell', () => {
         expect(func2).not.toHaveBeenCalled()
     })
 
+    it('should pass ownProps to shouldComponentUpdate', () => {
+        const { shell, renderInShellContext } = createMocks(mockPackage)
+
+        interface CompOwnProps {
+            ownProp: boolean
+        }
+        const ownPropsSpy = jest.fn()
+        const PureComp: FunctionComponent<CompOwnProps> = () => {
+            return <div>Pure Comp</div>
+        }
+
+        const ConnectedComp = connectWithShell<{}, CompOwnProps>(undefined, undefined, shell, {
+            shouldComponentUpdate: (_shell, _ownProps) => {
+                ownPropsSpy(_ownProps)
+
+                return false
+            },
+            allowOutOfEntryPoint: true
+        })(PureComp)
+
+        renderInShellContext(<ConnectedComp ownProp={true} />)
+
+        expect(ownPropsSpy).toHaveBeenCalledTimes(1)
+        expect(ownPropsSpy).toHaveBeenCalledWith({ ownProp: true })
+    })
+
     it('should pass scoped state to mapStateToProps', () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
