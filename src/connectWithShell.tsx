@@ -28,8 +28,13 @@ const reduxConnectOptions = {
     areOwnPropsEqual: propsDeepEqual
 }
 
-function wrapWithShouldUpdate<F extends AnyFunction>(shouldUpdate: Maybe<(shell: Shell) => boolean>, func: F, shell: Shell): F {
-    return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell) ? true : func(...args))) as F
+function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, prev: Props) => void>(
+    shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
+    func: F,
+    getOwnProps: () => Props,
+    shell: Shell
+): F {
+    return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell, getOwnProps()) ? true : func(args[0], args[1]))) as F
 }
 
 function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
@@ -37,7 +42,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
     mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
-    options: ConnectWithShellOptions = {}
+    options: ConnectWithShellOptions<OwnProps, StateProps> = {}
 ): ComponentWithChildrenProps<OwnProps> {
     class ConnectedComponent
         extends React.Component<WrappedComponentOwnProps<OwnProps>>
@@ -70,7 +75,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             const memoWithShouldUpdate = <F extends AnyFunction>(f: F): F => {
                 let last: ReturnType<F> | null = null
                 return ((...args) => {
-                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell)) {
+                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell, this.getOwnProps())) {
                         return last
                     }
                     last = f(...args)
@@ -88,17 +93,26 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                           areStatePropsEqual: wrapWithShouldUpdate(
                               shouldComponentUpdate,
                               reduxConnectOptions.areStatePropsEqual,
+                              this.getOwnProps,
                               boundShell
                           ),
-                          areOwnPropsEqual: wrapWithShouldUpdate(shouldComponentUpdate, reduxConnectOptions.areOwnPropsEqual, boundShell)
+                          areOwnPropsEqual: wrapWithShouldUpdate(
+                              shouldComponentUpdate,
+                              reduxConnectOptions.areOwnPropsEqual,
+                              this.getOwnProps,
+                              boundShell
+                          )
                       }
                     : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
         }
 
+        private readonly getOwnProps = () =>
+            _.omit(this.props, 'shell') as unknown as React.PropsWithChildren<OwnProps> & JSX.IntrinsicAttributes
+
         public render() {
             const Component = this.connectedComponent
-            const props = _.omit(this.props, 'shell') as unknown as React.PropsWithChildren<OwnProps> & JSX.IntrinsicAttributes
+            const props = this.getOwnProps()
             return <Component {...props} />
         }
     }
@@ -131,7 +145,7 @@ function wrapWithShellRenderer<OwnProps>(
     return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
 }
 
-export interface ConnectWithShellOptions {
+export interface ConnectWithShellOptions<OwnProps, StateProps> {
     readonly componentName?: string
     /**
      * Allow connecting the component outside of Entry Point lifecycle (use only when you really have no choice)
@@ -140,7 +154,7 @@ export interface ConnectWithShellOptions {
     /**
      * Update the component only when this function returns true
      */
-    shouldComponentUpdate?(shell: Shell): boolean
+    shouldComponentUpdate?(shell: Shell, ownProps?: OwnProps): boolean
     /**
      * Wraps the component with host and shell contexts, to allow valid connection outside AppHost
      */
@@ -164,7 +178,7 @@ export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, Dis
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
     mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
-    options: ConnectWithShellOptions = {}
+    options: ConnectWithShellOptions<OwnProps, StateProps> = {}
 ): ConnectedComponentFactory<State, OwnProps, StateProps, DispatchProps> {
     const validateLifecycle = (component: React.ComponentType<any>) => {
         if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
@@ -299,7 +313,7 @@ export function connectWithShellAndObserve<
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
     mapDispatchToProps: MapDispatchToProps<OwnProps, DispatchProps>,
     boundShell: Shell,
-    options: ConnectWithShellOptions = {}
+    options: ConnectWithShellOptions<OwnProps, StateProps> = {}
 ): ConnectedComponentFactory<State, OmitObservedSelectors<OwnProps, MappedObservables>, StateProps, DispatchProps, OwnProps> {
     const innerFactory = connectWithShell(mapStateToProps, mapDispatchToProps, boundShell, options)
     const wrapperFactory = observeConnectedComponentWithShell<MappedObservables, OwnProps>(observables, boundShell)(innerFactory)
