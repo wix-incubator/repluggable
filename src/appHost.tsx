@@ -208,7 +208,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         }
         const memoized = _.memoize(func, resolver)
 
-        Object.defineProperty(memoized, 'name', { value: `${func.name}_memoized` , writable: false})
+        Object.defineProperty(memoized, 'name', { value: `${func.name}_memoized`, writable: false})
 
         if (options.monitoring.disableMonitoring) {
             return memoized
