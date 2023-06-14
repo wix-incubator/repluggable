@@ -251,7 +251,7 @@ function createObservableConnectedComponentFactory<
             constructor(props: OwnProps) {
                 super(props)
                 this.unsubscribes = []
-                this.state = mapObservablesToSelectors(observables, true)
+                this.state = { ...mapObservablesToSelectors(observables, true), rendersCounter: 0 }
                 this.staticShellProps = mapShellToStaticProps ? mapShellToStaticProps(boundShell, props) : ({} as ShellStaticProps)
             }
 
@@ -259,7 +259,7 @@ function createObservableConnectedComponentFactory<
                 for (const key in observables) {
                     const unsubscribe = observables[key].subscribe(boundShell, () => {
                         const newState = mapObservablesToSelectors(observables, true)
-                        this.setState(newState)
+                        this.setState(state => ({ ...newState, rendersCounter: ((state.rendersCounter as number) + 1) % 1000 }))
                     })
                     this.unsubscribes.push(unsubscribe)
                 }
