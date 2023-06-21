@@ -7,7 +7,8 @@ import {
     Shell,
     SlotKey,
     CustomExtensionSlot,
-    CustomExtensionSlotHandler
+    CustomExtensionSlotHandler,
+    PrivateAppHost
 } from './API'
 import _ from 'lodash'
 
@@ -20,9 +21,14 @@ const alwaysTrue = () => true
 
 type Unsubscribe = () => void
 
-export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaringShell?: Shell): PrivateExtensionSlot<T> & AnyExtensionSlot {
+export function createExtensionSlot<T>(
+    key: SlotKey<T>,
+    host: PrivateAppHost,
+    declaringShell?: Shell
+): PrivateExtensionSlot<T> & AnyExtensionSlot {
     let items: ExtensionItem<T>[] = []
     let subscribers: (() => void)[] = []
+    const slotUniqueId = _.uniqueId()
 
     return {
         host,
@@ -43,7 +49,7 @@ export function createExtensionSlot<T>(key: SlotKey<T>, host: AppHost, declaring
             condition: condition || alwaysTrue,
             uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
         })
-        subscribers.forEach(func => func())
+        host.executeWhenFree(slotUniqueId, () => subscribers.forEach(func => func()))
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {

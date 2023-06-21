@@ -29,7 +29,8 @@ import {
     APILayer,
     CustomExtensionSlotHandler,
     CustomExtensionSlot,
-    ObservableState
+    ObservableState,
+    PrivateAppHost
 } from './API'
 import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
@@ -124,9 +125,10 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
-    let canInstallReadyEntryPoints: boolean = true
+    let isInstallingEntryPoints: boolean = false
     let isStoreSubscribersNotifyInProgress = false
     let isObserversNotifyInProgress = false
+    const entryPointsInstallationEndCallbacks: Map<string, () => void> = new Map()
 
     verifyLayersUniqueness(options.layers)
 
@@ -158,7 +160,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAppHostOptions: () => options
     }
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
-    const host: AppHost & AppHostServicesProvider = {
+    const host: PrivateAppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
         getSlot,
@@ -172,7 +174,8 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         removeShellsChangedCallback,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
         log: options.logger ? options.logger : ConsoleHostLogger,
-        options
+        options,
+        executeWhenFree
     }
 
     setupDebugInfo({
@@ -378,6 +381,17 @@ miss: ${memoizedWithMissHit.miss}
         return everyDependenciesReadyOrPending
     }
 
+    function onInstallShellsEnd() {
+        const callbacks = entryPointsInstallationEndCallbacks.values()
+        try {
+            for (const callback of callbacks) {
+                callback()
+            }
+        } finally {
+            entryPointsInstallationEndCallbacks.clear()
+        }
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
             const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
@@ -391,6 +405,7 @@ miss: ${memoizedWithMissHit.miss}
 
         unReadyEntryPointsStore.set(_.union(_.difference(unReadyEntryPointsStore.get(), readyEntryPoints), currentUnReadyEntryPoints))
         if (store && _.isEmpty(readyEntryPoints)) {
+            onInstallShellsEnd()
             return
         }
 
@@ -399,7 +414,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function executeReadyEntryPoints(shells: PrivateShell[]): void {
-        canInstallReadyEntryPoints = false
+        isInstallingEntryPoints = true
         try {
             invokeEntryPointPhase(
                 'getDependencyAPIs',
@@ -430,7 +445,7 @@ miss: ${memoizedWithMissHit.miss}
                 f.setLifecycleState(true, true, true)
             })
         } finally {
-            canInstallReadyEntryPoints = true
+            isInstallingEntryPoints = false
         }
         executeInstallShell(unReadyEntryPointsStore.get())
     }
@@ -509,6 +524,14 @@ miss: ${memoizedWithMissHit.miss}
             return item.contribution
         }
         throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
+    }
+
+    function executeWhenFree(key: string, callback: () => void): void {
+        if (isInstallingEntryPoints) {
+            entryPointsInstallationEndCallbacks.set(key, callback)
+        } else {
+            callback()
+        }
     }
 
     function getStore(): ThrottledStore {
@@ -973,7 +996,7 @@ miss: ${memoizedWithMissHit.miss}
 
                 readyAPIs.add(key)
 
-                if (canInstallReadyEntryPoints) {
+                if (!isInstallingEntryPoints) {
                     const shellNames = _.map(unReadyEntryPointsStore.get(), 'name')
                     executeInstallShell(unReadyEntryPointsStore.get())
                     setInstalledShellNames(_.difference(shellNames, _.map(unReadyEntryPointsStore.get(), 'name')))

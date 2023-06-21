@@ -274,6 +274,10 @@ export interface AppHost {
     readonly options: AppHostOptions
 }
 
+export interface PrivateAppHost extends AppHost {
+    executeWhenFree(identifier: string, callback: () => void): void
+}
+
 export interface MonitoringOptions {
     enablePerformance?: boolean
     readonly disableMonitoring?: boolean
@@ -343,7 +347,7 @@ export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F
  * @interface Shell
  * @extends {(Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>>)}
  */
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options' | 'isInstallingEntryPoints'>> {
     /**
      * Unique name of the matching {EntryPoint}
      */
