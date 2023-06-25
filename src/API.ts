@@ -347,7 +347,7 @@ export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F
  * @interface Shell
  * @extends {(Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>>)}
  */
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options' | 'isInstallingEntryPoints'>> {
+export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
     /**
      * Unique name of the matching {EntryPoint}
      */
