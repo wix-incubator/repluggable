@@ -274,6 +274,10 @@ export interface AppHost {
     readonly options: AppHostOptions
 }
 
+export interface PrivateAppHost extends AppHost {
+    executeWhenFree(identifier: string, callback: () => void): void
+}
+
 export interface MonitoringOptions {
     enablePerformance?: boolean
     readonly disableMonitoring?: boolean

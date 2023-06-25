@@ -2,7 +2,18 @@ import _ from 'lodash'
 
 import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
-import { AnySlotKey, AppHost, EntryPoint, Shell, SlotKey, AppHostOptions, HostLogger, PrivateShell, ObservableState } from '../src/API'
+import {
+    AnySlotKey,
+    AppHost,
+    EntryPoint,
+    Shell,
+    SlotKey,
+    AppHostOptions,
+    HostLogger,
+    PrivateShell,
+    ObservableState,
+    PrivateAppHost
+} from '../src/API'
 import {
     MockAPI,
     mockPackage,
@@ -1512,6 +1523,63 @@ describe('App Host', () => {
             expect(host.hasShell(entryPoints[0].name)).toBe(false)
             expect(host.hasShell(entryPoints[1].name)).toBe(false)
             expect(host.hasShell(entryPoints[2].name)).toBe(false)
+        })
+    })
+
+    describe('Host.executeWhenFree', () => {
+        it('should be invoked immediately', () => {
+            const host = createAppHost([], testHostOptions) as PrivateAppHost
+            const spy = jest.fn()
+            host.executeWhenFree('1', spy)
+            expect(spy).toBeCalledTimes(1)
+        })
+
+        it('when invoked during entryPoints installation, should run once installation resumes ', async () => {
+            const host = createAppHost([], testHostOptions) as PrivateAppHost
+            const spy = jest.fn()
+
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{}> = { name: 'API2' }
+            const API3: SlotKey<{}> = { name: 'API3' }
+
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        host.executeWhenFree('1', spy)
+                        shell.contributeAPI(API1, () => ({}))
+                    },
+                    extend(shell: Shell) {
+                        expect(spy).toBeCalledTimes(0)
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API1],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({}))
+                    },
+                    extend(shell: Shell) {
+                        expect(spy).toBeCalledTimes(0)
+                    }
+                },
+                {
+                    name: 'Package3',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API3],
+                    attach(shell) {
+                        shell.contributeAPI(API3, () => ({}))
+                    },
+                    extend(shell: Shell) {
+                        expect(spy).toBeCalledTimes(0)
+                    }
+                }
+            ]
+
+            await host.addShells(entryPoints)
+            expect(spy).toBeCalledTimes(1)
         })
     })
 })
