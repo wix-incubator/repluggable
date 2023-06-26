@@ -1,4 +1,3 @@
 {
-  "main": "../dist/testKit/index.js",
-  "module": "../dist/es/testKit/index.js"
+  "main": "../dist/testKit/index.js"
 }
