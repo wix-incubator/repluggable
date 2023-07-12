@@ -1,7 +1,7 @@
 import { create, act, ReactTestRenderer, ReactTestInstance, TestRendererOptions } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../../src/index'
 import { ShellRenderer } from '../../src/renderSlotComponents'
@@ -140,7 +140,9 @@ export const renderDOMInHost = (reactElement: ReactElement<any>, host: AppHost =
         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
 
-    ReactDOM.render(Component, document.body.querySelector('div'))
+    const container = document.body.querySelector('div')
+    const root = container && createRoot(container)
+    root?.render(Component)
 }
 
 export const renderInHost = (
