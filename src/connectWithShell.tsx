@@ -16,8 +16,10 @@ interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
 
 type Maybe<T> = T | undefined
 type Returns<T> = () => T
-type MapStateToProps<State, OwnProps, StateProps> = Maybe<(shell: Shell, state: State, ownProps?: OwnProps) => StateProps>
-type MapDispatchToProps<OwnProps, DispatchProps> = Maybe<(shell: Shell, dispatch: Dispatch<Action>, ownProps?: OwnProps) => DispatchProps>
+export type MapStateToProps<State, OwnProps, StateProps> = Maybe<(shell: Shell, state: State, ownProps?: OwnProps) => StateProps>
+export type MapDispatchToProps<OwnProps, DispatchProps> = Maybe<
+    (shell: Shell, dispatch: Dispatch<Action>, ownProps?: OwnProps) => DispatchProps
+>
 type MapShellToStaticProps<ShellStaticProps, OwnProps> = Maybe<(shell: Shell, ownProps?: OwnProps) => ShellStaticProps>
 type WithChildren<OwnProps> = OwnProps & { children?: React.ReactNode }
 type WrappedComponentOwnProps<OwnProps> = OwnProps & { shell: Shell }
