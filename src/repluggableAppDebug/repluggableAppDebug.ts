@@ -37,59 +37,36 @@ interface SetupDebugInfoParams {
     getAPI: AppHost['getAPI']
 }
 
-const getPackageDependencyPackages = async (
-    allArtifacts: Record<string, EntryPointOrPackage | Function>,
-    packageName: string
-): Promise<EntryPoint[]> => {
-    const allPackages = await Promise.all(_.values(allArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
+async function resolveEntryPoints(repluggableArtifacts: Record<string, EntryPointOrPackage | Function>) {
+    const allPackages = await Promise.all(_.values(repluggableArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
         _.flattenDeep(x.map(y => _.values(y)))
     )
-
-    const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
-    _.forEach(allPackages, (entryPoint: EntryPoint) => {
-        _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
-            apiToEntryPoint.set(dependency.name, entryPoint)
-        })
-    })
-
-    const loadedEntryPoints = new Set<string>()
-    const packagesList: EntryPoint[] = []
-    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => x.name === packageName)
-
-    while (entryPointsQueue.length) {
-        const currEntryPoint = entryPointsQueue.shift()
-        if (!currEntryPoint || loadedEntryPoints.has(currEntryPoint.name)) {
-            continue
-        }
-        loadedEntryPoints.add(currEntryPoint.name)
-        packagesList.push(currEntryPoint)
-        const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
-        const dependencyEntryPoints = dependencies.map((API: AnySlotKey) => apiToEntryPoint.get(API.name))
-        entryPointsQueue.push(..._.compact(dependencyEntryPoints))
-    }
-
-    return _.uniq(packagesList)
+    return allPackages
 }
 
-const getPackageDependencyAPIs = async (
-    allArtifacts: Record<string, EntryPointOrPackage | Function>,
-    apiName: string
-): Promise<EntryPoint[]> => {
-    const allPackages = await Promise.all(_.values(allArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
-        _.flattenDeep(x.map(y => _.values(y)))
-    )
-
+function mapApiToEntryPoint(allPackages: EntryPoint[]) {
     const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
     _.forEach(allPackages, (entryPoint: EntryPoint) => {
         _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
             apiToEntryPoint.set(dependency.name, entryPoint)
         })
     })
+    return apiToEntryPoint
+}
+
+const getAPIOrEntryPointsDependencies = async (
+    repluggableArtifacts: Record<string, EntryPointOrPackage | Function>,
+    apiOrPackageName: string
+): Promise<{ entryPoints: EntryPoint[]; apis: AnySlotKey[] }> => {
+    const allPackages = await resolveEntryPoints(repluggableArtifacts)
+    const apiToEntryPoint = mapApiToEntryPoint(allPackages)
 
     const loadedEntryPoints = new Set<string>()
     const packagesList: EntryPoint[] = []
     const allDependencies = new Set<AnySlotKey>()
-    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => x.name === apiToEntryPoint.get(apiName)?.name)
+    const entryPointsQueue: EntryPoint[] = allPackages.filter(
+        x => x.name === apiOrPackageName || x.name === apiToEntryPoint.get(apiOrPackageName)?.name
+    )
 
     while (entryPointsQueue.length) {
         const currEntryPoint = entryPointsQueue.shift()
@@ -104,7 +81,10 @@ const getPackageDependencyAPIs = async (
         entryPointsQueue.push(..._.compact(dependencyEntryPoints))
     }
 
-    return [...allDependencies]
+    return {
+        entryPoints: packagesList,
+        apis: [...allDependencies]
+    }
 }
 
 export function setupDebugInfo({
@@ -147,8 +127,7 @@ export function setupDebugInfo({
         findAPI: (name: string) => {
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
-        getPackageDependencyPackages,
-        getPackageDependencyAPIs,
+        getAPIOrEntryPointsDependencies,
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
