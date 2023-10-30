@@ -71,6 +71,42 @@ const getPackageDependencyPackages = async (
     return _.uniq(packagesList)
 }
 
+const getPackageDependencyAPIs = async (
+    allArtifacts: Record<string, EntryPointOrPackage | Function>,
+    apiName: string
+): Promise<EntryPoint[]> => {
+    const allPackages = await Promise.all(_.values(allArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
+        _.flattenDeep(x.map(y => _.values(y)))
+    )
+
+    const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
+    _.forEach(allPackages, (entryPoint: EntryPoint) => {
+        _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
+            apiToEntryPoint.set(dependency.name, entryPoint)
+        })
+    })
+
+    const loadedEntryPoints = new Set<string>()
+    const packagesList: EntryPoint[] = []
+    const allDependencies = new Set<AnySlotKey>()
+    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => x.name === apiToEntryPoint.get(apiName)?.name)
+
+    while (entryPointsQueue.length) {
+        const currEntryPoint = entryPointsQueue.shift()
+        if (!currEntryPoint || loadedEntryPoints.has(currEntryPoint.name)) {
+            continue
+        }
+        loadedEntryPoints.add(currEntryPoint.name)
+        packagesList.push(currEntryPoint)
+        const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
+        dependencies.forEach(x => allDependencies.add(x))
+        const dependencyEntryPoints = dependencies.map((API: AnySlotKey) => apiToEntryPoint.get(API.name))
+        entryPointsQueue.push(..._.compact(dependencyEntryPoints))
+    }
+
+    return [...allDependencies]
+}
+
 export function setupDebugInfo({
     host,
     uniqueShellNames,
@@ -112,6 +148,7 @@ export function setupDebugInfo({
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
         getPackageDependencyPackages,
+        getPackageDependencyAPIs,
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
