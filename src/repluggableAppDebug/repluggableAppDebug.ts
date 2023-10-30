@@ -1,5 +1,15 @@
 import { getPerformanceDebug } from './performanceDebugInfo'
-import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
+import {
+    AnySlotKey,
+    AppHost,
+    EntryPoint,
+    EntryPointOrPackage,
+    LazyEntryPointFactory,
+    PrivateShell,
+    SlotKey,
+    StatisticsMemoization,
+    Trace
+} from '../API'
 import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
@@ -25,6 +35,40 @@ interface SetupDebugInfoParams {
     getUnreadyEntryPoints(): EntryPoint[]
     getOwnSlotKey(key: SlotKey<any>): SlotKey<any>
     getAPI: AppHost['getAPI']
+}
+
+const getPackageDependencyPackages = async (
+    allArtifacts: Record<string, EntryPointOrPackage | Function>,
+    packageName: string
+): Promise<EntryPoint[]> => {
+    const allPackages = await Promise.all(_.values(allArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
+        _.flattenDeep(x.map(y => _.values(y)))
+    )
+
+    const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
+    _.forEach(allPackages, (entryPoint: EntryPoint) => {
+        _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
+            apiToEntryPoint.set(dependency.name, entryPoint)
+        })
+    })
+
+    const loadedEntryPoints = new Set<string>()
+    const packagesList: EntryPoint[] = []
+    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => x.name === packageName)
+
+    while (entryPointsQueue.length) {
+        const currEntryPoint = entryPointsQueue.shift()
+        if (!currEntryPoint || loadedEntryPoints.has(currEntryPoint.name)) {
+            continue
+        }
+        loadedEntryPoints.add(currEntryPoint.name)
+        packagesList.push(currEntryPoint)
+        const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
+        const dependencyEntryPoints = dependencies.map((API: AnySlotKey) => apiToEntryPoint.get(API.name))
+        entryPointsQueue.push(..._.compact(dependencyEntryPoints))
+    }
+
+    return _.uniq(packagesList)
 }
 
 export function setupDebugInfo({
@@ -67,6 +111,7 @@ export function setupDebugInfo({
         findAPI: (name: string) => {
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
+        getPackageDependencyPackages,
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
