@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React from 'react'
-import { createAppHost, addMockShell, renderInHost, withConsoleErrors } from '../testKit/v2'
+import { createAppHost, addMockShell, renderInHost, withConsoleErrors } from '../testKit'
 import { ErrorBoundary } from '../src'
 import { act } from 'react-test-renderer'
 

@@ -23,7 +23,7 @@ import {
     mockShellStateKey,
     addMockShell,
     emptyLoggerOptions
-} from '../testKit/v2'
+} from '../testKit'
 
 import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
