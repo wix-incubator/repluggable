@@ -13,7 +13,7 @@ import {
     withThrowOnError,
     TOGGLE_MOCK_VALUE,
     collectAllTexts
-} from '../testKit/v2'
+} from '../testKit'
 import { ReactTestRenderer, act, create } from 'react-test-renderer'
 import { AnyAction } from 'redux'
 import { ObservedSelectorsMap, observeWithShell } from '../src'

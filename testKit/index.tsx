@@ -1,12 +1,14 @@
-import { mount, ReactWrapper } from 'enzyme'
+import { create, act, ReactTestRenderer, ReactTestInstance, TestRendererOptions } from 'react-test-renderer'
 import _ from 'lodash'
 import React, { ReactElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { EntryPoint, ObservableState, PrivateShell, ShellBoundaryAspect } from '../src/API'
 import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
+export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
 export { connectWithShell, connectWithShellAndObserve } from '../src/connectWithShell'
 export { SlotRenderer } from '../src/renderSlotComponents'
@@ -56,7 +58,7 @@ export const getPackagesDependencies = (
         loadedEntryPoints.add(currEntryPoint.name)
         packagesList.push(currEntryPoint)
         const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
-        const dependencyEntryPoints = dependencies.map(API => apiToEntryPoint.get(API.name))
+        const dependencyEntryPoints = dependencies.map((API: AnySlotKey) => apiToEntryPoint.get(API.name))
         entryPointsQueue.push(..._.compact(dependencyEntryPoints))
     }
 
@@ -116,31 +118,53 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
     return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
 
-export type RenderHostType = (host: AppHost) => { root: ReactWrapper | null; DOMNode: HTMLElement | null }
-export const renderHost: RenderHostType = (host: AppHost) => {
-    const root = mount(<AppMainView host={host} />) as ReactWrapper
-    return { root, DOMNode: root && (root.getDOMNode() as HTMLElement) }
+export const renderHost = (host: AppHost): ReactTestRenderer => {
+    let renderer: ReactTestRenderer | undefined
+    act(() => {
+        renderer = create(<AppMainView host={host} />)
+    })
+
+    return renderer as unknown as ReactTestRenderer
 }
 
 export interface WrappedComponent {
-    root: ReactWrapper | null
-    parentWrapper: ReactWrapper | null
-    DOMNode: HTMLElement | null
+    testKit: ReturnType<typeof create>
     host: AppHost
+    parentWrapper: ReactTestInstance | undefined
 }
 
-export const renderInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell): WrappedComponent => {
+export const renderDOMInHost = (reactElement: ReactElement<any>, host: AppHost = createAppHost([]), customShell?: Shell) => {
     const shell = customShell || createShell(host)
 
-    const root = mount(
+    const Component = (
         <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
     )
 
-    const parentWrapper = root.find('[data-shell-in-host="true"]')
+    const container = document.body.querySelector('div')
+    const root = container && createRoot(container)
+    root?.render(Component)
+}
+
+export const renderInHost = (
+    reactElement: ReactElement<any>,
+    host: AppHost = createAppHost([]),
+    customShell?: Shell,
+    options?: TestRendererOptions
+): WrappedComponent => {
+    const shell = customShell || createShell(host)
+
+    const Component = (
+        <ShellRenderer host={host} shell={shell as PrivateShell} component={<div data-shell-in-host="true">{reactElement}</div>} key="" />
+    )
+    let root: ReactTestRenderer | undefined
+    act(() => {
+        root = create(Component, options)
+    })
+
+    const parentWrapper = root?.root.find(x => x.props['data-shell-in-host'])
 
     return {
-        root,
-        DOMNode: parentWrapper.children().first().getDOMNode() as HTMLElement,
+        testKit: root as unknown as ReactTestRenderer,
         parentWrapper,
         host
     }
@@ -158,7 +182,7 @@ export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverr
         {
             name: _.uniqueId('__MOCK_SHELL_'),
             ...entryPointOverrides,
-            attach(_shell) {
+            attach(_shell: Shell) {
                 shell = _shell
                 if (entryPointOverrides.attach) {
                     entryPointOverrides.attach(_shell)
@@ -176,10 +200,10 @@ export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverr
                 return false
             }
         }
-        const missing = dependencies.filter(key => !canGetAPI(key))
+        const missing = dependencies.filter((key: AnySlotKey) => !canGetAPI(key))
         throw new Error(
             `addMockShell: overridden entry point is not ready (missing dependency APIs?) host could not find: ${missing.map(
-                v => `"${v.name}"`
+                (v: AnySlotKey) => `"${v.name}"`
             )}`
         )
     }
@@ -234,7 +258,7 @@ function createShell(host: AppHost): PrivateShell {
         clearCache: _.noop,
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint),
-        wrapWithShellRenderer: component => component
+        wrapWithShellRenderer: (component: JSX.Element) => component
     }
 }
 
@@ -247,4 +271,10 @@ export function mockObservable<T>(value: T): ObservableState<T> {
             return value
         }
     }
+}
+
+export function collectAllTexts(instance: ReactTestInstance | undefined) {
+    return (instance
+        ?.findAll(x => x.children?.some(child => typeof child === 'string'))
+        .flatMap(x => x.children.filter(child => typeof child === 'string')) || []) as string[]
 }

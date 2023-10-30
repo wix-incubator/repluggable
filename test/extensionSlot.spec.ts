@@ -1,5 +1,5 @@
 import { SlotKey } from '../src'
-import { addMockShell, createAppHost } from '../testKit/v2'
+import { addMockShell, createAppHost } from '../testKit'
 import { PrivateExtensionSlot, Shell, EntryPoint } from '../src/API'
 
 describe('ExtensionSlot', () => {

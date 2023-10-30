@@ -13,7 +13,7 @@ import {
     dependsOnMockPackageEntryPoint,
     MockPublicAPI,
     createAppHostAndWaitForLoading
-} from '../testKit/v2'
+} from '../testKit'
 
 interface APIKeys {
     [name: string]: AnyExtensionSlot
