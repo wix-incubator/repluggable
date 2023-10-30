@@ -1,5 +1,15 @@
 import { getPerformanceDebug } from './performanceDebugInfo'
-import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
+import {
+    AnySlotKey,
+    AppHost,
+    EntryPoint,
+    EntryPointOrPackage,
+    LazyEntryPointFactory,
+    PrivateShell,
+    SlotKey,
+    StatisticsMemoization,
+    Trace
+} from '../API'
 import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
@@ -25,6 +35,56 @@ interface SetupDebugInfoParams {
     getUnreadyEntryPoints(): EntryPoint[]
     getOwnSlotKey(key: SlotKey<any>): SlotKey<any>
     getAPI: AppHost['getAPI']
+}
+
+async function resolveEntryPoints(repluggableArtifacts: Record<string, EntryPointOrPackage | Function>) {
+    const allPackages = await Promise.all(_.values(repluggableArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
+        _.flattenDeep(x.map(y => _.values(y)))
+    )
+    return allPackages
+}
+
+function mapApiToEntryPoint(allPackages: EntryPoint[]) {
+    const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
+    _.forEach(allPackages, (entryPoint: EntryPoint) => {
+        _.forEach(entryPoint.declareAPIs ? entryPoint.declareAPIs() : [], dependency => {
+            apiToEntryPoint.set(dependency.name, entryPoint)
+        })
+    })
+    return apiToEntryPoint
+}
+
+const getAPIOrEntryPointsDependencies = async (
+    repluggableArtifacts: Record<string, EntryPointOrPackage | Function>,
+    apiOrPackageName: string
+): Promise<{ entryPoints: EntryPoint[]; apis: AnySlotKey[] }> => {
+    const allPackages = await resolveEntryPoints(repluggableArtifacts)
+    const apiToEntryPoint = mapApiToEntryPoint(allPackages)
+
+    const loadedEntryPoints = new Set<string>()
+    const packagesList: EntryPoint[] = []
+    const allDependencies = new Set<AnySlotKey>()
+    const entryPointsQueue: EntryPoint[] = allPackages.filter(
+        x => x.name === apiOrPackageName || x.name === apiToEntryPoint.get(apiOrPackageName)?.name
+    )
+
+    while (entryPointsQueue.length) {
+        const currEntryPoint = entryPointsQueue.shift()
+        if (!currEntryPoint || loadedEntryPoints.has(currEntryPoint.name)) {
+            continue
+        }
+        loadedEntryPoints.add(currEntryPoint.name)
+        packagesList.push(currEntryPoint)
+        const dependencies = currEntryPoint.getDependencyAPIs ? currEntryPoint.getDependencyAPIs() : []
+        dependencies.forEach(x => allDependencies.add(x))
+        const dependencyEntryPoints = dependencies.map((API: AnySlotKey) => apiToEntryPoint.get(API.name))
+        entryPointsQueue.push(..._.compact(dependencyEntryPoints))
+    }
+
+    return {
+        entryPoints: packagesList,
+        apis: [...allDependencies]
+    }
 }
 
 export function setupDebugInfo({
@@ -67,6 +127,7 @@ export function setupDebugInfo({
         findAPI: (name: string) => {
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
+        getAPIOrEntryPointsDependencies,
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
