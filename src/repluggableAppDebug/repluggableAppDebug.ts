@@ -37,7 +37,7 @@ interface SetupDebugInfoParams {
     getAPI: AppHost['getAPI']
 }
 
-async function resolveEntryPoints(repluggableArtifacts: Record<string, EntryPointOrPackage | Function>) {
+async function resolveEntryPoints(repluggableArtifacts: Record<string, EntryPointOrPackage | Function>): Promise<EntryPoint[]> {
     const allPackages = await Promise.all(_.values(repluggableArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
         _.flattenDeep(x.map(y => _.values(y)))
     )
@@ -56,7 +56,7 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
 
 const getAPIOrEntryPointsDependencies = async (
     repluggableArtifacts: Record<string, EntryPointOrPackage | Function>,
-    apiOrPackageName: string
+    apisOrEntryPoints: string[]
 ): Promise<{ entryPoints: EntryPoint[]; apis: AnySlotKey[] }> => {
     const allPackages = await resolveEntryPoints(repluggableArtifacts)
     const apiToEntryPoint = mapApiToEntryPoint(allPackages)
@@ -64,9 +64,13 @@ const getAPIOrEntryPointsDependencies = async (
     const loadedEntryPoints = new Set<string>()
     const packagesList: EntryPoint[] = []
     const allDependencies = new Set<AnySlotKey>()
-    const entryPointsQueue: EntryPoint[] = allPackages.filter(
-        x => x.name === apiOrPackageName || x.name === apiToEntryPoint.get(apiOrPackageName)?.name
-    )
+    const apisOrEntryPointsSet = new Set(apisOrEntryPoints)
+    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => apisOrEntryPointsSet.has(x.name))
+
+    apisOrEntryPoints.forEach(x => {
+        const ep = apiToEntryPoint.get(x)
+        ep && entryPointsQueue.push(ep)
+    })
 
     while (entryPointsQueue.length) {
         const currEntryPoint = entryPointsQueue.shift()
