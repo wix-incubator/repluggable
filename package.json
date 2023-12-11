@@ -72,6 +72,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "resolutions": {
+    "@types/react": "^18.2.43",
     "node-forge": "^1.0.0"
   },
   "husky": {
