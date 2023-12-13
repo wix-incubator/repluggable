@@ -624,7 +624,8 @@ miss: ${memoizedWithMissHit.miss}
 
                 const circle = getCycle(dependentGraph)
                 if (circle) {
-                    host.log.log('error', `Circular API dependency found: ${circle.join(' -> ')}`)
+                    const reversedCircle = circle.reverse()
+                    host.log.log('error', `Circular API dependency found: ${reversedCircle.join(' -> ')}`)
                     throw new Error(`Circular API dependency found`)
                 }
             }
