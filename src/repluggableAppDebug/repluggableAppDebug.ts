@@ -1,15 +1,5 @@
 import { getPerformanceDebug } from './performanceDebugInfo'
-import {
-    AnySlotKey,
-    AppHost,
-    EntryPoint,
-    EntryPointOrPackage,
-    LazyEntryPointFactory,
-    PrivateShell,
-    SlotKey,
-    StatisticsMemoization,
-    Trace
-} from '../API'
+import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
 import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
@@ -37,13 +27,6 @@ interface SetupDebugInfoParams {
     getAPI: AppHost['getAPI']
 }
 
-async function resolveEntryPoints(repluggableArtifacts: Record<string, EntryPointOrPackage | Function>): Promise<EntryPoint[]> {
-    const allPackages = await Promise.all(_.values(repluggableArtifacts).map(x => (typeof x === 'function' ? x() : x))).then(x =>
-        _.flattenDeep(x.map(y => _.values(y)))
-    )
-    return allPackages
-}
-
 function mapApiToEntryPoint(allPackages: EntryPoint[]) {
     const apiToEntryPoint = new Map<string, EntryPoint | undefined>()
     _.forEach(allPackages, (entryPoint: EntryPoint) => {
@@ -55,19 +38,18 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
 }
 
 const getAPIOrEntryPointsDependencies = async (
-    repluggableArtifacts: Record<string, EntryPointOrPackage | Function>,
-    apisOrEntryPoints: string[]
+    apisOrEntryPointsNames: string[],
+    entryPoints: EntryPoint[]
 ): Promise<{ entryPoints: EntryPoint[]; apis: AnySlotKey[] }> => {
-    const allPackages = await resolveEntryPoints(repluggableArtifacts)
-    const apiToEntryPoint = mapApiToEntryPoint(allPackages)
+    const apiToEntryPoint = mapApiToEntryPoint(entryPoints)
 
     const loadedEntryPoints = new Set<string>()
     const packagesList: EntryPoint[] = []
     const allDependencies = new Set<AnySlotKey>()
-    const apisOrEntryPointsSet = new Set(apisOrEntryPoints)
-    const entryPointsQueue: EntryPoint[] = allPackages.filter(x => apisOrEntryPointsSet.has(x.name))
+    const apisOrEntryPointsSet = new Set(apisOrEntryPointsNames)
+    const entryPointsQueue: EntryPoint[] = entryPoints.filter(x => apisOrEntryPointsSet.has(x.name))
 
-    apisOrEntryPoints.forEach(x => {
+    apisOrEntryPointsNames.forEach(x => {
         const ep = apiToEntryPoint.get(x)
         ep && entryPointsQueue.push(ep)
     })
@@ -131,7 +113,10 @@ export function setupDebugInfo({
         findAPI: (name: string) => {
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
-        getAPIOrEntryPointsDependencies,
+        getAPIOrEntryPointsDependencies: (
+            apisOrEntryPointsNames: string[],
+            entryPoints = [...addedShells.values()].map(x => x.entryPoint)
+        ) => getAPIOrEntryPointsDependencies(apisOrEntryPointsNames, entryPoints),
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
