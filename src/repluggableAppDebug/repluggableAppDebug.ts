@@ -86,17 +86,15 @@ export function setupDebugInfo({
     shellInstallers,
     performance: { options, trace, memoizedArr }
 }: SetupDebugInfoParams) {
-    const apis = () => {
-        return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
-            return {
-                key: apiKey,
-                impl: () => getAPI(apiKey)
-            }
-        })
-    }
-
     const utils = {
-        apis,
+        apis: () => {
+            return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
+                return {
+                    key: apiKey,
+                    impl: () => getAPI(apiKey)
+                }
+            })
+        },
         unReadyEntryPoints: (): EntryPoint[] => getUnreadyEntryPoints(),
         whyEntryPointUnready: (name: string) => {
             const unreadyEntryPoint = _.find(
