@@ -37,10 +37,10 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
     return apiToEntryPoint
 }
 
-const getAPIOrEntryPointsDependencies = async (
+const getAPIOrEntryPointsDependencies = (
     apisOrEntryPointsNames: string[],
     entryPoints: EntryPoint[]
-): Promise<{ entryPoints: EntryPoint[]; apis: AnySlotKey[] }> => {
+): { entryPoints: EntryPoint[]; apis: AnySlotKey[] } => {
     const apiToEntryPoint = mapApiToEntryPoint(entryPoints)
 
     const loadedEntryPoints = new Set<string>()
