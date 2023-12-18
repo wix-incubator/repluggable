@@ -115,8 +115,10 @@ export function setupDebugInfo({
         findAPI: (name: string) => {
             return _.filter(utils.apis(), (api: any) => api.key.name.toLowerCase().indexOf(name.toLowerCase()) !== -1)
         },
-        getAPIOrEntryPointsDependencies: (apisOrEntryPointsNames: string[], entryPoints = apis().map(x => x.impl)) =>
-            getAPIOrEntryPointsDependencies(apisOrEntryPointsNames, entryPoints),
+        getAPIOrEntryPointsDependencies: (
+            apisOrEntryPointsNames: string[],
+            entryPoints = [...addedShells.values()].map(x => x.entryPoint)
+        ) => getAPIOrEntryPointsDependencies(apisOrEntryPointsNames, entryPoints),
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
