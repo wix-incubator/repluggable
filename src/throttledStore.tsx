@@ -55,6 +55,7 @@ export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     resetPendingNotifications(): void
     syncSubscribe(listener: () => void): Unsubscribe
     dispatchWithShell(shell: Shell): Dispatch
+    deferNotifications(flag: boolean): void
 }
 
 export interface PrivateObservableState<TState, TSelector> extends ObservableState<TSelector> {
@@ -160,6 +161,7 @@ export const createThrottledStore = (
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
+    let deferNotifications = false
 
     const onBroadcastNotify = () => {
         pendingBroadcastNotification = true
@@ -210,6 +212,9 @@ export const createThrottledStore = (
 
     const notifyAll = () => {
         try {
+            if (deferNotifications) {
+                return
+            }
             updateIsObserversNotifyInProgress(true)
             notifyObservers()
             updateIsSubscriptionNotifyInProgress(true)
@@ -250,7 +255,8 @@ export const createThrottledStore = (
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
-        hasPendingSubscribers: () => pendingBroadcastNotification
+        hasPendingSubscribers: () => pendingBroadcastNotification,
+        deferNotifications: (value: boolean) => {deferNotifications = value},
     }
 
     resetAllPendingNotifications()

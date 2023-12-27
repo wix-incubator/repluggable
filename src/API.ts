@@ -471,6 +471,14 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @param {(Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>)} memoizedFunction
      */
     clearCache(memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>): void
+    /**
+     * Defer subscribers notification while performing a function
+     * 
+     * @param func 
+     */
+    deferSubscriberNotifications<T>(
+        func: () => T | Promise<T>,
+    ): Promise<T>
 }
 
 export interface PrivateShell extends Shell {

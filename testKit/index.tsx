@@ -258,7 +258,8 @@ function createShell(host: AppHost): PrivateShell {
         clearCache: _.noop,
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint),
-        wrapWithShellRenderer: (component: JSX.Element) => component
+        wrapWithShellRenderer: (component: JSX.Element) => component,
+        deferSubscriberNotifications: _.identity,
     }
 }
 
