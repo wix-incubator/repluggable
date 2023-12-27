@@ -1058,6 +1058,7 @@ miss: ${memoizedWithMissHit.miss}
                     },
                     flush: host.getStore().flush,
                     hasPendingSubscribers: host.getStore().hasPendingSubscribers
+                    deferSubscriberNotifications: host.getStore().deferSubscriberNotifications
                 }
             },
 
@@ -1092,18 +1093,7 @@ miss: ${memoizedWithMissHit.miss}
                 return <ShellRenderer shell={shell} component={component} host={host} />
             },
 
-            deferSubscriberNotifications: async (func) => {
-              try {
-                (host.getStore() as PrivateThrottledStore).deferNotifications(true);
-                const functionResult =  await func();
-                return functionResult;
-                
-              }
-              finally {
-                (host.getStore() as PrivateThrottledStore).deferNotifications(false);
-                host.getStore().flush();
-              }            
-            },
+            
         }
 
         return shell

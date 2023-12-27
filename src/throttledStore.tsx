@@ -47,6 +47,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
     flush(): void
+    deferSubscriberNotifications<K>(action: () => K | Promise<K>): Promise<K>
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
@@ -55,7 +56,6 @@ export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
     resetPendingNotifications(): void
     syncSubscribe(listener: () => void): Unsubscribe
     dispatchWithShell(shell: Shell): Dispatch
-    deferNotifications(flag: boolean): void
 }
 
 export interface PrivateObservableState<TState, TSelector> extends ObservableState<TSelector> {
@@ -256,7 +256,18 @@ export const createThrottledStore = (
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
-        deferNotifications: (value: boolean) => {deferNotifications = value},
+        deferSubscriberNotifications: async (action) => {
+            try {
+              deferNotifications = true;
+              const functionResult =  await action();
+              return functionResult;
+              
+            }
+            finally {
+              deferNotifications = false;
+              flush();
+            }            
+          },
     }
 
     resetAllPendingNotifications()
