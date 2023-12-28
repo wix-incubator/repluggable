@@ -256,18 +256,19 @@ export const createThrottledStore = (
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
-        deferSubscriberNotifications: async (action) => {
-            try {
-              deferNotifications = true;
-              const functionResult =  await action();
-              return functionResult;
-              
+        deferSubscriberNotifications: async action => {
+            if (deferNotifications) {
+                return action()
             }
-            finally {
-              deferNotifications = false;
-              flush();
-            }            
-          },
+            try {
+                deferNotifications = true
+                const functionResult = await action()
+                return functionResult
+            } finally {
+                deferNotifications = false
+                flush()
+            }
+        }
     }
 
     resetAllPendingNotifications()

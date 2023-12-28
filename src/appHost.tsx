@@ -1057,7 +1057,7 @@ miss: ${memoizedWithMissHit.miss}
                         return entireStoreState[shell.name]
                     },
                     flush: host.getStore().flush,
-                    hasPendingSubscribers: host.getStore().hasPendingSubscribers
+                    hasPendingSubscribers: host.getStore().hasPendingSubscribers,
                     deferSubscriberNotifications: host.getStore().deferSubscriberNotifications
                 }
             },
@@ -1091,9 +1091,7 @@ miss: ${memoizedWithMissHit.miss}
 
             wrapWithShellRenderer(component): JSX.Element {
                 return <ShellRenderer shell={shell} component={component} host={host} />
-            },
-
-            
+            }
         }
 
         return shell
