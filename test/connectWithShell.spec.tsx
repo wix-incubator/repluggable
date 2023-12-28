@@ -589,6 +589,7 @@ describe('connectWithShell-useCases', () => {
     beforeEach(() => {
         renderSpy.mockClear()
         mapStateToPropsSpy.mockClear()
+        mountSpy.mockClear()
     })
 
     it('should include observable state in store', () => {
@@ -634,6 +635,81 @@ describe('connectWithShell-useCases', () => {
         expect(hasPendingSubscribers()).toBe(true)
         flush()
         expect(hasPendingSubscribers()).toBe(false)
+    })
+
+    it('should not notify subscribers when defering notifications', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        act(async () => {
+            await host.getStore().deferSubscriberNotifications(() => {
+                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
+                expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+                expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+            })
+            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+            expect(renderSpy).toHaveBeenCalledTimes(2)
+        })
+    })
+
+    it('should notify after defered notification action failed', () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        act(async () => {
+            await host.getStore().deferSubscriberNotifications(() => {
+                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
+                throw new Error('test error')
+            })
+            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+            expect(renderSpy).toHaveBeenCalledTimes(2)
+        })
+    })
+
+    it('should support nested defered notification actions', () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        act(async () => {
+            await host.getStore().deferSubscriberNotifications(async () => {
+                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from outer' }, host)
+                await host.getStore().deferSubscriberNotifications(() => {
+                    dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from inner' }, host)
+                })
+                expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
+                expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+                expect(renderSpy).toHaveBeenCalledTimes(1)
+            })
+            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update from inner')
+            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+            expect(renderSpy).toHaveBeenCalledTimes(2)
+        })
     })
 
     it('should not mount connected component on props update', () => {
