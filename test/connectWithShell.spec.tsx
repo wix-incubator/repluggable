@@ -649,19 +649,23 @@ describe('connectWithShell-useCases', () => {
         expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
-        act(async () => {
+
+        let valueOneWhileDefering
+
+        await act(async () => {
             await host.getStore().deferSubscriberNotifications(() => {
                 dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
-                expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
-                expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+                valueOneWhileDefering = testKit.root.findByProps({ className: 'ONE' }).children[0]
             })
-            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
-            expect(renderSpy).toHaveBeenCalledTimes(2)
         })
+
+        expect(valueOneWhileDefering).toBe('init1')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it('should notify after defered notification action failed', () => {
+    it('should notify after action failed while defering notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
@@ -673,18 +677,22 @@ describe('connectWithShell-useCases', () => {
         expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
-        act(async () => {
-            await host.getStore().deferSubscriberNotifications(() => {
-                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
-                throw new Error('test error')
+
+        try {
+            await act(async () => {
+                await host.getStore().deferSubscriberNotifications(() => {
+                    dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
+                    throw new Error('test error')
+                })
             })
-            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
-            expect(renderSpy).toHaveBeenCalledTimes(2)
-        })
+        } catch (e) {}
+
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it('should support nested defered notification actions', () => {
+    it('should support nested defered notification actions', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
@@ -696,20 +704,25 @@ describe('connectWithShell-useCases', () => {
         expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
-        act(async () => {
+        let valueOneInOuterDeferNotifications
+        let valueOneInInnerDeferNotifications
+
+        await act(async () => {
             await host.getStore().deferSubscriberNotifications(async () => {
                 dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from outer' }, host)
                 await host.getStore().deferSubscriberNotifications(() => {
                     dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from inner' }, host)
+                    valueOneInInnerDeferNotifications = testKit.root.findByProps({ className: 'ONE' }).children[0]
                 })
-                expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
-                expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
-                expect(renderSpy).toHaveBeenCalledTimes(1)
+                valueOneInOuterDeferNotifications = testKit.root.findByProps({ className: 'ONE' }).children[0]
             })
-            expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update from inner')
-            expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
-            expect(renderSpy).toHaveBeenCalledTimes(2)
         })
+
+        expect(valueOneInInnerDeferNotifications).toBe('init1')
+        expect(valueOneInOuterDeferNotifications).toBe('init1')
+        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update from inner')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
     it('should not mount connected component on props update', () => {
