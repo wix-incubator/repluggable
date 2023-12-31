@@ -211,10 +211,12 @@ export const createThrottledStore = (
     }
 
     const notifyAll = () => {
+        if (deferNotifications) {
+            updateIsObserversNotifyInProgress(true)
+            updateIsSubscriptionNotifyInProgress(true)
+            return
+        }
         try {
-            if (deferNotifications) {
-                return
-            }
             updateIsObserversNotifyInProgress(true)
             notifyObservers()
             updateIsSubscriptionNotifyInProgress(true)
@@ -246,7 +248,10 @@ export const createThrottledStore = (
         return store.dispatch(action)
     }
 
-    const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({ ...action, __shellName: shell.name })
+    const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({
+        ...action,
+        __shellName: shell.name
+    })
 
     const result: PrivateThrottledStore = {
         ...store,
@@ -269,7 +274,8 @@ export const createThrottledStore = (
                 return functionResult
             } finally {
                 deferNotifications = false
-                flush()
+                notifyObservers()
+                notifySubscribers()
             }
         }
     }
