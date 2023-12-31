@@ -237,9 +237,6 @@ export const createThrottledStore = (
     })
 
     const flush = () => {
-        if (deferNotifications) {
-            console.error('Cannot flush while notifications are deferred')
-        }
         cancelRender()
         notifyAll()
     }
