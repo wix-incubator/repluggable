@@ -274,8 +274,6 @@ export const createThrottledStore = (
                 return functionResult
             } finally {
                 deferNotifications = false
-                notifyObservers()
-                notifySubscribers()
             }
         }
     }
