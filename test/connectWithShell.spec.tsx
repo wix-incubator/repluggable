@@ -637,7 +637,7 @@ describe('connectWithShell-useCases', () => {
         expect(hasPendingSubscribers()).toBe(false)
     })
 
-    it('should not notify subscribers when defering notifications', async () => {
+    it('should not notify subscribers when deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
@@ -650,22 +650,22 @@ describe('connectWithShell-useCases', () => {
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
-        let valueOneWhileDefering
+        let valueOneWhileDeferring
 
         await act(async () => {
             await host.getStore().deferSubscriberNotifications(() => {
                 dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
-                valueOneWhileDefering = testKit.root.findByProps({ className: 'ONE' }).children[0]
+                valueOneWhileDeferring = testKit.root.findByProps({ className: 'ONE' }).children[0]
             })
         })
 
-        expect(valueOneWhileDefering).toBe('init1')
+        expect(valueOneWhileDeferring).toBe('init1')
         expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it('should notify after action failed while defering notifications', async () => {
+    it('should notify after action failed while deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
 
@@ -690,6 +690,28 @@ describe('connectWithShell-useCases', () => {
         expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should flush while deferring notifications if immediate flush was called during that action', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        let valueOneWhileDeferring
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            act(() => {
+                host.getStore().dispatch({ type: 'SET_FIRST_STATE', value: 'update1' })
+                host.getStore().flush({ excecutionType: 'immediate' })
+            })
+            valueOneWhileDeferring = testKit.root.findByProps({ className: 'ONE' }).children[0]
+        })
+
+        expect(valueOneWhileDeferring).toEqual('update1')
     })
 
     it('should support nested defered notification actions', async () => {

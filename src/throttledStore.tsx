@@ -46,7 +46,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
-    flush(): void
+    flush(config?: { excecutionType: 'scheduled' | 'immediate' }): void
     deferSubscriberNotifications<K>(action: () => K | Promise<K>): Promise<K>
 }
 
@@ -162,6 +162,7 @@ export const createThrottledStore = (
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
     let deferNotifications = false
+    let pendingFlush = false
 
     const onBroadcastNotify = () => {
         pendingBroadcastNotification = true
@@ -211,11 +212,6 @@ export const createThrottledStore = (
     }
 
     const notifyAll = () => {
-        if (deferNotifications) {
-            updateIsObserversNotifyInProgress(true)
-            updateIsSubscriptionNotifyInProgress(true)
-            return
-        }
         try {
             updateIsObserversNotifyInProgress(true)
             notifyObservers()
@@ -228,7 +224,14 @@ export const createThrottledStore = (
         }
     }
 
-    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, notifyAll)
+    const scheduledNotifyAll = () => {
+        if (deferNotifications) {
+            return
+        }
+        notifyAll()
+    }
+
+    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, scheduledNotifyAll)
 
     let cancelRender = _.noop
 
@@ -236,7 +239,11 @@ export const createThrottledStore = (
         cancelRender = notifyAllOnAnimationFrame()
     })
 
-    const flush = () => {
+    const flush = (config?: { excecutionType: 'scheduled' | 'immediate' }) => {
+        if (deferNotifications && config?.excecutionType !== 'immediate') {
+            pendingFlush = true
+            return
+        }
         cancelRender()
         notifyAll()
     }
@@ -271,8 +278,12 @@ export const createThrottledStore = (
                 return functionResult
             } finally {
                 deferNotifications = false
-                notifyObservers()
-                notifySubscribers()
+                if (pendingFlush) {
+                    pendingFlush = false
+                    flush()
+                } else {
+                    notifyAll()
+                }
             }
         }
     }
