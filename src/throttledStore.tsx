@@ -46,7 +46,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
-    flush(config?: { excecutionType: 'scheduled' | 'immediate' }): void
+    flush(config?: { excecutionType: 'scheduled' | 'immediate' | 'default' }): void
     deferSubscriberNotifications<K>(action: () => K | Promise<K>): Promise<K>
 }
 
@@ -239,12 +239,14 @@ export const createThrottledStore = (
         cancelRender = notifyAllOnAnimationFrame()
     })
 
-    const flush = (config?: { excecutionType: 'scheduled' | 'immediate' }) => {
-        if (deferNotifications && config?.excecutionType !== 'immediate') {
+    const flush = (config = { excecutionType: 'default' }) => {
+        if (deferNotifications && config.excecutionType !== 'immediate') {
             pendingFlush = true
             return
         }
-        cancelRender()
+        if (config.excecutionType !== 'scheduled') {
+            cancelRender()
+        }
         notifyAll()
     }
 
