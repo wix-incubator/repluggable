@@ -1058,7 +1058,8 @@ miss: ${memoizedWithMissHit.miss}
                         return entireStoreState[shell.name]
                     },
                     flush: host.getStore().flush,
-                    hasPendingSubscribers: host.getStore().hasPendingSubscribers
+                    hasPendingSubscribers: host.getStore().hasPendingSubscribers,
+                    deferSubscriberNotifications: host.getStore().deferSubscriberNotifications
                 }
             },
 

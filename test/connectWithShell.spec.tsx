@@ -586,9 +586,13 @@ describe('connectWithShell-useCases', () => {
         }
     }
 
+    const getComponentValueByClassName = (className: string, testKit: ReactTestRenderer) =>
+        testKit.root.findByProps({ className }).children[0]
+
     beforeEach(() => {
         renderSpy.mockClear()
         mapStateToPropsSpy.mockClear()
+        mountSpy.mockClear()
     })
 
     it('should include observable state in store', () => {
@@ -636,6 +640,116 @@ describe('connectWithShell-useCases', () => {
         expect(hasPendingSubscribers()).toBe(false)
     })
 
+    it('should not notify subscribers when deferring notifications', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+
+        let valueOneWhileDeferring
+
+        await act(async () => {
+            await host.getStore().deferSubscriberNotifications(() => {
+                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
+                valueOneWhileDeferring = getComponentValueByClassName('ONE', testKit)
+            })
+        })
+
+        expect(valueOneWhileDeferring).toBe('init1')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should notify after action failed while deferring notifications', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+
+        try {
+            await act(async () => {
+                await host.getStore().deferSubscriberNotifications(() => {
+                    dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
+                    throw new Error('test error')
+                })
+            })
+        } catch (e) {}
+
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+    })
+
+    it('should flush while deferring notifications if immediate flush was called during that action', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        let valueOneWhileDeferring
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            act(() => {
+                host.getStore().dispatch({ type: 'SET_FIRST_STATE', value: 'update1' })
+                host.getStore().flush({ excecutionType: 'immediate' })
+            })
+            valueOneWhileDeferring = getComponentValueByClassName('ONE', testKit)
+        })
+
+        expect(valueOneWhileDeferring).toEqual('update1')
+    })
+
+    it('should support nested defered notification actions', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
+        expect(renderSpy).toHaveBeenCalledTimes(1)
+        let valueOneInOuterDeferNotifications
+        let valueOneInInnerDeferNotifications
+
+        await act(async () => {
+            await host.getStore().deferSubscriberNotifications(async () => {
+                dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from outer' }, host)
+                await host.getStore().deferSubscriberNotifications(() => {
+                    dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update from inner' }, host)
+                    valueOneInInnerDeferNotifications = getComponentValueByClassName('ONE', testKit)
+                })
+                valueOneInOuterDeferNotifications = getComponentValueByClassName('ONE', testKit)
+            })
+        })
+
+        expect(valueOneInInnerDeferNotifications).toBe('init1')
+        expect(valueOneInOuterDeferNotifications).toBe('init1')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update from inner')
+        expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
+        expect(renderSpy).toHaveBeenCalledTimes(2)
+    })
+
     it('should not mount connected component on props update', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
@@ -662,29 +776,29 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         dispatchAndFlush({ type: 'SET_SECOND_STATE', value: 'update2' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('update2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
         dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('update2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('update2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })
@@ -701,23 +815,23 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         // this should not notify the uninterested component
         dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
@@ -750,34 +864,34 @@ describe('connectWithShell-useCases', () => {
             throw new Error('Connected component failed to render')
         }
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('init1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
-        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('init3')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('init1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
+        expect(getComponentValueByClassName('THREE', testKit)).toBe('init3')
 
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(1)
         expect(renderSpy).toHaveBeenCalledTimes(1)
 
         dispatchAndFlush({ type: 'SET_FIRST_STATE', value: 'update1' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
-        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('init3')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
+        expect(getComponentValueByClassName('THREE', testKit)).toBe('init3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(2)
         expect(renderSpy).toHaveBeenCalledTimes(2)
 
         dispatchAndFlush({ type: 'SET_FIRST_OBSERVABLE', value: 'update3' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
-        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('update3')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
+        expect(getComponentValueByClassName('THREE', testKit)).toBe('update3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
 
         dispatchAndFlush({ type: 'SOME_OTHER_ACTION' }, host)
 
-        expect(testKit.root.findByProps({ className: 'ONE' }).children[0]).toBe('update1')
-        expect(testKit.root.findByProps({ className: 'TWO' }).children[0]).toBe('init2')
-        expect(testKit.root.findByProps({ className: 'THREE' }).children[0]).toBe('update3')
+        expect(getComponentValueByClassName('ONE', testKit)).toBe('update1')
+        expect(getComponentValueByClassName('TWO', testKit)).toBe('init2')
+        expect(getComponentValueByClassName('THREE', testKit)).toBe('update3')
         expect(mapStateToPropsSpy).toHaveBeenCalledTimes(3)
         expect(renderSpy).toHaveBeenCalledTimes(3)
     })

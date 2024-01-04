@@ -46,7 +46,8 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
-    flush(): void
+    flush(config?: { excecutionType: 'scheduled' | 'immediate' | 'default' }): void
+    deferSubscriberNotifications<K>(action: () => K | Promise<K>): Promise<K>
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
@@ -160,6 +161,8 @@ export const createThrottledStore = (
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
+    let deferNotifications = false
+    let pendingFlush = false
 
     const onBroadcastNotify = () => {
         pendingBroadcastNotification = true
@@ -221,7 +224,14 @@ export const createThrottledStore = (
         }
     }
 
-    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, notifyAll)
+    const scheduledNotifyAll = () => {
+        if (deferNotifications) {
+            return
+        }
+        notifyAll()
+    }
+
+    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, scheduledNotifyAll)
 
     let cancelRender = _.noop
 
@@ -229,8 +239,14 @@ export const createThrottledStore = (
         cancelRender = notifyAllOnAnimationFrame()
     })
 
-    const flush = () => {
-        cancelRender()
+    const flush = (config = { excecutionType: 'default' }) => {
+        if (deferNotifications && config.excecutionType !== 'immediate') {
+            pendingFlush = true
+            return
+        }
+        if (config.excecutionType !== 'scheduled') {
+            cancelRender()
+        }
         notifyAll()
     }
 
@@ -238,7 +254,10 @@ export const createThrottledStore = (
         return store.dispatch(action)
     }
 
-    const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({ ...action, __shellName: shell.name })
+    const toShellAction = <T extends Action>(shell: Shell, action: T): T => ({
+        ...action,
+        __shellName: shell.name
+    })
 
     const result: PrivateThrottledStore = {
         ...store,
@@ -250,7 +269,25 @@ export const createThrottledStore = (
         broadcastNotify: onBroadcastNotify,
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
-        hasPendingSubscribers: () => pendingBroadcastNotification
+        hasPendingSubscribers: () => pendingBroadcastNotification,
+        deferSubscriberNotifications: async action => {
+            if (deferNotifications) {
+                return action()
+            }
+            try {
+                deferNotifications = true
+                const functionResult = await action()
+                return functionResult
+            } finally {
+                deferNotifications = false
+                if (pendingFlush) {
+                    pendingFlush = false
+                    flush()
+                } else {
+                    notifyAll()
+                }
+            }
+        }
     }
 
     resetAllPendingNotifications()
