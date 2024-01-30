@@ -120,17 +120,19 @@ export function setupDebugInfo({
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
-    window.repluggableAppDebug = {
-        host,
-        uniqueShellNames,
-        extensionSlots,
-        addedShells,
-        lazyShells,
-        readyAPIs,
-        shellInstallers,
-        utils,
-        hmr: {
-            hot
+    if (typeof window !== 'undefined') {
+        window.repluggableAppDebug = {
+            host,
+            uniqueShellNames,
+            extensionSlots,
+            addedShells,
+            lazyShells,
+            readyAPIs,
+            shellInstallers,
+            utils,
+            hmr: {
+                hot
+            }
         }
     }
 }
