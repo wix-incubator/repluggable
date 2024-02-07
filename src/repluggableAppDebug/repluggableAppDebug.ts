@@ -120,6 +120,10 @@ export function setupDebugInfo({
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
+    if (typeof window === 'undefined') {
+        return
+    }
+
     window.repluggableAppDebug = {
         host,
         uniqueShellNames,
