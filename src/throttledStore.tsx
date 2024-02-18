@@ -275,6 +275,7 @@ export const createThrottledStore = (
                 return action()
             }
             try {
+                notifyAll()
                 deferNotifications = true
                 const functionResult = await action()
                 return functionResult
