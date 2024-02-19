@@ -275,7 +275,9 @@ export const createThrottledStore = (
                 return action()
             }
             try {
-                notifyAll()
+                if (pendingBroadcastNotification || !pendingObservableNotifications) {
+                    notifyAll()
+                }
                 deferNotifications = true
                 const functionResult = await action()
                 return functionResult
