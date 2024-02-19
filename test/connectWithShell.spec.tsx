@@ -668,6 +668,26 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
+    it('should not have pending subscribers when starting to defer notifications', async () => {
+        const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        if (!testKit) {
+            throw new Error('Connected component failed to render')
+        }
+
+        let hasPendingSubscribersWhileDeferring
+        await act(async () => {
+            host.getStore().dispatch({ type: 'SET_FIRST_STATE', value: 'update1' })
+            await host.getStore().deferSubscriberNotifications(() => {
+                hasPendingSubscribersWhileDeferring = shell.getStore().hasPendingSubscribers()
+            })
+        })
+
+        expect(hasPendingSubscribersWhileDeferring).toBe(false)
+    })
+
     it('should notify after action failed while deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
