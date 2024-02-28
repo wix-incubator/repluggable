@@ -264,8 +264,11 @@ export const createThrottledStore = (
             pendingFlush = false
             flush()
         }
-        if (pendingBroadcastNotification || !pendingObservableNotifications) {
-            notifyAll()
+        if (pendingBroadcastNotification) {
+            notifySubscribers()
+        }
+        if (pendingObservableNotifications) {
+            notifyObservers()
         }
     }
 
