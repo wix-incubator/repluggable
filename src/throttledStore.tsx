@@ -259,6 +259,16 @@ export const createThrottledStore = (
         __shellName: shell.name
     })
 
+    const excecutePendingActions = () => {
+        if (pendingFlush) {
+            pendingFlush = false
+            flush()
+        }
+        if (pendingBroadcastNotification || !pendingObservableNotifications) {
+            notifyAll()
+        }
+    }
+
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
@@ -275,20 +285,13 @@ export const createThrottledStore = (
                 return action()
             }
             try {
-                if (pendingBroadcastNotification || !pendingObservableNotifications) {
-                    notifyAll()
-                }
+                excecutePendingActions()
                 deferNotifications = true
                 const functionResult = await action()
                 return functionResult
             } finally {
                 deferNotifications = false
-                if (pendingFlush) {
-                    pendingFlush = false
-                    flush()
-                } else {
-                    notifyAll()
-                }
+                excecutePendingActions()
             }
         }
     }
