@@ -259,7 +259,7 @@ export const createThrottledStore = (
         __shellName: shell.name
     })
 
-    const excecutePendingActions = () => {
+    const executePendingActions = () => {
         if (pendingFlush) {
             pendingFlush = false
             flush()
@@ -285,13 +285,13 @@ export const createThrottledStore = (
                 return action()
             }
             try {
-                excecutePendingActions()
+                executePendingActions()
                 deferNotifications = true
                 const functionResult = await action()
                 return functionResult
             } finally {
                 deferNotifications = false
-                excecutePendingActions()
+                executePendingActions()
             }
         }
     }
