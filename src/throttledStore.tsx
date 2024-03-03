@@ -161,7 +161,7 @@ export const createThrottledStore = (
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
-    let deferNotifications = false
+    let isDeferrringNotifications = false
     let pendingFlush = false
 
     const onBroadcastNotify = () => {
@@ -225,7 +225,7 @@ export const createThrottledStore = (
     }
 
     const scheduledNotifyAll = () => {
-        if (deferNotifications) {
+        if (isDeferrringNotifications) {
             return
         }
         notifyAll()
@@ -240,7 +240,7 @@ export const createThrottledStore = (
     })
 
     const flush = (config = { excecutionType: 'default' }) => {
-        if (deferNotifications && config.excecutionType !== 'immediate') {
+        if (isDeferrringNotifications && config.excecutionType !== 'immediate') {
             pendingFlush = true
             return
         }
@@ -259,6 +259,15 @@ export const createThrottledStore = (
         __shellName: shell.name
     })
 
+    const executePendingActions = () => {
+        if (pendingFlush) {
+            pendingFlush = false
+            flush()
+        } else if (pendingBroadcastNotification || pendingObservableNotifications) {
+            notifyAll()
+        }
+    }
+
     const result: PrivateThrottledStore = {
         ...store,
         subscribe,
@@ -271,21 +280,17 @@ export const createThrottledStore = (
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
         deferSubscriberNotifications: async action => {
-            if (deferNotifications) {
+            if (isDeferrringNotifications) {
                 return action()
             }
             try {
-                deferNotifications = true
+                executePendingActions()
+                isDeferrringNotifications = true
                 const functionResult = await action()
                 return functionResult
             } finally {
-                deferNotifications = false
-                if (pendingFlush) {
-                    pendingFlush = false
-                    flush()
-                } else {
-                    notifyAll()
-                }
+                isDeferrringNotifications = false
+                executePendingActions()
             }
         }
     }
