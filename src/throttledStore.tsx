@@ -161,7 +161,7 @@ export const createThrottledStore = (
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
-    let deferNotifications = false
+    let isDeferrringNotifications = false
     let pendingFlush = false
 
     const onBroadcastNotify = () => {
@@ -225,7 +225,7 @@ export const createThrottledStore = (
     }
 
     const scheduledNotifyAll = () => {
-        if (deferNotifications) {
+        if (isDeferrringNotifications) {
             return
         }
         notifyAll()
@@ -240,7 +240,7 @@ export const createThrottledStore = (
     })
 
     const flush = (config = { excecutionType: 'default' }) => {
-        if (deferNotifications && config.excecutionType !== 'immediate') {
+        if (isDeferrringNotifications && config.excecutionType !== 'immediate') {
             pendingFlush = true
             return
         }
@@ -263,8 +263,7 @@ export const createThrottledStore = (
         if (pendingFlush) {
             pendingFlush = false
             flush()
-        }
-        if (pendingBroadcastNotification || pendingObservableNotifications) {
+        } else if (pendingBroadcastNotification || pendingObservableNotifications) {
             notifyAll()
         }
     }
@@ -281,16 +280,16 @@ export const createThrottledStore = (
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
         deferSubscriberNotifications: async action => {
-            if (deferNotifications) {
+            if (isDeferrringNotifications) {
                 return action()
             }
             try {
                 executePendingActions()
-                deferNotifications = true
+                isDeferrringNotifications = true
                 const functionResult = await action()
                 return functionResult
             } finally {
-                deferNotifications = false
+                isDeferrringNotifications = false
                 executePendingActions()
             }
         }
