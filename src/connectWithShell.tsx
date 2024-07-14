@@ -39,6 +39,31 @@ function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, pre
     return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell, getOwnProps()) ? true : func(args[0], args[1]))) as F
 }
 
+function wrapWithShouldUpdateExperimental<Props extends unknown, F extends (next: Props, prev: Props) => boolean>(
+    shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
+    arePropsEqual: F,
+    getOwnProps: () => Props,
+    shell: Shell
+): F {
+    if (!shouldUpdate) {
+        return arePropsEqual
+    }
+    let changeInPropsDetected = false
+    return ((...args: Parameters<F>) => {
+        if (!shouldUpdate(shell, getOwnProps())) {
+            if (!changeInPropsDetected) {
+                changeInPropsDetected = !arePropsEqual(args[0], args[1])
+            }
+            return true
+        }
+        if (changeInPropsDetected) {
+            changeInPropsDetected = false
+            return false
+        }
+        return arePropsEqual(args[0], args[1])
+    }) as F
+}
+
 function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     component: React.ComponentType<OwnProps & StateProps & DispatchProps>,
     mapStateToProps: MapStateToProps<State, OwnProps, StateProps>,
@@ -98,7 +123,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                               this.getOwnProps,
                               boundShell
                           ),
-                          areOwnPropsEqual: wrapWithShouldUpdate(
+                          areOwnPropsEqual: wrapWithShouldUpdateExperimental(
                               shouldComponentUpdate,
                               reduxConnectOptions.areOwnPropsEqual,
                               this.getOwnProps,
