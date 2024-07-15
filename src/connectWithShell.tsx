@@ -48,18 +48,18 @@ function arePropsEqualFuncWrapper<Props extends unknown, F extends (next: Props,
     if (!componentShouldUpdateFunc) {
         return arePropsEqualFunc
     }
-    let changeInPropsDetected = false
+    let hasPendingPropChanges = false
     return ((...args: Parameters<F>) => {
         const componentShouldUpdate = componentShouldUpdateFunc(shell, getOwnProps())
         if (componentShouldUpdate) {
-            if (changeInPropsDetected) {
-                changeInPropsDetected = false
+            if (hasPendingPropChanges) {
+                hasPendingPropChanges = false
                 return false
             }
             return arePropsEqualFunc(args[0], args[1])
         }
-        if (!changeInPropsDetected) {
-            changeInPropsDetected = !arePropsEqualFunc(args[0], args[1])
+        if (!hasPendingPropChanges) {
+            hasPendingPropChanges = !arePropsEqualFunc(args[0], args[1])
         }
         return true
     }) as F
