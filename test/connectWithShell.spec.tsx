@@ -256,6 +256,119 @@ describe('connectWithShell', () => {
         expect(ownPropsSpy).toHaveBeenCalledWith({ ownProp: true })
     })
 
+    it('should trigger recalculation of mergedProps with consideration of ownProps change once updates are permitted', () => {
+        const { host, shell, renderInShellContext } = createMocks(mockPackage)
+
+        // Setup - create connected inner Component
+        interface InnerCompDispatchProps {
+            onClick(): void
+        }
+        interface InnerCompOwnProps {
+            num: number
+        }
+        type InnerCompProps = InnerCompOwnProps & InnerCompDispatchProps
+        const onClickSpy = jest.fn(num => {})
+        const innerComponentRender = jest.fn()
+        const mapDispatchSpy = jest.fn()
+        let shouldUpdateInnerComp = false
+
+        const mapDispatchToProps = (shell: Shell, state: unknown, ownProps?: InnerCompOwnProps): InnerCompDispatchProps => {
+            mapDispatchSpy()
+            return {
+                onClick: () => onClickSpy(ownProps?.num || 0)
+            }
+        }
+
+        const PureInnerComp: FunctionComponent<InnerCompProps> = ({ num, onClick }) => {
+            innerComponentRender()
+            return <div onClick={onClick}>{num.toString()}</div>
+        }
+
+        const ConnectedInnerComp = connectWithShell(undefined, mapDispatchToProps, shell, {
+            shouldComponentUpdate: () => shouldUpdateInnerComp,
+            allowOutOfEntryPoint: true
+        })(PureInnerComp)
+
+        // Setup - create connected outer Component
+        interface OuterCompStateProps {
+            num: number
+            str: string
+        }
+        type OuterCompProps = OuterCompStateProps
+
+        const mapStateSpy = jest.fn()
+        let stateProps: OuterCompStateProps = { num: 1, str: 'initialState' }
+        const mapStateToProps = (): OuterCompStateProps => {
+            mapStateSpy()
+            return stateProps
+        }
+        const outerComponentRenderSpy = jest.fn()
+
+        const PureOuterComp: FunctionComponent<OuterCompProps> = ({ num }) => {
+            outerComponentRenderSpy()
+            return <ConnectedInnerComp num={num} />
+        }
+
+        const ConnectedOuterComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureOuterComp)
+
+        // SetUp - use a reducer that creates a new state for any dispatch action
+        let counter = 0
+        host.getStore().replaceReducer(() => ({
+            counter: ++counter
+        }))
+
+        const updateOuterComp = (newStateProps: OuterCompStateProps) => {
+            stateProps = newStateProps
+
+            act(() => {
+                host.getStore().dispatch({ type: '' })
+                host.getStore().flush()
+            })
+        }
+
+        // Setup - render outer component
+        const { testKit } = renderInShellContext(<ConnectedOuterComp />)
+
+        if (!testKit) {
+            throw new Error('Connected component fail to render')
+        }
+
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
+        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(1)
+        expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
+        expect(innerComponentRender).toHaveBeenCalledTimes(1)
+        expect(testKit.root.findByType(ConnectedInnerComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('1')
+        testKit.root
+            .findByType(PureInnerComp)
+            .find(x => x.type === 'div')
+            .props.onClick()
+        expect(onClickSpy).toHaveBeenCalledWith(1)
+
+        // Act - update outer component
+        updateOuterComp({ num: 2, str: 'nextState_1' })
+        expect(mapStateSpy).toHaveBeenCalledTimes(2)
+        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(2)
+        expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
+        expect(innerComponentRender).toHaveBeenCalledTimes(1)
+
+        // Act - allow updates for inner component, then update outer component
+        shouldUpdateInnerComp = true
+        updateOuterComp({ num: 2, str: 'nextState_2' })
+        expect(mapStateSpy).toHaveBeenCalledTimes(3)
+        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(3)
+        expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+        expect(innerComponentRender).toHaveBeenCalledTimes(2)
+
+        expect(testKit.root.findByType(ConnectedInnerComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('2')
+        testKit.root
+            .findByType(PureInnerComp)
+            .find(x => x.type === 'div')
+            .props.onClick()
+        expect(onClickSpy).toHaveBeenCalledWith(2)
+    })
+
     it('should pass scoped state to mapStateToProps', () => {
         const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
