@@ -39,28 +39,29 @@ function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, pre
     return ((...args: Parameters<F>) => (shouldUpdate && !shouldUpdate(shell, getOwnProps()) ? true : func(args[0], args[1]))) as F
 }
 
-function wrapWithShouldUpdateExperimental<Props extends unknown, F extends (next: Props, prev: Props) => boolean>(
-    shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
-    arePropsEqual: F,
+function arePropsEqualFuncWrapper<Props extends unknown, F extends (next: Props, prev: Props) => boolean>(
+    componentShouldUpdateFunc: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
+    arePropsEqualFunc: F,
     getOwnProps: () => Props,
     shell: Shell
 ): F {
-    if (!shouldUpdate) {
-        return arePropsEqual
+    if (!componentShouldUpdateFunc) {
+        return arePropsEqualFunc
     }
     let changeInPropsDetected = false
     return ((...args: Parameters<F>) => {
-        if (!shouldUpdate(shell, getOwnProps())) {
-            if (!changeInPropsDetected) {
-                changeInPropsDetected = !arePropsEqual(args[0], args[1])
+        const componentShouldUpdate = componentShouldUpdateFunc(shell, getOwnProps())
+        if (componentShouldUpdate) {
+            if (changeInPropsDetected) {
+                changeInPropsDetected = false
+                return false
             }
-            return true
+            return arePropsEqualFunc(args[0], args[1])
         }
-        if (changeInPropsDetected) {
-            changeInPropsDetected = false
-            return false
+        if (!changeInPropsDetected) {
+            changeInPropsDetected = !arePropsEqualFunc(args[0], args[1])
         }
-        return arePropsEqual(args[0], args[1])
+        return true
     }) as F
 }
 
@@ -123,7 +124,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                               this.getOwnProps,
                               boundShell
                           ),
-                          areOwnPropsEqual: wrapWithShouldUpdateExperimental(
+                          areOwnPropsEqual: arePropsEqualFuncWrapper(
                               shouldComponentUpdate,
                               reduxConnectOptions.areOwnPropsEqual,
                               this.getOwnProps,
