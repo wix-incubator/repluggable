@@ -14,7 +14,7 @@ import {
     TOGGLE_MOCK_VALUE,
     collectAllTexts
 } from '../testKit'
-import { ReactTestRenderer, act, create } from 'react-test-renderer'
+import { ReactTestRenderer, act, create, ReactTestInstance } from 'react-test-renderer'
 import { AnyAction } from 'redux'
 import { ObservedSelectorsMap, observeWithShell } from '../src'
 
@@ -256,10 +256,7 @@ describe('connectWithShell', () => {
         expect(ownPropsSpy).toHaveBeenCalledWith({ ownProp: true })
     })
 
-    it('should trigger recalculation of mergedProps with consideration of ownProps change once updates are permitted', () => {
-        const { host, shell, renderInShellContext } = createMocks(mockPackage)
-
-        // Setup - create connected inner Component
+    describe('arePropsEqualFuncWrapper', () => {
         interface InnerCompDispatchProps {
             onClick(): void
         }
@@ -267,106 +264,145 @@ describe('connectWithShell', () => {
             num: number
         }
         type InnerCompProps = InnerCompOwnProps & InnerCompDispatchProps
-        const onClickSpy = jest.fn(num => {})
-        const innerComponentRender = jest.fn()
-        const mapDispatchSpy = jest.fn()
-        let shouldUpdateInnerComp = false
-
-        const mapDispatchToProps = (shell: Shell, state: unknown, ownProps?: InnerCompOwnProps): InnerCompDispatchProps => {
-            mapDispatchSpy()
-            return {
-                onClick: () => onClickSpy(ownProps?.num || 0)
-            }
-        }
-
-        const PureInnerComp: FunctionComponent<InnerCompProps> = ({ num, onClick }) => {
-            innerComponentRender()
-            return <div onClick={onClick}>{num.toString()}</div>
-        }
-
-        const ConnectedInnerComp = connectWithShell(undefined, mapDispatchToProps, shell, {
-            shouldComponentUpdate: () => shouldUpdateInnerComp,
-            allowOutOfEntryPoint: true
-        })(PureInnerComp)
-
-        // Setup - create connected outer Component
         interface OuterCompStateProps {
             num: number
             str: string
         }
         type OuterCompProps = OuterCompStateProps
 
-        const mapStateSpy = jest.fn()
-        let stateProps: OuterCompStateProps = { num: 1, str: 'initialState' }
-        const mapStateToProps = (): OuterCompStateProps => {
-            mapStateSpy()
-            return stateProps
-        }
-        const outerComponentRenderSpy = jest.fn()
+        // spies
+        let mapDispatchInnerCompSpy: jest.Mock
+        let innerComponentRender: jest.Mock
+        let mapStateOuterCompSpy: jest.Mock
+        let outerComponentRenderSpy: jest.Mock
+        let innerCompOnClickSpy: jest.Mock
+        let innerCompShouldComponentUpdateSpy: jest.Mock
 
-        const PureOuterComp: FunctionComponent<OuterCompProps> = ({ num }) => {
-            outerComponentRenderSpy()
-            return <ConnectedInnerComp num={num} />
-        }
+        // action helpers
+        let shouldUpdateInnerComp: boolean
+        let updateOuterComp: (newStateProps: OuterCompStateProps) => void
 
-        const ConnectedOuterComp = connectWithShell(mapStateToProps, undefined, shell, {
-            allowOutOfEntryPoint: true
-        })(PureOuterComp)
+        // assertion helpers
+        let getInnerCompText: () => ReactTestInstance | string
+        let invokeInnerCompOnClick: () => void
 
-        // SetUp - use a reducer that creates a new state for any dispatched action
-        let counter = 0
-        host.getStore().replaceReducer(() => ({
-            counter: ++counter
-        }))
+        beforeEach(() => {
+            const { host, shell, renderInShellContext } = createMocks(mockPackage)
 
-        const updateOuterComp = (newStateProps: OuterCompStateProps) => {
-            stateProps = newStateProps
+            // Setup - create connected inner Component
+            innerComponentRender = jest.fn()
+            mapDispatchInnerCompSpy = jest.fn()
+            shouldUpdateInnerComp = false
+            innerCompOnClickSpy = jest.fn(num => {})
+            innerCompShouldComponentUpdateSpy = jest.fn((ownProps: InnerCompOwnProps) => {})
 
-            act(() => {
-                host.getStore().dispatch({ type: '' })
-                host.getStore().flush()
-            })
-        }
+            const mapDispatchToProps = (shell: Shell, state: unknown, ownProps?: InnerCompOwnProps): InnerCompDispatchProps => {
+                mapDispatchInnerCompSpy()
+                return {
+                    onClick: () => innerCompOnClickSpy(ownProps?.num || 0)
+                }
+            }
 
-        // Setup - render outer component
-        const { testKit } = renderInShellContext(<ConnectedOuterComp />)
+            const PureInnerComp: FunctionComponent<InnerCompProps> = ({ num, onClick }) => {
+                innerComponentRender()
+                return <div onClick={onClick}>{num.toString()}</div>
+            }
 
-        if (!testKit) {
-            throw new Error('Connected component fail to render')
-        }
+            const ConnectedInnerComp = connectWithShell(undefined, mapDispatchToProps, shell, {
+                shouldComponentUpdate: (shell, nextOwnProps) => {
+                    innerCompShouldComponentUpdateSpy(nextOwnProps)
+                    return shouldUpdateInnerComp
+                },
+                allowOutOfEntryPoint: true
+            })(PureInnerComp)
 
-        expect(mapStateSpy).toHaveBeenCalledTimes(1)
-        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(1)
-        expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
-        expect(innerComponentRender).toHaveBeenCalledTimes(1)
-        expect(testKit.root.findByType(ConnectedInnerComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('1')
-        testKit.root
-            .findByType(PureInnerComp)
-            .find(x => x.type === 'div')
-            .props.onClick()
-        expect(onClickSpy).toHaveBeenCalledWith(1)
+            // Setup - create connected outer Component
+            mapStateOuterCompSpy = jest.fn()
+            outerComponentRenderSpy = jest.fn()
 
-        // Act - update outer component, while updates for inner component are blocked
-        updateOuterComp({ num: 2, str: 'nextState_1' })
-        expect(mapStateSpy).toHaveBeenCalledTimes(2)
-        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(2)
-        expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
-        expect(innerComponentRender).toHaveBeenCalledTimes(1)
+            let stateProps: OuterCompStateProps = { num: 1, str: 'initialState' }
+            const mapStateToProps = (): OuterCompStateProps => {
+                mapStateOuterCompSpy()
+                return stateProps
+            }
 
-        // Act - allow updates for inner component, then update outer component
-        shouldUpdateInnerComp = true
-        updateOuterComp({ num: 2, str: 'nextState_2' })
-        expect(mapStateSpy).toHaveBeenCalledTimes(3)
-        expect(outerComponentRenderSpy).toHaveBeenCalledTimes(3)
-        expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
-        expect(innerComponentRender).toHaveBeenCalledTimes(2)
+            const PureOuterComp: FunctionComponent<OuterCompProps> = ({ num }) => {
+                outerComponentRenderSpy()
+                return <ConnectedInnerComp num={num} />
+            }
 
-        expect(testKit.root.findByType(ConnectedInnerComp).find(x => typeof x.children[0] === 'string').children[0]).toBe('2')
-        testKit.root
-            .findByType(PureInnerComp)
-            .find(x => x.type === 'div')
-            .props.onClick()
-        expect(onClickSpy).toHaveBeenCalledWith(2)
+            const ConnectedOuterComp = connectWithShell(mapStateToProps, undefined, shell, {
+                allowOutOfEntryPoint: true
+            })(PureOuterComp)
+
+            updateOuterComp = (newStateProps: OuterCompStateProps) => {
+                stateProps = newStateProps
+
+                act(() => {
+                    host.getStore().dispatch({ type: '' })
+                    host.getStore().flush()
+                })
+            }
+
+            // SetUp - use a reducer that creates a new state for any dispatched action
+            let counter = 0
+            host.getStore().replaceReducer(() => ({
+                counter: ++counter
+            }))
+
+            // Setup - render outer component
+            const { testKit } = renderInShellContext(<ConnectedOuterComp />)
+
+            if (!testKit) {
+                throw new Error('Connected component fail to render')
+            }
+
+            // create assertion helpers
+            getInnerCompText = () => testKit.root.findByType(ConnectedInnerComp).find(x => typeof x.children[0] === 'string').children[0]
+            invokeInnerCompOnClick = () =>
+                testKit.root
+                    .findByType(PureInnerComp)
+                    .find(x => x.type === 'div')
+                    .props.onClick()
+        })
+        it('should execute mapDispatchToProps, mapStateToProps, and render for both components during mount phase', () => {
+            // Assert initial execution of mapping functions and components render
+            expect(mapStateOuterCompSpy).toHaveBeenCalledTimes(1)
+            expect(outerComponentRenderSpy).toHaveBeenCalledTimes(1)
+            expect(mapDispatchInnerCompSpy).toHaveBeenCalledTimes(1)
+            expect(innerComponentRender).toHaveBeenCalledTimes(1)
+            expect(getInnerCompText()).toBe('1')
+            invokeInnerCompOnClick()
+            expect(innerCompOnClickSpy).toHaveBeenCalledWith(1)
+        })
+        it('should not trigger mapDispatchToProps or re-render the inner component when ownProps change while updates are blocked for the inner component', () => {
+            // Act - update outer component, while updates for inner component are blocked
+            updateOuterComp({ num: 2, str: 'nextState_1' })
+
+            // Assert - outer component re-rendered and passed new ownProps to inner component
+            expect(mapStateOuterCompSpy).toHaveBeenCalledTimes(2)
+            expect(outerComponentRenderSpy).toHaveBeenCalledTimes(2)
+            expect(innerCompShouldComponentUpdateSpy).toHaveBeenCalledWith({ num: 2 })
+
+            // Assert - should not trigger mapDispatchToProps or re-render of inner component even though it's ownProps have changed
+            expect(mapDispatchInnerCompSpy).toHaveBeenCalledTimes(1)
+            expect(innerComponentRender).toHaveBeenCalledTimes(1)
+        })
+        it('should trigger recalculation of mergedProps with consideration of ownProps change once updates are permitted', () => {
+            // Act - update outer component, while updates for inner component are blocked
+            updateOuterComp({ num: 2, str: 'nextState_1' })
+
+            // Act - allow updates for inner component, then update outer component
+            shouldUpdateInnerComp = true
+            updateOuterComp({ num: 2, str: 'nextState_2' })
+
+            // Assert - mapDispatchToProps and re-render of inner component were triggered
+            expect(mapDispatchInnerCompSpy).toHaveBeenCalledTimes(2)
+            expect(innerComponentRender).toHaveBeenCalledTimes(2)
+            expect(getInnerCompText()).toBe('2')
+            invokeInnerCompOnClick()
+            expect(innerCompOnClickSpy).toHaveBeenCalledWith(2)
+        })
     })
 
     it('should pass scoped state to mapStateToProps', () => {
