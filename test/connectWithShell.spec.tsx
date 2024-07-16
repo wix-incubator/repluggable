@@ -313,7 +313,7 @@ describe('connectWithShell', () => {
             allowOutOfEntryPoint: true
         })(PureOuterComp)
 
-        // SetUp - use a reducer that creates a new state for any dispatch action
+        // SetUp - use a reducer that creates a new state for any dispatched action
         let counter = 0
         host.getStore().replaceReducer(() => ({
             counter: ++counter
@@ -346,7 +346,7 @@ describe('connectWithShell', () => {
             .props.onClick()
         expect(onClickSpy).toHaveBeenCalledWith(1)
 
-        // Act - update outer component
+        // Act - update outer component, while updates for inner component are blocked
         updateOuterComp({ num: 2, str: 'nextState_1' })
         expect(mapStateSpy).toHaveBeenCalledTimes(2)
         expect(outerComponentRenderSpy).toHaveBeenCalledTimes(2)
