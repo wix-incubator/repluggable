@@ -933,6 +933,18 @@ describe('App Host', () => {
                 }
             })
         })
+
+        describe('lazyEvaluator', () => {
+            it('should return a getter that is evaluated only once', () => {
+                const { helperShell } = createHostWithDependantPackages(MockAPI)
+                const func = jest.fn(() => 42)
+                const lazyEval = helperShell.lazyEvaluator(func)
+
+                expect(lazyEval.get()).toBe(42)
+                expect(lazyEval.get()).toBe(42)
+                expect(func).toHaveBeenCalledTimes(1)
+            })
+        })
     })
 
     describe('Entry Point Shell Scoping', () => {
