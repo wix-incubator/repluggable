@@ -9,6 +9,7 @@ import {
     EntryPointsInfo,
     ExtensionItem,
     ExtensionSlot,
+    Lazy,
     LazyEntryPointDescriptor,
     LazyEntryPointFactory,
     PrivateShell,
@@ -235,6 +236,22 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
             }
         }
         return enrichedMemoization
+    }
+
+    function lazyEvaluator<F extends AnyFunction, T extends ReturnType<F>>(fn: F): Lazy<T> {
+        let _value: T
+        let _resolved: boolean = false
+
+        return {
+            get: () => {
+                if (!_resolved) {
+                    _value = fn()
+                    _resolved = true
+                }
+
+                return _value
+            }
+        }
     }
 
     // we know that addShells completes synchronously
@@ -1092,7 +1109,8 @@ miss: ${memoizedWithMissHit.miss}
 
             wrapWithShellRenderer(component): JSX.Element {
                 return <ShellRenderer shell={shell} component={component} host={host} />
-            }
+            },
+            lazyEvaluator
         }
 
         return shell

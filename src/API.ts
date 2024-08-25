@@ -342,6 +342,10 @@ export interface ObservableState<TSelectorAPI> {
 export type AnyFunction = (...args: any[]) => any
 export type FunctionWithSameArgs<F extends AnyFunction> = (...args: Parameters<F>) => any
 
+export interface Lazy<T> {
+    get(): T
+}
+
 /**
  * An scoped communication terminal provided for an {EntryPoint}
  * in order to contribute its application content to the {AppHost}
@@ -474,6 +478,15 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @param {(Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>)} memoizedFunction
      */
     clearCache(memoizedFunction: Partial<_.MemoizedFunction> & Partial<MemoizeMissHit>): void
+    /**
+     * Creates a lazy-evaluated value. The function `func` is only executed once when `get` is called for the first time,
+     * and the result is cached for subsequent calls.
+     *
+     * @template T
+     * @param {F} func - The function that will be lazily evaluated. It should not take any arguments.
+     * @returns {Lazy<T>} An object with a `get` method that returns the lazily evaluated value of type `T`.
+     */
+    lazyEvaluator<F extends AnyFunction, T extends ReturnType<F>>(func: F): Lazy<T>
 }
 
 export interface PrivateShell extends Shell {
