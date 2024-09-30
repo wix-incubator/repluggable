@@ -197,12 +197,7 @@ describe('interceptAnyObject', () => {
     it('should not intercept non object-like values - primitives', () => {
         const spy: LogSpy = jest.fn()
         const real = 'real'
-        const intercepted = interceptAnyObject(
-            // @ts-ignore
-            real,
-            createFuncInterceptor(spy),
-            createPropInterceptor(spy)
-        )
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
         expect(intercepted).toBe('real')
     })
 
