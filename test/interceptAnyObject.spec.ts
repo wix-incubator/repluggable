@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { interceptAnyObject, FunctionInterceptor, PropertyInterceptor } from '../src/interceptAnyObject'
+import { FunctionInterceptor, interceptAnyObject, PropertyInterceptor } from '../src/interceptAnyObject'
 
 type LogSpy = jest.Mock<void, string[]>
 
@@ -183,5 +183,40 @@ describe('interceptAnyObject', () => {
             'AFTER:objectProp.nestedObject.nestedFuncLevelTwo(12345)'
         ])
         expect(nestedFuncLevelTwoRetVal).toBe(12345)
+    })
+
+    it('should not intercept non object-like values - functions', () => {
+        const spy: LogSpy = jest.fn()
+        function real() {
+            return 'real'
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+        expect(intercepted()).toBe('real')
+    })
+
+    it('should not intercept non object-like values - primitives', () => {
+        const spy: LogSpy = jest.fn()
+        const real = 'real'
+        const intercepted = interceptAnyObject(
+            // @ts-ignore
+            real,
+            createFuncInterceptor(spy),
+            createPropInterceptor(spy)
+        )
+        expect(intercepted).toBe('real')
+    })
+
+    it('should not intercept non object-like values - arrays', () => {
+        const spy: LogSpy = jest.fn()
+        const real = ['real']
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+        expect(intercepted).toEqual(['real'])
+    })
+
+    it('should not intercept non object-like values - maps', () => {
+        const spy: LogSpy = jest.fn()
+        const real = new Map<string, string>([['key', 'value']])
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+        expect(intercepted.get('key')).toEqual('value')
     })
 })
