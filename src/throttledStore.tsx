@@ -47,7 +47,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
     flush(config?: { excecutionType: 'scheduled' | 'immediate' | 'default' }): void
-    deferSubscriberNotifications<K>(action: () => K | Promise<K>): Promise<K>
+    deferSubscriberNotifications<K>(action: () => K | Promise<K>, shouldClearMemoizedForState?: boolean): Promise<K>
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
@@ -157,7 +157,8 @@ export const createThrottledStore = (
     requestAnimationFrame: Window['requestAnimationFrame'],
     cancelAnimationFrame: Window['cancelAnimationFrame'],
     updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
-    updateIsObserversNotifyInProgress: (isObserversNotifyInProgress: boolean) => void
+    updateIsObserversNotifyInProgress: (isObserversNotifyInProgress: boolean) => void,
+    updateIsDeferringNotifications: (isDeferringNotifications: boolean) => void
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -279,17 +280,19 @@ export const createThrottledStore = (
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
-        deferSubscriberNotifications: async action => {
+        deferSubscriberNotifications: async (action, shouldClearMemoizedForState) => {
             if (isDeferrringNotifications) {
                 return action()
             }
             try {
                 executePendingActions()
                 isDeferrringNotifications = true
+                shouldClearMemoizedForState && updateIsDeferringNotifications(isDeferrringNotifications)
                 const functionResult = await action()
                 return functionResult
             } finally {
                 isDeferrringNotifications = false
+                shouldClearMemoizedForState && updateIsDeferringNotifications(isDeferrringNotifications)
                 executePendingActions()
             }
         }

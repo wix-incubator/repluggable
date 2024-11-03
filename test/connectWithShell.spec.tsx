@@ -937,6 +937,20 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
+    it('should clear state memoization on every state update when deferring subscriber notifications', async () => {
+        const { host, shell } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        let numberOfCalls = 0
+        const originalFn = jest.fn(() => ++numberOfCalls)
+        const memoizedFn = shell.memoizeForState(originalFn, () => '*') as _.MemoizedFunction
+        const clearCacheSpy = jest.spyOn(memoizedFn.cache, 'clear')
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            host.getStore().dispatch({ type: 'MOCK' })
+        }, true)
+
+        expect(clearCacheSpy).toHaveBeenCalledTimes(1)
+    })
+
     it('should not mount connected component on props update', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
