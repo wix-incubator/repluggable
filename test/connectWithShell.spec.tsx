@@ -937,7 +937,7 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
-    it('should clear state memoization on every state update when deferring subscriber notifications', async () => {
+    it('should clear state memoization on dispatch when deferring notifications and setting shouldClearMemoizedForState', async () => {
         const { host, shell } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
         let numberOfCalls = 0
         const originalFn = jest.fn(() => ++numberOfCalls)
@@ -949,6 +949,20 @@ describe('connectWithShell-useCases', () => {
         }, true)
 
         expect(clearCacheSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not clear state memoization on dispatch when deferring notifications without setting shouldClearMemoizedForState', async () => {
+        const { host, shell } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        let numberOfCalls = 0
+        const originalFn = jest.fn(() => ++numberOfCalls)
+        const memoizedFn = shell.memoizeForState(originalFn, () => '*') as _.MemoizedFunction
+        const clearCacheSpy = jest.spyOn(memoizedFn.cache, 'clear')
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            host.getStore().dispatch({ type: 'MOCK' })
+        })
+
+        expect(clearCacheSpy).toHaveBeenCalledTimes(0)
     })
 
     it('should not mount connected component on props update', () => {
