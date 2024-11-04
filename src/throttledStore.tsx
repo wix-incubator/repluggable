@@ -158,7 +158,7 @@ export const createThrottledStore = (
     cancelAnimationFrame: Window['cancelAnimationFrame'],
     updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
     updateIsObserversNotifyInProgress: (isObserversNotifyInProgress: boolean) => void,
-    updateIsDeferringNotifications: (isDeferringNotifications: boolean) => void
+    updateShouldFlushMemoizationSync: (shouldFlushMemoizationSync: boolean) => void
 ): PrivateThrottledStore => {
     let pendingBroadcastNotification = false
     let pendingObservableNotifications: Set<AnyPrivateObservableState> | undefined
@@ -287,12 +287,12 @@ export const createThrottledStore = (
             try {
                 executePendingActions()
                 isDeferrringNotifications = true
-                shouldClearMemoizedForState && updateIsDeferringNotifications(isDeferrringNotifications)
+                shouldClearMemoizedForState && updateShouldFlushMemoizationSync(isDeferrringNotifications)
                 const functionResult = await action()
                 return functionResult
             } finally {
                 isDeferrringNotifications = false
-                shouldClearMemoizedForState && updateIsDeferringNotifications(isDeferrringNotifications)
+                shouldClearMemoizedForState && updateShouldFlushMemoizationSync(isDeferrringNotifications)
                 executePendingActions()
             }
         }

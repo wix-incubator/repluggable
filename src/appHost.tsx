@@ -129,7 +129,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     let isInstallingEntryPoints: boolean = false
     let isStoreSubscribersNotifyInProgress = false
     let isObserversNotifyInProgress = false
-    let isDeferringNotifications = false
+    let shouldFlushMemoizationSync = false
     const entryPointsInstallationEndCallbacks: Map<string, () => void> = new Map()
 
     verifyLayersUniqueness(options.layers)
@@ -667,8 +667,8 @@ miss: ${memoizedWithMissHit.miss}
                 notifyObserversIsRunning => {
                     isObserversNotifyInProgress = notifyObserversIsRunning
                 },
-                deferNotifications => {
-                    isDeferringNotifications = deferNotifications
+                updateShouldFlushMemoizationSync => {
+                    shouldFlushMemoizationSync = updateShouldFlushMemoizationSync
                 }
             )
             store.subscribe(() => {
@@ -679,7 +679,7 @@ miss: ${memoizedWithMissHit.miss}
             })
             store.syncSubscribe(() => {
                 shouldFlushMemoization = true
-                if (isStoreSubscribersNotifyInProgress || isObserversNotifyInProgress || isDeferringNotifications) {
+                if (isStoreSubscribersNotifyInProgress || isObserversNotifyInProgress || shouldFlushMemoizationSync) {
                     shouldFlushMemoization = false
                     flushMemoizedForState()
                 }
