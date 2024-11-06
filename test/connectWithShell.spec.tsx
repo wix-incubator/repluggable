@@ -1,22 +1,22 @@
 import _ from 'lodash'
 import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 
-import { AppHost, EntryPoint, Shell, SlotKey, ObservableState, AnySlotKey } from '../src/API'
+import { act, create, ReactTestInstance, ReactTestRenderer } from 'react-test-renderer'
+import { AnyAction } from 'redux'
+import { ObservedSelectorsMap, observeWithShell } from '../src'
+import { AnySlotKey, AppHost, EntryPoint, ObservableState, Shell, SlotKey } from '../src/API'
 import {
+    collectAllTexts,
+    connectWithShell,
+    connectWithShellAndObserve,
     createAppHost,
     mockPackage,
     mockShellStateKey,
     MockState,
     renderInHost,
-    connectWithShell,
-    connectWithShellAndObserve,
-    withThrowOnError,
     TOGGLE_MOCK_VALUE,
-    collectAllTexts
+    withThrowOnError
 } from '../testKit'
-import { ReactTestRenderer, act, create, ReactTestInstance } from 'react-test-renderer'
-import { AnyAction } from 'redux'
-import { ObservedSelectorsMap, observeWithShell } from '../src'
 
 interface MockPackageState {
     [mockShellStateKey]: MockState
@@ -59,7 +59,9 @@ describe('connectWithShell', () => {
         const PureComp = ({ shellName }: { shellName: string }) => <div>{shellName}</div>
         const mapStateToProps = (s: Shell) => ({ shellName: s.name })
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { parentWrapper } = renderInShellContext(<ConnectedComp />)
         expect(collectAllTexts(parentWrapper)).toContain(mockPackage.name)
@@ -128,7 +130,9 @@ describe('connectWithShell', () => {
             return <div onClick={func}>{JSON.stringify(obj)}</div>
         }
 
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
 
@@ -382,7 +386,9 @@ describe('connectWithShell', () => {
             // Assert - outer component re-rendered and passed new ownProps to inner component
             expect(mapStateOuterCompSpy).toHaveBeenCalledTimes(2)
             expect(outerComponentRenderSpy).toHaveBeenCalledTimes(2)
-            expect(innerCompShouldComponentUpdateSpy).toHaveBeenCalledWith({ num: 2 })
+            expect(innerCompShouldComponentUpdateSpy).toHaveBeenCalledWith({
+                num: 2
+            })
 
             // Assert - should not trigger mapDispatchToProps or re-render of inner component even though it's ownProps have changed
             expect(mapDispatchInnerCompSpy).toHaveBeenCalledTimes(1)
@@ -497,7 +503,9 @@ describe('connectWithShell', () => {
             MockPackageState,
             PureCompWithChildrenOwnProps,
             PureCompWithChildrenStateProps
-        >(mapStateToProps, undefined, getBoundShell(), { allowOutOfEntryPoint: true })(PureCompWithChildren)
+        >(mapStateToProps, undefined, getBoundShell(), {
+            allowOutOfEntryPoint: true
+        })(PureCompWithChildren)
 
         const { testKit } = renderInShellContext(
             <ConnectedUnboundCompWithChildren id="A">
@@ -521,7 +529,9 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
-        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         // act
         const { testKit } = renderInHost(<ConnectedComp />, host, shell)
@@ -542,7 +552,9 @@ describe('connectWithShell', () => {
             }
         })
         const PureComp: FunctionComponent<{}> = () => <div className="TEST-PURE-COMP">TEST</div>
-        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         // act
 
@@ -572,7 +584,9 @@ describe('connectWithShell', () => {
         const PureComp: FunctionComponent<{}> = () => (
             <TestAspectContext.Consumer>{aspect => <div className="TEST-PURE-COMP">{aspect.theNumber}</div>}</TestAspectContext.Consumer>
         )
-        const ConnectedComp = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         // act
 
@@ -601,7 +615,10 @@ describe('connectWithShell-useCases', () => {
     interface SecondStateAPI {
         getValueTwo(): string
     }
-    const SecondStateAPI: SlotKey<SecondStateAPI> = { name: 'TWO_API', public: true }
+    const SecondStateAPI: SlotKey<SecondStateAPI> = {
+        name: 'TWO_API',
+        public: true
+    }
 
     interface FirstObservableAPI {
         observables: { three: ObservableState<FirstObservableSelectors> }
@@ -609,7 +626,10 @@ describe('connectWithShell-useCases', () => {
     interface FirstObservableSelectors {
         getValueThree(): string
     }
-    const FirstObservableAPI: SlotKey<FirstObservableAPI> = { name: 'THREE_API', public: true }
+    const FirstObservableAPI: SlotKey<FirstObservableAPI> = {
+        name: 'THREE_API',
+        public: true
+    }
 
     interface SecondObservableAPI {
         observables: { four: ObservableState<SecondObservableSelectors> }
@@ -617,7 +637,10 @@ describe('connectWithShell-useCases', () => {
     interface SecondObservableSelectors {
         getValueFour(): string
     }
-    const SecondObservableAPI: SlotKey<SecondObservableAPI> = { name: 'FOUR_API', public: true }
+    const SecondObservableAPI: SlotKey<SecondObservableAPI> = {
+        name: 'FOUR_API',
+        public: true
+    }
 
     const entryPointWithState: EntryPoint = {
         name: 'ONE',
@@ -791,7 +814,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should not notify subscribers when deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -819,7 +844,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should not have pending subscribers when starting to defer notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -839,7 +866,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should notify subscribers of state changes before deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -857,7 +886,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should notify after action failed while deferring notifications', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -884,7 +915,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should flush while deferring notifications if immediate flush was called during that action', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -906,7 +939,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should support nested defered notification actions', async () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -937,9 +972,39 @@ describe('connectWithShell-useCases', () => {
         expect(renderSpy).toHaveBeenCalledTimes(2)
     })
 
+    it('should clear state memoization on dispatch when deferring notifications and setting shouldDispatchClearCache', async () => {
+        const { host, shell } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        let numberOfCalls = 0
+        const originalFn = jest.fn(() => ++numberOfCalls)
+        const memoizedFn = shell.memoizeForState(originalFn, () => '*') as _.MemoizedFunction
+        const clearCacheSpy = jest.spyOn(memoizedFn.cache, 'clear')
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            host.getStore().dispatch({ type: 'MOCK' })
+        }, true)
+
+        expect(clearCacheSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('should not clear state memoization on dispatch when deferring notifications without setting shouldDispatchClearCache', async () => {
+        const { host, shell } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
+        let numberOfCalls = 0
+        const originalFn = jest.fn(() => ++numberOfCalls)
+        const memoizedFn = shell.memoizeForState(originalFn, () => '*') as _.MemoizedFunction
+        const clearCacheSpy = jest.spyOn(memoizedFn.cache, 'clear')
+
+        await host.getStore().deferSubscriberNotifications(() => {
+            host.getStore().dispatch({ type: 'MOCK' })
+        })
+
+        expect(clearCacheSpy).toHaveBeenCalledTimes(0)
+    })
+
     it('should not mount connected component on props update', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
             throw new Error('Connected component failed to render')
@@ -956,7 +1021,9 @@ describe('connectWithShell-useCases', () => {
 
     it('should update component on change in regular state', () => {
         const { host, shell, renderInShellContext } = createMocks(entryPointWithState, [entryPointSecondStateWithAPI])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -995,7 +1062,9 @@ describe('connectWithShell-useCases', () => {
             entryPointSecondStateWithAPI,
             entryPointFirstObservable
         ])
-        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, { allowOutOfEntryPoint: true })(PureComp)
+        const ConnectedComp = connectWithShell(mapStateToProps, undefined, shell, {
+            allowOutOfEntryPoint: true
+        })(PureComp)
 
         const { testKit } = renderInShellContext(<ConnectedComp />)
         if (!testKit) {
@@ -1210,7 +1279,10 @@ describe('observeWithShellPureComponent', () => {
         getStringValue(): string
         getNumberValue(): number
     }
-    const ObservableAPI: SlotKey<ObservableAPI> = { name: 'OBSERVABLE_API', public: true }
+    const ObservableAPI: SlotKey<ObservableAPI> = {
+        name: 'OBSERVABLE_API',
+        public: true
+    }
     interface ActualObservableState {
         stringValue: string
         numberValue: number
