@@ -1,8 +1,8 @@
-import { Reducer, createStore, Store, ReducersMapObject, combineReducers, AnyAction, Dispatch, Action, Unsubscribe } from 'redux'
-import { devToolsEnhancer } from 'redux-devtools-extension'
-import { AppHostServicesProvider } from './appHostServices'
 import _ from 'lodash'
-import { AppHost, ExtensionSlot, ReducersMapObjectContributor, ObservableState, StateObserver, Shell, SlotKey } from './API'
+import { Action, AnyAction, Dispatch, Reducer, ReducersMapObject, Store, Unsubscribe, combineReducers, createStore } from 'redux'
+import { devToolsEnhancer } from 'redux-devtools-extension'
+import { AppHost, ExtensionSlot, ObservableState, ReducersMapObjectContributor, Shell, SlotKey, StateObserver } from './API'
+import { AppHostServicesProvider } from './appHostServices'
 import { contributeInstalledShellsState } from './installedShellsState'
 import { interceptAnyObject } from './interceptAnyObject'
 import { invokeSlotCallbacks } from './invokeSlotCallbacks'
@@ -47,7 +47,7 @@ export interface StateContribution<TState = {}, TAction extends AnyAction = AnyA
 export interface ThrottledStore<T = any> extends Store<T> {
     hasPendingSubscribers(): boolean
     flush(config?: { excecutionType: 'scheduled' | 'immediate' | 'default' }): void
-    deferSubscriberNotifications<K>(action: () => K | Promise<K>, shouldClearMemoizedForState?: boolean): Promise<K>
+    deferSubscriberNotifications<K>(action: () => K | Promise<K>, shouldDispatchClearCache?: boolean): Promise<K>
 }
 
 export interface PrivateThrottledStore<T = any> extends ThrottledStore<T> {
@@ -280,19 +280,19 @@ export const createThrottledStore = (
         observableNotify: onObservableNotify,
         resetPendingNotifications: resetAllPendingNotifications,
         hasPendingSubscribers: () => pendingBroadcastNotification,
-        deferSubscriberNotifications: async (action, shouldClearMemoizedForState) => {
+        deferSubscriberNotifications: async (action, shouldDispatchClearCache) => {
             if (isDeferrringNotifications) {
                 return action()
             }
             try {
                 executePendingActions()
                 isDeferrringNotifications = true
-                shouldClearMemoizedForState && updateShouldFlushMemoizationSync(isDeferrringNotifications)
+                shouldDispatchClearCache && updateShouldFlushMemoizationSync(isDeferrringNotifications)
                 const functionResult = await action()
                 return functionResult
             } finally {
                 isDeferrringNotifications = false
-                shouldClearMemoizedForState && updateShouldFlushMemoizationSync(isDeferrringNotifications)
+                shouldDispatchClearCache && updateShouldFlushMemoizationSync(isDeferrringNotifications)
                 executePendingActions()
             }
         }
