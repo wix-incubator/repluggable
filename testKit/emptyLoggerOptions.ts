@@ -2,13 +2,9 @@ import { AppHostOptions } from '../src/API'
 
 export const emptyLoggerOptions: AppHostOptions = {
     logger: {
-        log: jest.fn(),
-        spanChild: jest.fn().mockImplementation(() => ({
-            end() {}
-        })),
-        spanRoot: jest.fn().mockImplementation(() => ({
-            end() {}
-        }))
+        log: () => {},
+        spanChild: () => ({ end: () => {} }),
+        spanRoot: () => ({ end: () => {} })
     },
     monitoring: {
         disableMonitoring: true
