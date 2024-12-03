@@ -76,13 +76,11 @@ const getRootUnreadyAPI = (host: AppHost) => {
                     continue
                 }
             } catch (e) {
-                // console.log('API not ready', currentAPI)
                 unReadyAPIsArray.push(currentAPI)
                 // we found an API that is unready, lets find which entry point declares it
                 const declarer = allEntryPoints.find(entryPointData =>
                     entryPointData.declareAPIs?.().some(api => currentAPI?.name === api.name)
                 )
-                // console.log('API declarer', declarer)
                 dependenciesOfUnreadyEntryPoint = declarer?.getDependencyAPIs?.()
             }
         }
