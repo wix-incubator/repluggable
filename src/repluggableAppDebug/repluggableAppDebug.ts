@@ -40,7 +40,7 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
 /**
  * a function that returns all the entry points in the system with their declared APIs and dependencies
  */
-const getAllEntryPoints3 = () => {
+const getAllEntryPoints = () => {
     return [
         ...window.repluggableAppDebug.utils.unReadyEntryPoints(),
         ...[...window.repluggableAppDebug.addedShells].map(([_, shell]) => shell.entryPoint)
@@ -58,7 +58,7 @@ const getAllEntryPoints3 = () => {
 const getRootUnreadyAPI = (host: AppHost) => {
     return () => {
         // get all unready entry points
-        const allEntryPoints = getAllEntryPoints3()
+        const allEntryPoints = getAllEntryPoints()
         const unReadyAPIsArray = []
         // get the depdenencies of the first unready entry point
         let dependenciesOfUnreadyEntryPoint = allEntryPoints?.[0]?.getDependencyAPIs?.()
