@@ -1,4 +1,4 @@
-import { EntryPoint, AppHost, AnySlotKey, LazyEntryPointFactory, PrivateShell } from '../API'
+import { EntryPoint, AppHost, AnySlotKey, LazyEntryPointFactory, PrivateShell, SlotKey } from '../API'
 import { AnyExtensionSlot } from '../extensionSlot'
 import { Hot } from '../hot'
 
@@ -23,6 +23,7 @@ export interface RepluggableAppDebugInfo {
 export interface RepluggableDebugUtils {
     apis(): APIDebugInfo[]
     unReadyEntryPoints(): EntryPoint[]
+    getRootUnreadyAPI: () => SlotKey<any>[]
     whyEntryPointUnready(name: string): void
     findAPI(name: string): APIDebugInfo[]
 }
