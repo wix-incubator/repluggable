@@ -311,15 +311,9 @@ export const createObservable = <TState, TSelector>(
         name: uniqueName
     }
     const observersSlot = shell.declareSlot(subscribersSlotKey)
-    let cachedSelector: TSelector | undefined
 
-    const getOrCreateCachedSelector = (): TSelector => {
-        if (cachedSelector) {
-            return cachedSelector
-        }
-        const newSelector = selectorFactory(shell.getStore<TState>().getState())
-        cachedSelector = newSelector
-        return newSelector
+    const createSelector = (): TSelector => {
+        return selectorFactory(shell.getStore<TState>().getState())
     }
 
     return {
@@ -330,10 +324,9 @@ export const createObservable = <TState, TSelector>(
             }
         },
         notify() {
-            cachedSelector = undefined
-            const newSelector = getOrCreateCachedSelector()
+            const newSelector = createSelector()
             invokeSlotCallbacks(observersSlot, newSelector)
         },
-        current: getOrCreateCachedSelector
+        current: createSelector
     }
 }
