@@ -7557,9 +7557,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"repluggable@workspace:.":
+"repluggable-core@workspace:packages/repluggable-core":
   version: 0.0.0-use.local
-  resolution: "repluggable@workspace:."
+  resolution: "repluggable-core@workspace:packages/repluggable-core"
+  languageName: unknown
+  linkType: soft
+
+"repluggable-monorepo@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "repluggable-monorepo@workspace:."
+  languageName: unknown
+  linkType: soft
+
+"repluggable@workspace:packages/repluggable":
+  version: 0.0.0-use.local
+  resolution: "repluggable@workspace:packages/repluggable"
   dependencies:
     "@types/jest": "npm:^26.0.15"
     "@types/lodash": "npm:^4.14.162"
