@@ -700,7 +700,9 @@ describe('App Host', () => {
             interface MemoizedAPIInterface {
                 getNewObject(): object
             }
-            const memoizedAPI: SlotKey<MemoizedAPIInterface> = { name: 'memoizedAPI' }
+            const memoizedAPI: SlotKey<MemoizedAPIInterface> = {
+                name: 'memoizedAPI'
+            }
 
             function contributeMemoizedAPI(host: AppHost, shouldClear?: () => boolean): Shell {
                 const createAPI = (shell: Shell): MemoizedAPIInterface => ({
@@ -736,7 +738,9 @@ describe('App Host', () => {
 
                         shell.contributeAPI(memoizedAPI, () => ({
                             getNewObject: shell.memoizeForState(
-                                () => ({ value: observableState.current(true).getStateValue() }),
+                                () => ({
+                                    value: observableState.current(true).getStateValue()
+                                }),
                                 _.stubTrue
                             )
                         }))
@@ -860,7 +864,7 @@ describe('App Host', () => {
 
             beforeEach(() => {
                 originalFinalizationRegistry = FinalizationRegistry as any
-                window.FinalizationRegistry = function (cleanupCb: (heldValue: any) => void) {
+                globalThis.FinalizationRegistry = function (cleanupCb: (heldValue: any) => void) {
                     const heldValueSet = new Map()
 
                     cleanupMemory = ref => {
@@ -879,7 +883,7 @@ describe('App Host', () => {
             })
 
             afterEach(() => {
-                window.FinalizationRegistry = originalFinalizationRegistry as any
+                globalThis.FinalizationRegistry = originalFinalizationRegistry as any
             })
 
             it('should remove memoized function from memory when there is no ref to memoized function', () => {
@@ -1025,7 +1029,10 @@ describe('App Host', () => {
             const SET_VALUE = 'SET_VALUE'
             const setValue = (value: number) => ({ type: SET_VALUE, value })
 
-            const host = createAppHost([], { shouldScopeReducers: true, monitoring: {} })
+            const host = createAppHost([], {
+                shouldScopeReducers: true,
+                monitoring: {}
+            })
             const shell1 = addMockShell(host, {
                 attach(shell) {
                     shell.contributeState<State1>(() => ({
@@ -1066,8 +1073,12 @@ describe('App Host', () => {
         const LowLevelSlotKey: SlotKey<string> = { name: 'LOW-LEVEL-SLOT' }
         const HighLevelSlotKey: SlotKey<string> = { name: 'HIGH-LEVEL-SLOT' }
         const ConsumerSlotKey: SlotKey<string> = { name: 'CONSUMER-SLOT' }
-        const LowLevelAPI: SlotKey<{ lowLevelFunc(s: string): void }> = { name: 'LOW-LEVEL-API' }
-        const HighLevelAPI: SlotKey<{ highLevelFunc(s: string): void }> = { name: 'HIGH-LEVEL-API' }
+        const LowLevelAPI: SlotKey<{ lowLevelFunc(s: string): void }> = {
+            name: 'LOW-LEVEL-API'
+        }
+        const HighLevelAPI: SlotKey<{ highLevelFunc(s: string): void }> = {
+            name: 'HIGH-LEVEL-API'
+        }
         const hmrTestPackage: EntryPoint[] = [
             {
                 name: 'LOW_LEVEL_API_ENTRY_POINT',
@@ -1189,7 +1200,10 @@ describe('App Host', () => {
         })
 
         it('should not allow adding shell of unknown layer', () => {
-            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: 'NON_EXIXTING_layer' }
+            const MockAPI1: SlotKey<{}> = {
+                name: 'Mock-API',
+                layer: 'NON_EXIXTING_layer'
+            }
             const layers = [
                 {
                     level: 0,
@@ -1238,7 +1252,10 @@ describe('App Host', () => {
         })
 
         it('should support multi dimensional layers definition', () => {
-            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['COMMON', 'INFRA'] }
+            const MockAPI1: SlotKey<{}> = {
+                name: 'Mock-API',
+                layer: ['COMMON', 'INFRA']
+            }
             const layersDimension1 = [
                 {
                     level: 0,
@@ -1284,7 +1301,10 @@ describe('App Host', () => {
         })
 
         it('should throw for multi dimensional layers violation', () => {
-            const MockAPI1: SlotKey<{}> = { name: 'Mock-API', layer: ['INFRA', 'SPECIFIC'] }
+            const MockAPI1: SlotKey<{}> = {
+                name: 'Mock-API',
+                layer: ['INFRA', 'SPECIFIC']
+            }
             const layersDimension1 = [
                 {
                     level: 0,
@@ -1410,7 +1430,10 @@ describe('App Host', () => {
     describe('API version', () => {
         it('should provide API of matching version', async () => {
             const MockAPIv0: SlotKey<{ f1(): void }> = { name: 'Mock-API' }
-            const MockAPIv2: SlotKey<{ f2(): void }> = { name: 'Mock-API', version: 2 }
+            const MockAPIv2: SlotKey<{ f2(): void }> = {
+                name: 'Mock-API',
+                version: 2
+            }
             const host = createAppHost([])
             const entryPoint: EntryPoint = {
                 name: 'MOCK_ENTRY_POINT',
@@ -1428,7 +1451,10 @@ describe('App Host', () => {
             expect(host.getAPI(MockAPIv2).f2).toBeDefined()
             expect((host.getAPI(MockAPIv2) as any).f1).not.toBeDefined()
 
-            const SecondMockAPIv2: SlotKey<{ f2(): void }> = { name: 'Mock-API', version: 2 }
+            const SecondMockAPIv2: SlotKey<{ f2(): void }> = {
+                name: 'Mock-API',
+                version: 2
+            }
             expect(() => {
                 addMockShell(host, {
                     declareAPIs: () => [SecondMockAPIv2],
@@ -1492,7 +1518,10 @@ describe('App Host', () => {
                     }
                 }
             ]
-            const host = createAppHost(entryPoints, { ...testHostOptions, experimentalCyclicMode: true })
+            const host = createAppHost(entryPoints, {
+                ...testHostOptions,
+                experimentalCyclicMode: true
+            })
 
             expect(host.hasShell(entryPoints[0].name)).toBe(true)
             expect(host.hasShell(entryPoints[1].name)).toBe(true)
@@ -1530,7 +1559,10 @@ describe('App Host', () => {
                     }
                 }
             ]
-            const host = createAppHost(entryPoints, { ...testHostOptions, experimentalCyclicMode: true })
+            const host = createAppHost(entryPoints, {
+                ...testHostOptions,
+                experimentalCyclicMode: true
+            })
 
             expect(host.hasShell(entryPoints[0].name)).toBe(false)
             expect(host.hasShell(entryPoints[1].name)).toBe(false)
