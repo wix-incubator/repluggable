@@ -84,5 +84,6 @@
     "(src|test|testKit)/**/*.{ts,tsx}": [
       "tslint --project . --fix"
     ]
-  }
+  },
+  "packageManager": "yarn@4.6.0"
 }
