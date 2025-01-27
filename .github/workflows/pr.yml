@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 20
       - run: yarn
       - run: yarn build
       - run: yarn test
@@ -17,8 +17,8 @@ jobs:
       - name: Bump version
         run: |
           git reset --hard
-          echo yarn version --prerelease --preid "pr$PR_ID.$BUILD_NUMBER" --no-git-tag-version
-          yarn version --prerelease --preid "pr$PR_ID.$BUILD_NUMBER" --no-git-tag-version
+          echo yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
+          yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
           git status -vv
           yarn build
           git add . || true
