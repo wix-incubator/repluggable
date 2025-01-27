@@ -61,8 +61,5 @@ typings/
 # next.js build output
 .next
 
-# IDE specific settings
-.idea/
-.vscode/
 
 .DS_Store
