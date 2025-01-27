@@ -82,7 +82,7 @@
   },
   "lint-staged": {
     "(src|test|testKit)/**/*.{ts,tsx}": [
-      "tslint --project ."
+      "tslint --project . --fix"
     ]
   }
 }

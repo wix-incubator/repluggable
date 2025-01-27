@@ -23,7 +23,7 @@ export interface RepluggableAppDebugInfo {
 export interface RepluggableDebugUtils {
     apis(): APIDebugInfo[]
     unReadyEntryPoints(): EntryPoint[]
-    getRootUnreadyAPI: () => SlotKey<any>[]
+    getRootUnreadyAPI(): SlotKey<any>[]
     whyEntryPointUnready(name: string): void
     findAPI(name: string): APIDebugInfo[]
 }
