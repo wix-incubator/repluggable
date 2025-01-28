@@ -4,7 +4,7 @@ const unreadAPI = { name: 'unreadyAPI' }
 
 const getUnreadyAPIs = async () => {
     await new Promise(resolve => setTimeout(resolve, 0))
-    return window.repluggableAppDebug.utils.getRootUnreadyAPI()
+    return globalThis.repluggableAppDebug.utils.getRootUnreadyAPI()
 }
 
 describe('RepluggableAppDebug', () => {
