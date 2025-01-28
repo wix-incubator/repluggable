@@ -42,8 +42,8 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
  */
 const getAllEntryPoints = () => {
     return [
-        ...window.repluggableAppDebug.utils.unReadyEntryPoints(),
-        ...[...window.repluggableAppDebug.addedShells].map(([_, shell]) => shell.entryPoint)
+        ...globalThis.repluggableAppDebug.utils.unReadyEntryPoints(),
+        ...[...globalThis.repluggableAppDebug.addedShells].map(([_, shell]) => shell.entryPoint)
     ]
 }
 
@@ -172,11 +172,11 @@ export function setupDebugInfo({
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 
-    if (typeof window === 'undefined') {
+    if (typeof globalThis === 'undefined') {
         return
     }
 
-    window.repluggableAppDebug = {
+    globalThis.repluggableAppDebug = {
         host,
         uniqueShellNames,
         extensionSlots,

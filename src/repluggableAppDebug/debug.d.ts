@@ -3,9 +3,8 @@ import { AnyExtensionSlot } from '../extensionSlot'
 import { Hot } from '../hot'
 
 declare global {
-    interface Window {
-        repluggableAppDebug: RepluggableAppDebugInfo
-    }
+    // Have to use var is this variable reassigned in the global scope
+    var repluggableAppDebug: RepluggableAppDebugInfo
 }
 
 export interface RepluggableAppDebugInfo {

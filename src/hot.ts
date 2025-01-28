@@ -18,11 +18,11 @@ export function hot(sourceModule: any, entryPoints: EntryPoint[], host?: AppHost
     }
 
     const getHostInstance = () => {
-        const hostInstance = host ?? window.repluggableAppDebug?.host
+        const hostInstance = host ?? globalThis.repluggableAppDebug?.host
         if (!hostInstance) {
             console.error(
                 `HMR error: cannot find host object.\n` +
-                    `hot(...) was called without the optional host parameter, and the fallback window.repluggableAppDebug.host doesn't exist`
+                    `hot(...) was called without the optional host parameter, and the fallback globalThis.repluggableAppDebug.host doesn't exist`
             )
         }
 

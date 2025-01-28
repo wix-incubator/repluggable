@@ -90,7 +90,7 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
 
     const timeoutPromise = new Promise((resolve, reject) => {
         setTimeout(() => {
-            const readyAPIs = Array.from(window.repluggableAppDebug.readyAPIs)
+            const readyAPIs = Array.from(globalThis.repluggableAppDebug.readyAPIs)
             const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
             reject(
                 new Error(
