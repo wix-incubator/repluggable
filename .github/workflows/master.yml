@@ -1,7 +1,7 @@
 name: Master Build
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
@@ -10,15 +10,16 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-    - uses: actions/checkout@v1
-    - name: Use Node.js
-      uses: actions/setup-node@v1
-      with:
-        node-version: 20
-    - name: install, build, and test
-      run: |
-        yarn
-        yarn build
-        yarn test
-      env:
-        CI: true
+      - uses: actions/checkout@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 20
+      - name: install, build, and test
+        run: |
+          yarn
+          cd packages/repluggable
+          yarn build
+          yarn test
+        env:
+          CI: true

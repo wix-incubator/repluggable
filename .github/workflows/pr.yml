@@ -10,13 +10,23 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 20
-      - run: yarn
-      - run: yarn build
-      - run: yarn test
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build package
+        run: |
+          cd packages/repluggable 
+          yarn build
+
+      - name: Run tests
+        run: |
+          cd packages/repluggable 
+          yarn test
 
       - name: Bump version
         run: |
           git reset --hard
+          cd packages/repluggable
           echo yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
           yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
           git status -vv
@@ -30,8 +40,8 @@ jobs:
 
       - name: npm publish
         run: |
+          cd packages/repluggable
           echo PR package tag is [pr$PR_ID.$BUILD_NUMBER]
-          npm config set //registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN
           npm publish --tag "pr$PR_ID.$BUILD_NUMBER"
         env:
           NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}

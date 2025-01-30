@@ -33,6 +33,7 @@ jobs:
       - name: Bump version
         run: |
           git reset --hard
+          cd packages/repluggable
           yarn version ${{ github.event.inputs.yarnVersionArgs }}
           export NEW_RELEASE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
           echo New Release Version is: [$NEW_RELEASE_VERSION]
@@ -48,7 +49,7 @@ jobs:
 
       - name: npm publish
         run: |
-          npm config set //registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN
+          cd packages/repluggable
           npm publish
         env:
           NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
