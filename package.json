@@ -25,6 +25,10 @@
     "posttest": "yarn workspace repluggable posttest",
     "lintfix": "yarn workspace repluggable lintfix"
   },
+  "devDependencies": {
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.2"
+  },
   "resolutions": {
     "node-forge": "^1.0.0"
   },
@@ -40,4 +44,3 @@
   },
   "packageManager": "yarn@4.6.0"
 }
-

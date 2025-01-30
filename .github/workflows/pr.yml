@@ -25,8 +25,8 @@ jobs:
 
       - name: Bump version
         run: |
-          cd packages/repluggable
           git reset --hard
+          cd packages/repluggable
           echo yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
           yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
           git status -vv

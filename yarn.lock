@@ -7566,6 +7566,9 @@ __metadata:
 "repluggable-monorepo@workspace:.":
   version: 0.0.0-use.local
   resolution: "repluggable-monorepo@workspace:."
+  dependencies:
+    husky: "npm:^4.3.0"
+    lint-staged: "npm:^10.4.2"
   languageName: unknown
   linkType: soft
 
@@ -7580,10 +7583,8 @@ __metadata:
     "@types/react-test-renderer": "npm:^18.0.0"
     "@types/webpack-env": "npm:^1.15.3"
     case-sensitive-paths-webpack-plugin: "npm:^2.3.0"
-    husky: "npm:^4.3.0"
     jest: "npm:^26.6.0"
     jest-teamcity-reporter: "npm:^0.9.0"
-    lint-staged: "npm:^10.4.2"
     lodash: "npm:^4.17.20"
     prettier: "npm:^2.1.2"
     react: "npm:^18.0.0"
