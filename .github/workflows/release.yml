@@ -6,7 +6,7 @@ on:
       yarnVersionArgs:
         description: 'Arguments for "yarn version"'
         required: true
-        default: '--patch'
+        default: "patch"
 
 jobs:
   publish:
@@ -29,11 +29,11 @@ jobs:
         env:
           GH_EMAIL: ${{secrets.GH_EMAIL}}
           GH_USER: ${{secrets.GH_USER}}
-          
+
       - name: Bump version
         run: |
           git reset --hard
-          yarn version --no-git-tag-version ${{ github.event.inputs.yarnVersionArgs }}
+          yarn version ${{ github.event.inputs.yarnVersionArgs }}
           export NEW_RELEASE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
           echo New Release Version is: [$NEW_RELEASE_VERSION]
           yarn build
@@ -45,7 +45,7 @@ jobs:
           git push "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY" --tags
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          
+
       - name: npm publish
         run: |
           npm config set //registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN

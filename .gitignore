@@ -66,3 +66,13 @@ typings/
 .vscode/
 
 .DS_Store
+
+# Yarn Berry
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
