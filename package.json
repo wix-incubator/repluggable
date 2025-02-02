@@ -16,11 +16,7 @@
   ],
   "scripts": {
     "start": "yarn workspace repluggable start",
-    "build": "yarn workspace repluggable build",
-    "build-cjs": "yarn workspace repluggable build-cjs",
-    "build-es": "yarn workspace repluggable build-es",
-    "build-bundle-dev": "yarn workspace repluggable build-bundle-dev",
-    "build-bundle-prod": "yarn workspace repluggable build-bundle-prod",
+    "build": "yarn workspaces foreach --all --topological --parallel run build",
     "test": "yarn workspace repluggable test",
     "posttest": "yarn workspace repluggable posttest",
     "lintfix": "yarn workspace repluggable lintfix"
