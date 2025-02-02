@@ -1,10 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "esnext",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "lib": ["dom", "esnext"],
-    "jsx": "react",
     "declaration": true,
     "declarationMap": true,
     "noUnusedLocals": true,
@@ -17,9 +15,5 @@
     "noFallthroughCasesInSwitch": true,
     "useUnknownInCatchVariables": false
   },
-  "include": [
-    "src",
-    "test",
-    "testKit"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

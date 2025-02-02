@@ -1,21 +1,8 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES6",
-    "module": "esnext",
-    "moduleResolution": "node",
     "lib": ["dom", "esnext"],
     "jsx": "react",
-    "declaration": true,
-    "declarationMap": true,
-    "noUnusedLocals": true,
-    "sourceMap": true,
-    "strict": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowUnreachableCode": false,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "useUnknownInCatchVariables": false
   },
   "include": [
     "src",
