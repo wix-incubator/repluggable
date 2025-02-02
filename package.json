@@ -17,9 +17,7 @@
   "scripts": {
     "start": "yarn workspace repluggable start",
     "build": "yarn workspaces foreach --all --topological --parallel run build",
-    "test": "yarn workspace repluggable test",
-    "posttest": "yarn workspace repluggable posttest",
-    "lintfix": "yarn workspace repluggable lintfix"
+    "test": "yarn workspaces foreach --all --topological --parallel run test"
   },
   "devDependencies": {
     "husky": "^4.3.0",

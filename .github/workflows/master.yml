@@ -18,7 +18,6 @@ jobs:
       - name: install, build, and test
         run: |
           yarn
-          cd packages/repluggable
           yarn build
           yarn test
         env:
