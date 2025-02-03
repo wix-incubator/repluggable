@@ -37,7 +37,7 @@ jobs:
           yarn workspace repluggable version "$DEPLOY_PREVIEW_VERSION"
 
           # Adding the new version of repluggable-core to repluggable
-          export CORE_VERSION=$(npm pkg get version --workspace=repluggable-core | awk -F ': ' '{print $2}' | tr -d ' }"' | xargs)
+          export CORE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
           echo "repluggable-core version is $CORE_VERSION, adding it to repluggable"
           yarn workspace repluggable add repluggable-core@$CORE_VERSION
           
