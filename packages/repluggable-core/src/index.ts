@@ -1,1 +1,4 @@
-export const x: number = 1
+export {
+    AnySlotKey,
+    SlotKey
+} from './API'
