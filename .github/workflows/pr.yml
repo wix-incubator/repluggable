@@ -10,40 +10,55 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 20
+      - name: Set PR version
+        run: | 
+          echo "DEPLOY_PREVIEW_VERSION=0.0.0-pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "DEPLOY_PREVIEW_TAG=pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
+        env:
+          PR_ID: ${{ github.event.number }}
+          BUILD_NUMBER: ${{ github.run_number }}
+
       - name: Install dependencies
         run: yarn install
 
-      - name: Build package
-        run: |
-          cd packages/repluggable 
-          yarn build
+      - name: Build packages
+        run: yarn build
 
       - name: Run tests
-        run: |
-          cd packages/repluggable 
-          yarn test
+        run: yarn test
 
-      - name: Bump version
+      - name: Bump versions
         run: |
           git reset --hard
-          cd packages/repluggable
-          echo yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
-          yarn version "0.0.0-pr$PR_ID.$BUILD_NUMBER"
+          echo "Deploy preview version: '$DEPLOY_PREVIEW_VERSION'"
+
+          # Bumping repluggable-core & repluggable versions
+          yarn workspace repluggable-core version "$DEPLOY_PREVIEW_VERSION"
+          yarn workspace repluggable version "$DEPLOY_PREVIEW_VERSION"
+
+          # Adding the new version of repluggable-core to repluggable
+          export CORE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
+          echo "repluggable-core version is $CORE_VERSION, adding it to repluggable"
+          yarn workspace repluggable add repluggable-core@$CORE_VERSION
+          
           git status -vv
-          yarn build
           git add . || true
           git commit -m "Bump prerelease version" || true
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          PR_ID: ${{ github.event.number }}
-          BUILD_NUMBER: ${{ github.run_number }}
 
-      - name: npm publish
+      - name: npm publish repluggable-core
         run: |
-          cd packages/repluggable
-          echo PR package tag is [pr$PR_ID.$BUILD_NUMBER]
-          npm publish --tag "pr$PR_ID.$BUILD_NUMBER"
+          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
+          npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG"
+          echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
         env:
           NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
-          PR_ID: ${{ github.event.number }}
-          BUILD_NUMBER: ${{ github.run_number }}
+      
+      - name: npm publish repluggable
+        run: |
+          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
+          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG"
+          echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
+        env:
+          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
