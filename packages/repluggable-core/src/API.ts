@@ -32,10 +32,6 @@ export interface SlotKey<T> extends AnySlotKey {
     readonly version?: number // TODO: Move to new interface - APIKey
 }
 
-
-
-
-
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
     TState,
