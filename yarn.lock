@@ -7561,6 +7561,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "repluggable-core@workspace:packages/repluggable-core"
   dependencies:
+    redux: "npm:^4.0.5"
     typescript: "npm:^5.4.2"
   languageName: unknown
   linkType: soft

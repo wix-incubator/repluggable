@@ -16,6 +16,9 @@
     "build-es": "tsc --outDir dist/es --module esNext",
     "test": ":"
   },
+  "dependencies": {
+    "redux": "^4.0.5"
+  },
   "devDependencies": {
     "typescript": "^5.4.2"
   },
