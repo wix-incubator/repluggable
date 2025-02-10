@@ -34,7 +34,7 @@ jobs:
       - name: Bump version
         run: |
           git reset --hard
-          yarn workspace replupluggable-core version ${{ github.event.inputs.yarnVersionArgs }}
+          yarn workspace repluggable-core version ${{ github.event.inputs.yarnVersionArgs }}
           yarn workspace replupluggable version ${{ github.event.inputs.yarnVersionArgs }}
           export NEW_CORE_RELEASE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
           export NEW_REPLUGGABLE_RELEASE_VERSION=$(npm pkg get version --workspace=repluggable | jq -r '."repluggable"')
