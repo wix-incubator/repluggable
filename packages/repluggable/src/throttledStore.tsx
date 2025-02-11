@@ -20,7 +20,7 @@ interface AnyShellAction extends AnyAction {
 function createTimeOutPublisher ( notify: () => void)  {
     let id : null | NodeJS.Timeout =  null 
     return () => {
-        if (!id) {
+        if (id === null) {
             id = setTimeout(() => {
                 id = null
                 notify()
@@ -39,7 +39,7 @@ function createTimeOutPublisher ( notify: () => void)  {
 function createAnimationFramePublisher ( notify: () => void)  {
     let id : null | number =  null 
     return () => {
-        if (!id) {
+        if (id === null) {
             id = requestAnimationFrame(() => {
                 id = null
                 notify()
