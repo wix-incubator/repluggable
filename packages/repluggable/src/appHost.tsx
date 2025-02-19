@@ -659,8 +659,6 @@ miss: ${memoizedWithMissHit.miss}
             store = createThrottledStore(
                 host,
                 contributedState,
-                window.requestAnimationFrame,
-                window.cancelAnimationFrame,
                 notifySubscribersIsRunning => {
                     isStoreSubscribersNotifyInProgress = notifySubscribersIsRunning
                 },
