@@ -176,8 +176,6 @@ export const updateThrottledStore = (
 export const createThrottledStore = (
     host: AppHost & AppHostServicesProvider,
     contributedState: ExtensionSlot<StateContribution>,
-    requestAnimationFrame: Window['requestAnimationFrame'],
-    cancelAnimationFrame: Window['cancelAnimationFrame'],
     updateIsSubscriptionNotifyInProgress: (isSubscriptionNotifyInProgress: boolean) => void,
     updateIsObserversNotifyInProgress: (isObserversNotifyInProgress: boolean) => void,
     updateShouldFlushMemoizationSync: (shouldFlushMemoizationSync: boolean) => void
