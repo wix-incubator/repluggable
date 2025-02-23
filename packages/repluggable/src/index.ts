@@ -1,4 +1,16 @@
 export {
+    createShellLogger,
+    createAppHost,
+    makeLazyEntryPoint,
+    mainViewSlotKey,
+    stateSlotKey,
+    monitorAPI, 
+    interceptAnyObject, 
+    invokeSlotCallbacks,
+    hot
+} from 'repluggable-core'
+
+export {
     EntryPointOrPackage,
     EntryPointOrPackagesMap,
     EntryPoint,
@@ -28,16 +40,14 @@ export {
 
 export { AppMainView } from './appMainView'
 
-export { ConsoleHostLogger } from './loggers'
 
-export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './appHost'
+
+
 
 export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
-export { invokeSlotCallbacks } from './invokeSlotCallbacks'
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
 export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
-export { interceptAnyObject } from './interceptAnyObject'
-export { monitorAPI } from './monitorAPI'
-export { hot } from './hot'
+
+

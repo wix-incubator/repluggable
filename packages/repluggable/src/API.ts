@@ -1,16 +1,12 @@
 import * as React from 'react'
 import * as Redux from 'redux'
-import { ThrottledStore } from './throttledStore'
-import { SlotKey, AnySlotKey } from 'repluggable-core'
 
-export { AnySlotKey, SlotKey }
+import { SlotKey, AnySlotKey, AppHost, AppHostAPI, ScopedStore } from 'repluggable-core'
 
-export { AppHostAPI } from './appHostServices'
+export { AnySlotKey, SlotKey, AppHost, AppHostAPI, ScopedStore }
 
-export type ScopedStore<S> = Pick<
-    ThrottledStore<S>,
-    'dispatch' | 'getState' | 'subscribe' | 'flush' | 'hasPendingSubscribers' | 'deferSubscriberNotifications'
->
+
+
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
     TState,
@@ -180,75 +176,7 @@ export interface ExtensionItem<T> {
 // addPackages(packages: EntryPointOrPackage[])
 //
 
-/**
- * An application content container that will accept {EntryPoint} and provide registry for contracts
- *
- * @export
- * @interface AppHost
- */
-export interface AppHost {
-    /**
-     * Get the root store of the application
-     *
-     * @return {ThrottledStore}
-     */
-    getStore(): ThrottledStore
-    /**
-     * Get an implementation of API previously contributed to the {AppHost}
-     *
-     * @template TAPI
-     * @param {SlotKey<TAPI>} key API Key
-     * @return {*}  {TAPI}
-     */
-    getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
-    /**
-     * Get an extension slot defined on the host
-     *
-     * @template TItem
-     * @param {SlotKey<TItem>} key
-     * @return {ExtensionSlot<TItem>}
-     */
-    getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
-    /**
-     * Get all the extension slots defined on the host
-     *
-     * @return {*}  {AnySlotKey[]}
-     */
-    getAllSlotKeys(): AnySlotKey[]
-    /**
-     * Get all {EntryPoint}s addded to the {AppHost}
-     *
-     * @return {EntryPointsInfo[]}
-     */
-    getAllEntryPoints(): EntryPointsInfo[]
-    /**
-     * Does the {AppHost} contain a specific {Shell}
-     *
-     * @param {string} name
-     * @return {boolean}
-     */
-    hasShell(name: string): boolean
-    // TODO: Deprecate
-    isLazyEntryPoint(name: string): boolean
-    /**
-     * Dynamically add {Shell}s after the host is created
-     *
-     * @param {EntryPointOrPackage[]} entryPointsOrPackages New packages or entry points to be added to the {AppHost}
-     * @return {Promise<void>}
-     */
-    addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void>
-    /**
-     * Dynamically remove {Shell}s after the host is created
-     *
-     * @param {string[]} names {Shell} names to be removed
-     * @return {Promise<void>}
-     */
-    removeShells(names: string[]): Promise<void>
-    onShellsChanged(callback: ShellsChangedCallback): string
-    removeShellsChangedCallback(callbackId: string): void
-    readonly log: HostLogger
-    readonly options: AppHostOptions
-}
+
 
 export interface PrivateAppHost extends AppHost {
     executeWhenFree(identifier: string, callback: () => void): void
