@@ -6,6 +6,10 @@ export {
   EntryPointOrPackage,
   Shell,
   ScopedStore,
+  EntryPoint,
+  CustomExtensionSlot,
+  CustomExtensionSlotHandler,
+  ExtensionItem,
 } from "./API";
 
 export {
@@ -31,3 +35,8 @@ export {
 } from "./installedShellsState";
 
 export { hot } from "./hot";
+
+export {
+  interceptEntryPoints,
+  interceptEntryPointsMap,
+} from "./interceptEntryPoints";

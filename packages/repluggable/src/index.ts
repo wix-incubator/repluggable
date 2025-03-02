@@ -1,53 +1,48 @@
 export {
-    createShellLogger,
-    createAppHost,
-    makeLazyEntryPoint,
-    mainViewSlotKey,
-    stateSlotKey,
-    monitorAPI, 
-    interceptAnyObject, 
-    invokeSlotCallbacks,
-    hot
-} from 'repluggable-core'
+  createShellLogger,
+  createAppHost,
+  makeLazyEntryPoint,
+  mainViewSlotKey,
+  stateSlotKey,
+  monitorAPI,
+  interceptAnyObject,
+  invokeSlotCallbacks,
+  hot,
+  interceptEntryPoints,
+  interceptEntryPointsMap,
+} from "repluggable-core";
 
 export {
-    EntryPointOrPackage,
-    EntryPointOrPackagesMap,
-    EntryPoint,
-    AppHost,
-    AppHostAPI,
-    AppHostOptions,
-    Shell,
-    ExtensionSlot,
-    ExtensionItem,
-    CustomExtensionSlot,
-    CustomExtensionSlotHandler,
-    AnySlotKey,
-    SlotKey,
-    ReactComponentContributor,
-    ReducersMapObjectContributor,
-    EntryPointInterceptor,
-    ShellLogger,
-    ShellLoggerSpan,
-    HostLogger,
-    LogSeverity,
-    APILayer,
-    StateObserverUnsubscribe,
-    StateObserver,
-    ObservableState,
-    ScopedStore
-} from './API'
+  EntryPointOrPackage,
+  EntryPointOrPackagesMap,
+  EntryPoint,
+  AppHost,
+  AppHostAPI,
+  AppHostOptions,
+  Shell,
+  ExtensionSlot,
+  ExtensionItem,
+  CustomExtensionSlot,
+  CustomExtensionSlotHandler,
+  AnySlotKey,
+  SlotKey,
+  ReactComponentContributor,
+  ReducersMapObjectContributor,
+  EntryPointInterceptor,
+  ShellLogger,
+  ShellLoggerSpan,
+  HostLogger,
+  LogSeverity,
+  APILayer,
+  StateObserverUnsubscribe,
+  StateObserver,
+  ObservableState,
+  ScopedStore,
+} from "./API";
 
-export { AppMainView } from './appMainView'
+export { AppMainView } from "./appMainView";
 
+export { SlotRenderer, ShellRenderer } from "./renderSlotComponents";
 
-
-
-
-export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
-
-export * from './connectWithShell'
-export { ErrorBoundary } from './errorBoundary'
-export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
-
-
+export * from "./connectWithShell";
+export { ErrorBoundary } from "./errorBoundary";
