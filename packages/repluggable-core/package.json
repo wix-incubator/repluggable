@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && yarn build-cjs && yarn build-es",
-    "build-cjs": "tsc --outDir dist/src --module commonjs",
+    "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
     "test": ":"
   },

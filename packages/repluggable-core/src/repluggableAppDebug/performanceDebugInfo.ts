@@ -62,7 +62,7 @@ export function getPerformanceDebug(options: AppHostOptions, trace: Trace[], mem
                     const groups = _(getGroups(name))
                         .mapValues((obj, group) => {
                             const keys = Object.keys(obj)
-                            length = keys.length
+                            const length = keys.length
                             if (group !== 'groupedRes' || length === 0) {
                                 return length
                             }

@@ -1,5 +1,14 @@
 import * as Redux from 'redux'
 
+import { ThrottledStore } from './throttledStore'
+
+export type ScopedStore<S> = Pick<
+    ThrottledStore<S>,
+    'dispatch' | 'getState' | 'subscribe' | 'flush' | 'hasPendingSubscribers' | 'deferSubscriberNotifications'
+>
+
+export {AppHostAPI} from './appHostServices'
+
 export interface AnySlotKey {
     readonly name: string
     readonly public?: boolean // TODO: Move to new interface - APIKey
@@ -208,6 +217,12 @@ export interface ExtensionItem<T> {
  * @interface AppHost
  */
 export interface AppHost {
+     /**
+     * Get the root store of the application
+     *
+     * @return {ThrottledStore}
+     */
+     getStore(): ThrottledStore
     /**
      * Get an implementation of API previously contributed to the {AppHost}
      *
@@ -344,6 +359,18 @@ export interface Lazy<T> {
  */
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
     /**
+     * Unique name of the matching {EntryPoint}
+     */
+    readonly name: string
+    readonly log: ShellLogger
+    /**
+     * Get store that is scoped for this {Shell}
+     *
+     * @template TState
+     * @return {ScopedStore<TState>} Scoped store for this {Shell}
+     */
+    getStore<TState>(): ScopedStore<TState>
+    /**
      * Are APIs ready to be requested
      *
      * @return {*}  {boolean}
@@ -471,7 +498,6 @@ export interface PrivateShell extends Shell {
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
-    wrapWithShellRenderer(component: JSX.Element): JSX.Element
 }
 
 export interface EntryPointsInfo {
