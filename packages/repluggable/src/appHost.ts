@@ -161,7 +161,6 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAppHostOptions: () => options
     }
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
-    const hasAPI = (key: AnySlotKey) => readyAPIs.has(key)
     const host: PrivateAppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
@@ -543,6 +542,12 @@ miss: ${memoizedWithMissHit.miss}
             return item.contribution
         }
         throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
+    }
+
+    function hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+        const APISlot = getSlot<TAPI>(key)
+        const item = APISlot.getSingleItem()
+        return !!item
     }
 
     function executeWhenFree(key: string, callback: () => void): void {
