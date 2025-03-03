@@ -551,6 +551,9 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+        if (!hasSlot(key)) {
+            return false
+        }
         const APISlot = getSlot<TAPI>(key)
         const item = APISlot.getSingleItem()
         return !!item
