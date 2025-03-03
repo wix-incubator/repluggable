@@ -140,11 +140,9 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
-    // use this to subscribe to the IOC container changes
     const readyAPIs = new Set<AnySlotKey>()
 
     const uniqueShellNames = new Set<string>()
-    // or this
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const slotKeysByName = new Map<string, AnySlotKey>()
     const addedShells = new Map<string, PrivateShell>()

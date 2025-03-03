@@ -16,17 +16,18 @@ interface AnyShellAction extends AnyAction {
     __shellName?: string
 }
 
-function createTimeOutPublisher(notify: () => void) {
-    let id: null | NodeJS.Timeout = null
+
+function createTimeOutPublisher ( notify: () => void)  {
+    let id : null | NodeJS.Timeout =  null 
     return () => {
         if (id === null) {
             id = setTimeout(() => {
                 id = null
                 notify()
-            }, 0)
+            },0)
         }
         return () => {
-            if (id === null) {
+            if(id === null) {
                 return
             }
             clearTimeout(id)
@@ -35,8 +36,8 @@ function createTimeOutPublisher(notify: () => void) {
     }
 }
 
-function createAnimationFramePublisher(notify: () => void) {
-    let id: null | number = null
+function createAnimationFramePublisher ( notify: () => void)  {
+    let id : null | number =  null 
     return () => {
         if (id === null) {
             id = requestAnimationFrame(() => {
@@ -45,7 +46,7 @@ function createAnimationFramePublisher(notify: () => void) {
             })
         }
         return () => {
-            if (id === null) {
+            if(id === null) {
                 return
             }
             cancelAnimationFrame(id)
@@ -53,6 +54,9 @@ function createAnimationFramePublisher(notify: () => void) {
         }
     }
 }
+
+
+
 
 type Subscriber = () => void
 
@@ -248,8 +252,10 @@ export const createThrottledStore = (
         notifyAll()
     }
 
-    const notifyAllOnPublish =
-        typeof window === 'undefined' ? createTimeOutPublisher(scheduledNotifyAll) : createAnimationFramePublisher(scheduledNotifyAll)
+
+   
+
+    const notifyAllOnPublish = typeof window === 'undefined' ? createTimeOutPublisher(scheduledNotifyAll) : createAnimationFramePublisher(scheduledNotifyAll)
 
     let cancelRender = _.noop
 
