@@ -29,8 +29,6 @@ export interface LazyEntryPointDescriptor {
     readonly factory: LazyEntryPointFactory
 }
 
-
-
 /**
  * Application part that will receive a {Shell} when loaded into the {AppHost}
  * @export
@@ -201,6 +199,14 @@ export interface AppHost {
      * @return {*}  {TAPI}
      */
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
+    /**
+     * Check if an implementation of API previously contributed to the {AppHost}
+     *
+     * @template TAPI
+     * @param {SlotKey<TAPI>} key API Key
+     * @return {*}  {boolean}
+     */
+    hasAPI<TAPI>(key: SlotKey<TAPI>): boolean
     /**
      * Get an extension slot defined on the host
      *
