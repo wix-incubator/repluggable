@@ -1,42 +1,46 @@
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
+    AnyFunction,
     AnySlotKey,
+    APILayer,
     AppHost,
+    AppHostOptions,
+    ContributeAPIOptions,
+    CustomExtensionSlot,
+    CustomExtensionSlotHandler,
     EntryPoint,
     EntryPointOrPackage,
     EntryPointsInfo,
     ExtensionItem,
     ExtensionSlot,
+    FunctionWithSameArgs,
     Lazy,
     LazyEntryPointDescriptor,
     LazyEntryPointFactory,
+    MemoizeMissHit,
+    ObservableState,
+    PrivateAppHost,
     PrivateShell,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
     Shell,
+    ShellBoundaryAspect,
     ShellsChangedCallback,
     SlotKey,
-    ShellBoundaryAspect,
-    MemoizeMissHit,
-    AppHostOptions,
     StatisticsMemoization,
-    Trace,
-    AnyFunction,
-    FunctionWithSameArgs,
-    ContributeAPIOptions,
-    APILayer,
-    CustomExtensionSlotHandler,
-    CustomExtensionSlot,
-    ObservableState,
-    PrivateAppHost
+    Trace
 } from './API'
-import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
-import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
+import { declaredAPIs, dependentAPIs } from './appHostUtils'
+import { AnyExtensionSlot, createCustomExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
-import { dependentAPIs, declaredAPIs } from './appHostUtils'
+import { IterableWeakMap } from './IterableWeakMap'
+import { ConsoleHostLogger, createShellLogger } from './loggers'
+import { monitorAPI } from './monitorAPI'
+import { setupDebugInfo } from './repluggableAppDebug'
+import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import {
     createObservable,
     createThrottledStore,
@@ -46,11 +50,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { ConsoleHostLogger, createShellLogger } from './loggers'
-import { monitorAPI } from './monitorAPI'
-import { getCycle, Graph, Tarjan } from './tarjanGraph'
-import { setupDebugInfo } from './repluggableAppDebug'
-import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -141,9 +140,11 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const trace: Trace[] = []
     const memoizedArr: StatisticsMemoization[] = []
 
+    // use this to subscribe to the IOC container changes
     const readyAPIs = new Set<AnySlotKey>()
 
     const uniqueShellNames = new Set<string>()
+    // or this
     const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const slotKeysByName = new Map<string, AnySlotKey>()
     const addedShells = new Map<string, PrivateShell>()
@@ -160,9 +161,11 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAppHostOptions: () => options
     }
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
+    const hasAPI = (key: AnySlotKey) => readyAPIs.has(key)
     const host: PrivateAppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
+        hasAPI,
         getSlot,
         getAllSlotKeys,
         getAllEntryPoints,
@@ -969,6 +972,10 @@ miss: ${memoizedWithMissHit.miss}
                         entryPoint.name
                     }' (forgot to return it from getDependencyAPIs?)`
                 )
+            },
+
+            hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+                return hasAPI(key)
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {

@@ -261,7 +261,7 @@ function createShell(host: AppHost): PrivateShell {
         lazyEvaluator: func => ({ get: func }),
         TEMP_getAppHost() {
             return host
-        },
+        }
     }
 }
 
