@@ -216,6 +216,14 @@ export interface AppHost {
      */
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     /**
+     * Check if an extension slot is defined on the host
+     *
+     * @template TItem
+     * @param {SlotKey<TItem>} key
+     * @return {boolean}
+     */
+    hasSlot<TItem>(key: SlotKey<TItem>): boolean
+    /**
      * Get all the extension slots defined on the host
      *
      * @return {*}  {AnySlotKey[]}

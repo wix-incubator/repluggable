@@ -166,6 +166,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAPI,
         hasAPI,
         getSlot,
+        hasSlot,
         getAllSlotKeys,
         getAllEntryPoints,
         hasShell,
@@ -535,6 +536,11 @@ miss: ${memoizedWithMissHit.miss}
         throw new Error(`Extension slot with key '${slotKeyToName(key)}' doesn't exist.`)
     }
 
+    function hasSlot<TItem>(key: SlotKey<TItem>): boolean {
+        const ownKey = getOwnSlotKey(key)
+        return extensionSlots.has(ownKey)
+    }
+
     function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
         const APISlot = getSlot<TAPI>(key)
         const item = APISlot.getSingleItem()
@@ -901,6 +907,16 @@ miss: ${memoizedWithMissHit.miss}
                 }
                 return slot
             },
+
+            hasSlot<TItem>(key: SlotKey<TItem>): boolean {
+                if (hasSlot(key)) {
+                    const slot = host.getSlot(key)
+                    const { declaringShell } = slot
+                    return !!declaringShell && declaringShell === shell
+                }
+                return false
+            },
+
             getAllSlotKeys: host.getAllSlotKeys,
             getAllEntryPoints: host.getAllEntryPoints,
             hasShell: host.hasShell,
@@ -980,7 +996,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
-                return hasAPI(key)
+                return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && hasAPI(key)
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
