@@ -14,12 +14,14 @@
     "build": "rm -rf dist && yarn build-cjs && yarn build-es",
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
-    "test": ":"
+    "test": "jest --coverage"
   },
   "dependencies": {
     "redux": "^4.0.5"
   },
   "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "jest": "^26.6.0",
     "typescript": "^5.4.2"
   },
   "repository": {

@@ -148,7 +148,7 @@ export interface PrivateShell extends Shell {
   ): void;
   getBoundaryAspects(): ShellBoundaryAspect[];
   getHostOptions(): AppHostOptions;
-  wrapWithShellRenderer(component: JSX.Element): JSX.Element;
+  getAppHost(): AppHost;
 }
 
 export interface EntryPointsInfo {

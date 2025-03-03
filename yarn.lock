@@ -7561,6 +7561,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "repluggable-core@workspace:packages/repluggable-core"
   dependencies:
+    "@types/jest": "npm:^26.0.15"
+    jest: "npm:^26.6.0"
     redux: "npm:^4.0.5"
     typescript: "npm:^5.4.2"
   languageName: unknown
