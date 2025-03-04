@@ -539,22 +539,25 @@ miss: ${memoizedWithMissHit.miss}
         return extensionSlots.has(ownKey)
     }
 
-    function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+    function tryGetAPI<TAPI>(key: SlotKey<TAPI>): TAPI | undefined {
+        if (!hasSlot(key)) {
+            return undefined
+        }
         const APISlot = getSlot<TAPI>(key)
         const item = APISlot.getSingleItem()
-        if (item) {
-            return item.contribution
+        return item?.contribution
+    }
+
+    function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+        const api = tryGetAPI(key)
+        if (!api) {
+            throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
         }
-        throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
+        return api
     }
 
     function hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
-        if (!hasSlot(key)) {
-            return false
-        }
-        const APISlot = getSlot<TAPI>(key)
-        const item = APISlot.getSingleItem()
-        return !!item
+        return !!tryGetAPI(key)
     }
 
     function executeWhenFree(key: string, callback: () => void): void {
