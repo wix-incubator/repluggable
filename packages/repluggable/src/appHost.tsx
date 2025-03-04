@@ -1,43 +1,49 @@
+import _ from 'lodash'
 import React from 'react'
 import { AnyAction, Store } from 'redux'
+import { ShellRenderer } from '.'
 import {
     AnyEntryPoint,
+    AnyFunction,
     AnySlotKey,
+    APILayer,
     AppHost,
+    AppHostOptions,
+    ContributeAPIOptions,
+    CustomExtensionSlot,
+    CustomExtensionSlotHandler,
     EntryPoint,
     EntryPointOrPackage,
     EntryPointsInfo,
     ExtensionItem,
     ExtensionSlot,
+    FunctionWithSameArgs,
     Lazy,
     LazyEntryPointDescriptor,
     LazyEntryPointFactory,
+    MemoizeMissHit,
+    ObservableState,
+    PrivateAppHost,
     PrivateShell,
     ReactComponentContributor,
     ReducersMapObjectContributor,
     ScopedStore,
     Shell,
+    ShellBoundaryAspect,
     ShellsChangedCallback,
     SlotKey,
-    ShellBoundaryAspect,
-    MemoizeMissHit,
-    AppHostOptions,
     StatisticsMemoization,
-    Trace,
-    AnyFunction,
-    FunctionWithSameArgs,
-    ContributeAPIOptions,
-    APILayer,
-    CustomExtensionSlotHandler,
-    CustomExtensionSlot,
-    ObservableState,
-    PrivateAppHost
+    Trace
 } from './API'
-import _ from 'lodash'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
-import { AnyExtensionSlot, createExtensionSlot, createCustomExtensionSlot } from './extensionSlot'
+import { declaredAPIs, dependentAPIs } from './appHostUtils'
+import { AnyExtensionSlot, createCustomExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
-import { dependentAPIs, declaredAPIs } from './appHostUtils'
+import { IterableWeakMap } from './IterableWeakMap'
+import { ConsoleHostLogger, createShellLogger } from './loggers'
+import { monitorAPI } from './monitorAPI'
+import { setupDebugInfo } from './repluggableAppDebug'
+import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import {
     createObservable,
     createThrottledStore,
@@ -47,12 +53,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { ConsoleHostLogger, createShellLogger } from './loggers'
-import { monitorAPI } from './monitorAPI'
-import { getCycle, Graph, Tarjan } from './tarjanGraph'
-import { setupDebugInfo } from './repluggableAppDebug'
-import { ShellRenderer } from '.'
-import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -165,7 +165,9 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const host: PrivateAppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
+        hasAPI,
         getSlot,
+        hasSlot,
         getAllSlotKeys,
         getAllEntryPoints,
         hasShell,
@@ -535,13 +537,30 @@ miss: ${memoizedWithMissHit.miss}
         throw new Error(`Extension slot with key '${slotKeyToName(key)}' doesn't exist.`)
     }
 
-    function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+    function hasSlot<TItem>(key: SlotKey<TItem>): boolean {
+        const ownKey = getOwnSlotKey(key)
+        return extensionSlots.has(ownKey)
+    }
+
+    function tryGetAPI<TAPI>(key: SlotKey<TAPI>): TAPI | undefined {
+        if (!hasSlot(key)) {
+            return
+        }
         const APISlot = getSlot<TAPI>(key)
         const item = APISlot.getSingleItem()
-        if (item) {
-            return item.contribution
+        return item?.contribution
+    }
+
+    function getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+        const api = tryGetAPI(key)
+        if (!api) {
+            throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
         }
-        throw new Error(`API '${slotKeyToName(key)}' doesn't exist.`)
+        return api
+    }
+
+    function hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+        return !!tryGetAPI(key)
     }
 
     function executeWhenFree(key: string, callback: () => void): void {
@@ -895,6 +914,16 @@ miss: ${memoizedWithMissHit.miss}
                 }
                 return slot
             },
+
+            hasSlot<TItem>(key: SlotKey<TItem>): boolean {
+                if (hasSlot(key)) {
+                    const slot = host.getSlot(key)
+                    const { declaringShell } = slot
+                    return !!declaringShell && declaringShell === shell
+                }
+                return false
+            },
+
             getAllSlotKeys: host.getAllSlotKeys,
             getAllEntryPoints: host.getAllEntryPoints,
             hasShell: host.hasShell,
@@ -971,6 +1000,10 @@ miss: ${memoizedWithMissHit.miss}
                         entryPoint.name
                     }' (forgot to return it from getDependencyAPIs?)`
                 )
+            },
+
+            hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
+                return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && host.hasAPI(key)
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
