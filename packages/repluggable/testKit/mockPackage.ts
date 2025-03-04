@@ -13,6 +13,7 @@ export interface MockPublicAPI {
 }
 
 export const MockAPI: SlotKey<MockAPI> = { name: 'mock API' }
+export const MockSlot: SlotKey<any> = { name: 'mock slot' }
 export const MockPublicAPI: SlotKey<MockPublicAPI> = {
     name: 'mock API public',
     public: true
@@ -95,5 +96,15 @@ export const mockPackageWithPublicAPI: EntryPoint = {
         shell.contributeAPI(MockPublicAPI, () => ({
             stubTrue: () => true
         }))
+    }
+}
+
+export const mockPackageWithSlot: EntryPoint = {
+    name: 'MOCK_PACKAGE_WITH_SLOT',
+    declareAPIs() {
+        return []
+    },
+    attach(shell: Shell) {
+        shell.declareSlot(MockSlot)
     }
 }
