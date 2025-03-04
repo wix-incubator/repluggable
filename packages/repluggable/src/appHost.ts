@@ -541,7 +541,7 @@ miss: ${memoizedWithMissHit.miss}
 
     function tryGetAPI<TAPI>(key: SlotKey<TAPI>): TAPI | undefined {
         if (!hasSlot(key)) {
-            return undefined
+            return
         }
         const APISlot = getSlot<TAPI>(key)
         const item = APISlot.getSingleItem()

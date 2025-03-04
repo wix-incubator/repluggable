@@ -5,29 +5,31 @@ import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from
 import {
     AnySlotKey,
     AppHost,
-    EntryPoint,
-    Shell,
-    SlotKey,
     AppHostOptions,
+    EntryPoint,
     HostLogger,
-    PrivateShell,
     ObservableState,
-    PrivateAppHost
+    PrivateAppHost,
+    PrivateShell,
+    Shell,
+    SlotKey
 } from '../src/API'
 import {
+    addMockShell,
+    emptyLoggerOptions,
     MockAPI,
     mockPackage,
     mockPackageWithPublicAPI,
     MockPublicAPI,
     mockShellInitialState,
     mockShellStateKey,
-    addMockShell,
-    emptyLoggerOptions
+    mockPackageWithSlot,
+    MockSlot
 } from '../testKit'
 
 import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
-import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { ConsoleHostLogger } from '../src/loggers'
+import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 
 const testHostOptions: AppHostOptions = {
     monitoring: { disableMonitoring: true }
@@ -430,6 +432,17 @@ describe('App Host', () => {
     )
 
     describe('Host extension slots', () => {
+        describe('hasSlot', () => {
+            it('should return false for hasSlot if the slot is not defined on the host', () => {
+                const host = createAppHost([], testHostOptions)
+                expect(host.hasSlot(MockSlot)).toBeFalsy()
+            })
+
+            it('should return true for hasSlot if the slot is defined on the host', () => {
+                const host = createAppHost([mockPackageWithSlot], testHostOptions)
+                expect(host.hasSlot(MockSlot)).toBeTruthy()
+            })
+        })
         it('should have a state extension slot', () => {
             const host = createAppHost([], testHostOptions)
             expect(host.getSlot(stateSlotKey)).toBeTruthy()
@@ -533,6 +546,32 @@ describe('App Host', () => {
     })
 
     describe('Shell extension slots', () => {
+        describe('hasSlot', () => {
+            it('should return false for hasSlot if the slot is not defined on the host', async () => {
+                const host = createAppHost([], testHostOptions)
+                const entryPointWithoutSlot: EntryPoint = {
+                    name: 'MOCK_WITHOUT_SLOT',
+                    extend(shell) {
+                        expect(shell.hasSlot(MockSlot)).toBeFalsy()
+                    }
+                }
+                await host.addShells([entryPointWithoutSlot])
+            })
+
+            it('should return true for hasSlot if the slot is defined on the host', async () => {
+                const host = createAppHost([], testHostOptions)
+                const entryPointWithSlot: EntryPoint = {
+                    name: 'MOCK_WITH_SLOT',
+                    attach(shell) {
+                        shell.declareSlot(MockSlot)
+                    },
+                    extend(shell) {
+                        expect(shell.hasSlot(MockSlot)).toBeTruthy()
+                    }
+                }
+                await host.addShells([entryPointWithSlot])
+            })
+        })
         it('should allow contribution', async () => {
             const host = createAppHost([], testHostOptions)
             interface SlotItem {
@@ -952,6 +991,55 @@ describe('App Host', () => {
     })
 
     describe('Entry Point Shell Scoping', () => {
+        describe('Shell hasAPI', () => {
+            it('should return false if the API is not defined on the host', async () => {
+                const host = createAppHost([], testHostOptions)
+                const entryPointWithoutAPI: EntryPoint = {
+                    name: 'ENTRY_POINT_WITHOUT_API',
+                    getDependencyAPIs: () => [],
+                    extend(shell: Shell) {
+                        expect(shell.hasAPI(MockAPI)).toBeFalsy()
+                    }
+                }
+                await host.addShells([entryPointWithoutAPI])
+            })
+            it('should return false if the API is defined on the host but is not declared as dependency', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const entryPointWithoutAPIDependency: EntryPoint = {
+                    name: 'ENTRY_POINT_WITHOUT_API_DEPENDENCY',
+                    getDependencyAPIs: () => [],
+                    extend(shell: Shell) {
+                        expect(shell.hasAPI(MockAPI)).toBeFalsy()
+                    }
+                }
+                await host.addShells([entryPointWithoutAPIDependency])
+            })
+            it('should return true if the API is defined on the host and is declared as dependency', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const entryPointWithAPIDependency: EntryPoint = {
+                    name: 'ENTRY_POINT_WITH_API_DEPENDENCY',
+                    getDependencyAPIs: () => [MockAPI],
+                    extend(shell: Shell) {
+                        expect(shell.hasAPI(MockAPI)).toBeTruthy()
+                    }
+                }
+                await host.addShells([entryPointWithAPIDependency])
+            })
+            it('should return true if the API is declared on the shell', async () => {
+                const host = createAppHost([], testHostOptions)
+                const entryPointWithAPIDeclaration: EntryPoint = {
+                    name: 'ENTRY_POINT_WITH_API_DECLARATION',
+                    declareAPIs: () => [MockAPI],
+                    attach(shell: Shell) {
+                        shell.contributeAPI(MockAPI, () => ({}))
+                    },
+                    extend(shell: Shell) {
+                        expect(shell.hasAPI(MockAPI)).toBeTruthy()
+                    }
+                }
+                await host.addShells([entryPointWithAPIDeclaration])
+            })
+        })
         it('should be able to call an API declared in dependencies', () => {
             const entryPointThatCallsAPI: EntryPoint = {
                 name: 'ENTRY_POINT_WITH_API_CALL',
@@ -1469,6 +1557,17 @@ describe('App Host', () => {
     })
 
     describe('Host API', () => {
+        describe('hasAPI', () => {
+            it('should return false if the API is not defined on the host', () => {
+                const host = createAppHost([], testHostOptions)
+                expect(host.hasAPI(MockAPI)).toBeFalsy()
+            })
+
+            it('should return true if the API is defined on the host', () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                expect(host.hasAPI(MockAPI)).toBeTruthy()
+            })
+        })
         it('should get all entry points', async () => {
             const host = createAppHost([mockPackage], testHostOptions) as AppHost & AppHostServicesProvider
             await host.addShells([mockPackageWithPublicAPI])
