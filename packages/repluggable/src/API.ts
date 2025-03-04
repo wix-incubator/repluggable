@@ -200,7 +200,7 @@ export interface AppHost {
      */
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     /**
-     * Check if an implementation of API previously contributed to the {AppHost}
+     * Check if an API implementation has been contributed to the {AppHost}
      *
      * @template TAPI
      * @param {SlotKey<TAPI>} key API Key
@@ -216,7 +216,7 @@ export interface AppHost {
      */
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
     /**
-     * Check if an extension slot is defined on the host
+     * Check if an extension slot has been contributed to the {AppHost}
      *
      * @template TItem
      * @param {SlotKey<TItem>} key
