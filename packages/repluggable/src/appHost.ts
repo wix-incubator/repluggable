@@ -997,7 +997,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
-                return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && hasAPI(key)
+                return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && host.hasAPI(key)
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
