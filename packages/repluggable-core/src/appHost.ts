@@ -532,7 +532,6 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     const shells = readyEntryPoints.map(createShell);
-    console.log("shells.getAPPHost", shells[0].getAppHost());
     executeReadyEntryPoints(shells);
   }
 
