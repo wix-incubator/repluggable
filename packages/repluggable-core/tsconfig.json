@@ -1,4 +1,14 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src"]
+  "include": [
+    "src",
+    "test",
+    "testKit"
+  ],
+  "compilerOptions": {
+    // adding DOM only to types code which has no DOM will not use it
+    "lib": ["dom", "esnext"],
+
+  },
+ 
 }
