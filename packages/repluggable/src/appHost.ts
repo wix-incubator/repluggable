@@ -1,4 +1,3 @@
-import React from 'react'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -51,7 +50,6 @@ import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import { setupDebugInfo } from './repluggableAppDebug'
-import { ShellRenderer } from '.'
 import { IterableWeakMap } from './IterableWeakMap'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
@@ -1108,10 +1106,7 @@ miss: ${memoizedWithMissHit.miss}
             getHostOptions: () => host.options,
 
             log: createShellLogger(host, entryPoint),
-
-            wrapWithShellRenderer(component): JSX.Element {
-                return <ShellRenderer shell={shell} component={component} host={host} />
-            },
+            getAppHost: () => host,
             lazyEvaluator
         }
 

@@ -7,6 +7,7 @@ import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
+import { ShellRenderer } from './renderSlotComponents'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
@@ -166,11 +167,16 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     )
 }
 
+
+
 function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
-    return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
+  const host = (boundShell as PrivateShell).getAppHost()
+    return (props: WithChildren<OwnProps>) => {
+      return <ShellRenderer shell={boundShell} component={component(props)} host={host}  />
+    }
 }
 
 export interface ConnectWithShellOptions<OwnProps, StateProps> {

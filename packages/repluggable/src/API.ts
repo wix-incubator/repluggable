@@ -468,7 +468,7 @@ export interface PrivateShell extends Shell {
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
-    wrapWithShellRenderer(component: JSX.Element): JSX.Element
+    getAppHost(): AppHost
 }
 
 export interface EntryPointsInfo {
