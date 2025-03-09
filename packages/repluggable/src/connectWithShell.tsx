@@ -173,8 +173,8 @@ function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
-  const host = (boundShell as PrivateShell).getAppHost()
     return (props: WithChildren<OwnProps>) => {
+      const host = (boundShell as PrivateShell).getAppHost()
       return <ShellRenderer shell={boundShell} component={component(props)} host={host}  />
     }
 }
