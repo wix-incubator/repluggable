@@ -469,6 +469,7 @@ export interface PrivateShell extends Shell {
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
     getAppHost(): AppHost
+    wrapWithShellRenderer(component: JSX.Element): JSX.Element
 }
 
 export interface EntryPointsInfo {

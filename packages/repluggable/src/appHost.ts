@@ -903,6 +903,9 @@ miss: ${memoizedWithMissHit.miss}
             declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
                 return declareSlot<TItem>(key, shell)
             },
+            wrapWithShellRenderer: (() => {
+                
+            }) as any,
 
             declareCustomSlot<TItem>(key: SlotKey<TItem>, handler: CustomExtensionSlotHandler<TItem>): CustomExtensionSlot<TItem> {
                 return declareCustomSlot<TItem>(key, handler, shell)
