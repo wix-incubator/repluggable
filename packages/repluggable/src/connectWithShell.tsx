@@ -29,7 +29,7 @@ const reduxConnectOptions = {
     context: StoreContext,
     areStatePropsEqual: propsDeepEqual,
     areOwnPropsEqual: propsDeepEqual
-}
+ }
 
 function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, prev: Props) => void>(
     shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
