@@ -7,7 +7,7 @@ import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
-import { ShellRenderer } from './renderSlotComponents'
+import { ShellRenderer } from '.'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
