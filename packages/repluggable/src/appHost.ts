@@ -1105,6 +1105,7 @@ miss: ${memoizedWithMissHit.miss}
 
             getHostOptions: () => host.options,
 
+
             log: createShellLogger(host, entryPoint),
             getAppHost: () => host,
             lazyEvaluator

@@ -169,13 +169,18 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
 
 
 
+const wrapWithShellRenderer2 = (component: any,boundShell: Shell ): JSX.Element  => {
+    const host = (boundShell as PrivateShell).getAppHost()
+    return <ShellRenderer shell={boundShell} component={component} host={host} />
+}
+
+
 function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
     return (props: WithChildren<OwnProps>) => {
-      const host = (boundShell as PrivateShell).getAppHost()
-      return <ShellRenderer shell={boundShell} component={component(props)} host={host}  />
+        return wrapWithShellRenderer2(component(props), boundShell)
     }
 }
 
