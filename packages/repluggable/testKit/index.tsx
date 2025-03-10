@@ -258,6 +258,7 @@ function createShell(host: AppHost): PrivateShell {
         clearCache: _.noop,
         getHostOptions: () => host.options,
         getAppHost: () => host,
+        wrapWithShellRenderer: (component: JSX.Element) => component,
         log: createShellLogger(host, entryPoint),
         lazyEvaluator: func => ({ get: func })
     }
