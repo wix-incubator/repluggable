@@ -167,14 +167,14 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     )
 }
 
-// function wrapWithShellRenderer<OwnProps>(
-//     boundShell: Shell,
-//     component: ComponentWithChildrenProps<OwnProps>
-// ): ComponentWithChildrenProps<OwnProps> {
-//     return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
-// }
-
 function wrapWithShellRenderer<OwnProps>(
+    boundShell: Shell,
+    component: ComponentWithChildrenProps<OwnProps>
+): ComponentWithChildrenProps<OwnProps> {
+    return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
+}
+
+function wrapWithShellRenderer2<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
