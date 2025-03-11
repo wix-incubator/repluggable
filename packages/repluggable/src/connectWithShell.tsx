@@ -235,6 +235,7 @@ export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, Dis
         validateLifecycle(component)
         const wrappedWithShellContext = wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
         if (options.renderOutsideProvider) {
+            console.log(wrapWithShellRenderer2)
             return wrapWithShellRenderer(boundShell, wrappedWithShellContext)
         }
         return wrappedWithShellContext
