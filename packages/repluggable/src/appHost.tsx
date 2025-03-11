@@ -1106,7 +1106,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             getHostOptions: () => host.options,
-
+            getAppHost: () => host,
             log: createShellLogger(host, entryPoint),
 
             wrapWithShellRenderer(component): JSX.Element {
