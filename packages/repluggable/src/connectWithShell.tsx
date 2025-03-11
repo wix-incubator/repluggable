@@ -7,6 +7,7 @@ import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
+// @ts-ignore
 import { ShellRenderer } from './renderSlotComponents'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
@@ -174,16 +175,7 @@ function wrapWithShellRenderer<OwnProps>(
     return (props: WithChildren<OwnProps>) => (boundShell as PrivateShell).wrapWithShellRenderer(component(props))
 }
 
-function wrapWithShellRenderer2<OwnProps>(
-    boundShell: Shell,
-    component: ComponentWithChildrenProps<OwnProps>
-): ComponentWithChildrenProps<OwnProps> {
-    return (props: WithChildren<OwnProps>) => {
-        const shell = boundShell as PrivateShell
-        const host = shell.getAppHost()
-        return <ShellRenderer host={host} shell={shell} component={component(props)}  />
-    }
-}
+
 
 export interface ConnectWithShellOptions<OwnProps, StateProps> {
     readonly componentName?: string
@@ -235,7 +227,6 @@ export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, Dis
         validateLifecycle(component)
         const wrappedWithShellContext = wrapWithShellContext(component, mapStateToProps, mapDispatchToProps, boundShell, options)
         if (options.renderOutsideProvider) {
-            console.log(wrapWithShellRenderer2)
             return wrapWithShellRenderer(boundShell, wrappedWithShellContext)
         }
         return wrappedWithShellContext
