@@ -468,7 +468,8 @@ export interface PrivateShell extends Shell {
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
-    getAppHost(): AppHost
+    // @restricted - for internal use of repluggable only
+    TEMP_getAppHost(): AppHost
 }
 
 export interface EntryPointsInfo {

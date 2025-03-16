@@ -1107,7 +1107,7 @@ miss: ${memoizedWithMissHit.miss}
 
             log: createShellLogger(host, entryPoint),
 
-            getAppHost: () => host,
+            TEMP_getAppHost: () => host,
 
             lazyEvaluator
         }
