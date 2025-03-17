@@ -202,6 +202,14 @@ export interface AppHost {
      */
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     /**
+     * Check if an API implementation has been contributed to the {AppHost}
+     *
+     * @template TAPI
+     * @param {SlotKey<TAPI>} key API Key
+     * @return {*}  {boolean}
+     */
+    hasAPI<TAPI>(key: SlotKey<TAPI>): boolean
+    /**
      * Get an extension slot defined on the host
      *
      * @template TItem
@@ -209,6 +217,14 @@ export interface AppHost {
      * @return {ExtensionSlot<TItem>}
      */
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
+    /**
+     * Check if an extension slot has been contributed to the {AppHost}
+     *
+     * @template TItem
+     * @param {SlotKey<TItem>} key
+     * @return {boolean}
+     */
+    hasSlot<TItem>(key: SlotKey<TItem>): boolean
     /**
      * Get all the extension slots defined on the host
      *

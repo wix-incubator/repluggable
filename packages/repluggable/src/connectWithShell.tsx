@@ -167,15 +167,12 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     )
 }
 
-
-
 function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
     const host = (boundShell as PrivateShell).TEMP_getAppHost()
-    return (props: WithChildren<OwnProps>) => 
-        <ShellRenderer shell={boundShell} component={component(props)} host={host} />
+    return (props: WithChildren<OwnProps>) => <ShellRenderer shell={boundShell} component={component(props)} host={host} />
 }
 
 export interface ConnectWithShellOptions<OwnProps, StateProps> {
