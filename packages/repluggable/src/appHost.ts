@@ -598,12 +598,10 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
-        if (key.public === true) {
-            const ownKey = slotKeysByName.get(slotKeyToName(key))
+        const ownKey = slotKeysByName.get(slotKeyToName(key))
             if (ownKey && ownKey.public) {
                 return ownKey as SlotKey<T>
             }
-        }
         return key
     }
 
