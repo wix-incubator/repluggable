@@ -29,6 +29,8 @@ export interface LazyEntryPointDescriptor {
     readonly factory: LazyEntryPointFactory
 }
 
+
+
 /**
  * Application part that will receive a {Shell} when loaded into the {AppHost}
  * @export
