@@ -50,6 +50,7 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
+import _ from 'lodash'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
