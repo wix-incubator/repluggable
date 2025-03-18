@@ -8,6 +8,7 @@ import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
 import { ShellRenderer } from './renderSlotComponents'
+import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
@@ -171,8 +172,9 @@ function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
-    const host = (boundShell as PrivateShell).TEMP_getAppHost()
-    return (props: WithChildren<OwnProps>) => <ShellRenderer shell={boundShell} component={component(props)} host={host} />
+    const host = (boundShell as PrivateShell)[SHELL_GET_APP_HOST]()
+    return (props: WithChildren<OwnProps>) => 
+        <ShellRenderer shell={boundShell} component={component(props)} host={host} />
 }
 
 export interface ConnectWithShellOptions<OwnProps, StateProps> {

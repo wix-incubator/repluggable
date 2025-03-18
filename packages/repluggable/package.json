@@ -37,6 +37,7 @@
     "redux": "^4.0.5",
     "redux-devtools-extension": "^2.13.8",
     "repluggable-core": "1.302.63",
+    "repluggable-secrets": "1.302.63",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

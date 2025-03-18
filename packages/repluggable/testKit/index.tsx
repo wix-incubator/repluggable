@@ -7,6 +7,7 @@ import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, Entr
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
+import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
 
 export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
@@ -259,7 +260,7 @@ function createShell(host: AppHost): PrivateShell {
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint),
         lazyEvaluator: func => ({ get: func }),
-        TEMP_getAppHost() {
+        [SHELL_GET_APP_HOST]: () => {
             return host
         }
     }

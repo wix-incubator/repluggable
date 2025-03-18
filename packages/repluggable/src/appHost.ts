@@ -1,3 +1,4 @@
+import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -1140,7 +1141,7 @@ miss: ${memoizedWithMissHit.miss}
 
             log: createShellLogger(host, entryPoint),
 
-            TEMP_getAppHost: () => host,
+            [SHELL_GET_APP_HOST]: () => host,
 
             lazyEvaluator
         }
