@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.302.63",
   "license": "MIT",
-  "description": "Expose secrets for the repluggable repo",
+  "description": "Private npm package the hold 'secrets' of the repluggable monorepo",
   "main": "dist/src/index.js",
   "module": "dist/es/index.js",
   "unpkg": true,
