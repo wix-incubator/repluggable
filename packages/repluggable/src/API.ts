@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { SlotKey, AnySlotKey } from 'repluggable-core'
-import {  SHELL_GET_APP_HOST } from 'repluggable-secrets'
+import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
 
 export { AnySlotKey, SlotKey }
 

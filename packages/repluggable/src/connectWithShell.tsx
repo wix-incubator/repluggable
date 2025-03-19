@@ -8,7 +8,7 @@ import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
 import { ShellRenderer } from './renderSlotComponents'
-import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
+import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any

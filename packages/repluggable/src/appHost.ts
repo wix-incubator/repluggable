@@ -1,4 +1,4 @@
-import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
+import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,

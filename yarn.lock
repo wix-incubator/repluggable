@@ -7575,14 +7575,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"repluggable-secrets@npm:1.302.63, repluggable-secrets@workspace:packages/repluggable-secrets":
-  version: 0.0.0-use.local
-  resolution: "repluggable-secrets@workspace:packages/repluggable-secrets"
-  dependencies:
-    typescript: "npm:^5.4.2"
-  languageName: unknown
-  linkType: soft
-
 "repluggable@workspace:packages/repluggable":
   version: 0.0.0-use.local
   resolution: "repluggable@workspace:packages/repluggable"
@@ -7605,7 +7597,6 @@ __metadata:
     redux: "npm:^4.0.5"
     redux-devtools-extension: "npm:^2.13.8"
     repluggable-core: "npm:1.302.63"
-    repluggable-secrets: "npm:1.302.63"
     terser-webpack-plugin: "npm:^4.1.0"
     ts-jest: "npm:^26.4.1"
     ts-loader: "npm:^8.0.6"

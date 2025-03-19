@@ -7,7 +7,7 @@ import { AnySlotKey, AppHost, AppMainView, createAppHost as _createAppHost, Entr
 import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
-import { SHELL_GET_APP_HOST } from 'repluggable-secrets'
+import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
 
 export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
