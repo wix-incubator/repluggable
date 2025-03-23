@@ -8,7 +8,7 @@ import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
 import { propsDeepEqual } from './propsDeepEqual'
 import { ShellRenderer } from './renderSlotComponents'
-import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
 
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
@@ -172,7 +172,7 @@ function wrapWithShellRenderer<OwnProps>(
     boundShell: Shell,
     component: ComponentWithChildrenProps<OwnProps>
 ): ComponentWithChildrenProps<OwnProps> {
-    const host = (boundShell as PrivateShell)[SHELL_GET_APP_HOST]()
+    const host = (boundShell as PrivateShell)[INTERNAL_DONT_USE_SHELL_GET_APP_HOST]()
     return (props: WithChildren<OwnProps>) => 
         <ShellRenderer shell={boundShell} component={component(props)} host={host} />
 }

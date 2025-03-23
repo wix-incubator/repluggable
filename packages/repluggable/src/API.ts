@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { SlotKey, AnySlotKey } from 'repluggable-core'
-import { SHELL_GET_APP_HOST } from 'repluggable-core/dist/src/__internal'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 
 export { AnySlotKey, SlotKey }
 
@@ -485,7 +485,7 @@ export interface PrivateShell extends Shell {
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions,
-    readonly [SHELL_GET_APP_HOST]: () => AppHost
+    readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
   
 }
 
