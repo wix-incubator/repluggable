@@ -31,7 +31,16 @@ import {
     ShellsChangedCallback,
     SlotKey,
     StatisticsMemoization,
-    Trace
+    Trace,
+    AnyFunction,
+    FunctionWithSameArgs,
+    ContributeAPIOptions,
+    APILayer,
+    CustomExtensionSlotHandler,
+    CustomExtensionSlot,
+    ObservableState,
+    PrivateAppHost,
+    ExtractDependencyAPIs
 } from './API'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { declaredAPIs, dependentAPIs } from './appHostUtils'
@@ -145,10 +154,10 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const readyAPIs = new Set<AnySlotKey>()
 
     const uniqueShellNames = new Set<string>()
-    const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
     const slotKeysByName = new Map<string, AnySlotKey>()
-    const addedShells = new Map<string, PrivateShell>()
-    const shellInstallers = new WeakMap<PrivateShell, string[]>()
+    const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
+    const addedShells = new Map<string, PrivateShell<any>>()
+    const shellInstallers = new WeakMap<PrivateShell<any>, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
@@ -432,7 +441,7 @@ miss: ${memoizedWithMissHit.miss}
         executeReadyEntryPoints(shells)
     }
 
-    function executeReadyEntryPoints(shells: PrivateShell[]): void {
+    function executeReadyEntryPoints(shells: PrivateShell<any>[]): void {
         isInstallingEntryPoints = true
         try {
             invokeEntryPointPhase(
@@ -721,9 +730,9 @@ miss: ${memoizedWithMissHit.miss}
 
     function invokeEntryPointPhase(
         phase: keyof EntryPoint, // TODO: Exclude 'name'
-        shell: PrivateShell[],
-        action: (shell: PrivateShell) => void,
-        predicate?: (shell: PrivateShell) => boolean
+        shell: PrivateShell<any>[],
+        action: (shell: PrivateShell<any>) => void,
+        predicate?: (shell: PrivateShell<any>) => boolean
     ): void {
         host.log.log('debug', `--- ${phase} phase ---`)
 
@@ -737,7 +746,7 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `--- End of ${phase} phase ---`)
     }
 
-    function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
+    function invokeShell(shell: PrivateShell<any>, action: (shell: PrivateShell<any>) => void, phase: string): void {
         host.log.log('debug', `${phase} : ${shell.entryPoint.name}`)
 
         try {
@@ -761,7 +770,7 @@ miss: ${memoizedWithMissHit.miss}
     function doesExtensionItemBelongToShells(extensionItem: ExtensionItem<any>, shellNames: string[]) {
         return (
             _.includes(shellNames, extensionItem.shell.name) ||
-            _.some(_.invoke((extensionItem.shell as PrivateShell).entryPoint, 'getDependencyAPIs'), APIKey =>
+            _.some(_.invoke((extensionItem.shell as PrivateShell<any>).entryPoint, 'getDependencyAPIs'), APIKey =>
                 _.includes(shellNames, _.get(getAPIContributor(APIKey), 'name'))
             )
         )
@@ -776,10 +785,10 @@ miss: ${memoizedWithMissHit.miss}
         host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
-    function findDependantShells(entryShell: PrivateShell): PrivateShell[] {
-        const cache = new Map<string, PrivateShell[]>()
+    function findDependantShells(entryShell: PrivateShell<any>): PrivateShell<any>[] {
+        const cache = new Map<string, PrivateShell<any>[]>()
 
-        const _findDependantShells = (declaringShell: PrivateShell): PrivateShell[] =>
+        const _findDependantShells = (declaringShell: PrivateShell<any>): PrivateShell<any>[] =>
             _([...addedShells.entries()])
                 .flatMap(([name, shell]) => {
                     const cachedValue = cache.get(name)
@@ -801,14 +810,14 @@ miss: ${memoizedWithMissHit.miss}
         return _findDependantShells(entryShell)
     }
 
-    function isShellBeingDependantOnInGroup(declaringShell: PrivateShell, shells: PrivateShell[]): boolean {
+    function isShellBeingDependantOnInGroup(declaringShell: PrivateShell<any>, shells: PrivateShell<any>[]): boolean {
         return !!shells.find(dependantShell => {
             const dependencyAPIs = dependantShell.entryPoint?.getDependencyAPIs?.() || []
             return dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
         })
     }
 
-    function executeDetachOnShellReadyForRemoval(shellsToBeDetached: PrivateShell[], originalRequestedRemovalNames: string[]) {
+    function executeDetachOnShellReadyForRemoval(shellsToBeDetached: PrivateShell<any>[], originalRequestedRemovalNames: string[]) {
         invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
 
         const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
@@ -842,7 +851,7 @@ miss: ${memoizedWithMissHit.miss}
         const shellsCandidatesToBeDetached = _(names)
             .map(name => addedShells.get(name))
             .compact()
-            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
+            .flatMap<PrivateShell<any>>(shell => [shell, ...findDependantShells(shell)])
             .uniqBy('name')
             .value()
 
@@ -885,7 +894,7 @@ miss: ${memoizedWithMissHit.miss}
         return Promise.resolve()
     }
 
-    function createShell(entryPoint: EntryPoint): PrivateShell {
+    function createShell(entryPoint: EntryPoint): PrivateShell<ExtractDependencyAPIs<typeof entryPoint>> {
         let storeEnabled = false
         let APIsEnabled = false
         let wasInitCompleted = false
@@ -897,7 +906,7 @@ miss: ${memoizedWithMissHit.miss}
             return getAPIContributor(key) === shell
         }
 
-        const shell: PrivateShell = {
+        const shell: PrivateShell<ExtractDependencyAPIs<typeof entryPoint>> = {
             name: entryPoint.name,
             entryPoint,
 
