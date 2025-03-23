@@ -1,3 +1,4 @@
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -1140,7 +1141,7 @@ miss: ${memoizedWithMissHit.miss}
 
             log: createShellLogger(host, entryPoint),
 
-            TEMP_getAppHost: () => host,
+            [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => host,
 
             lazyEvaluator
         }
