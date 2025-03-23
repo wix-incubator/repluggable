@@ -1,4 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src"]
+  "include": ["src"],
+  // adding dom only for types if run on server it will not be used
+  "compilerOptions": {"lib": [ "esnext", "dom"]},
 }
