@@ -37,7 +37,7 @@ export interface LazyEntryPointDescriptor {
  * @export
  * @interface EntryPoint
  */
-export interface EntryPoint {
+export interface EntryPoint<TDependencies extends SlotKey<any> = SlotKey<any>> {
     /**
      * Unique name that will represent this entry point in the host
      */
@@ -51,9 +51,9 @@ export interface EntryPoint {
     readonly layer?: string | string[]
     /**
      * Define which API keys (a.k.a. contracts) are mandatory for this entry point to be executed
-     * @return {SlotKey<any>[]} API keys to wait for implementation
+     * @return {TDependencies[]} API keys to wait for
      */
-    getDependencyAPIs?(): SlotKey<any>[]
+    getDependencyAPIs?(): TDependencies[]
     /**
      * Define which API keys (a.k.a. contracts) this entry point is going to implement and contribute
      * @return {SlotKey<any>[]} API keys that will be contributed
@@ -62,22 +62,22 @@ export interface EntryPoint {
     /**
      * Execute logic that is independent from other entry points
      * Most commonly - contribute APIs and state
-     * @param {Shell} shell
+     * @param {Shell<TDependencies>} shell Type-safe shell with properly typed dependencies
      */
-    attach?(shell: Shell): void
+    attach?(shell: Shell<TDependencies>): void
     /**
      * Execute logic that is dependent on other entry points
-     * @param {Shell} shell
+     * @param {Shell<TDependencies>} shell Type-safe shell with properly typed dependencies
      */
-    extend?(shell: Shell): void
+    extend?(shell: Shell<TDependencies>): void
     /**
      * Clean side effects
-     * @param {Shell} shell
+     * @param {Shell<TDependencies>} shell Type-safe shell with properly typed dependencies
      */
-    detach?(shell: Shell): void
+    detach?(shell: Shell<TDependencies>): void
 }
 
-export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
+export type AnyEntryPoint = EntryPoint<any> | LazyEntryPointDescriptor
 export type EntryPointOrPackage = AnyEntryPoint | AnyEntryPoint[]
 export interface EntryPointOrPackagesMap {
     [name: string]: EntryPointOrPackage
@@ -343,8 +343,10 @@ export interface Lazy<T> {
  * @export
  * @interface Shell
  * @extends {(Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>>)}
+ * @template TDependencies - Union type of SlotKey dependencies that this Shell has declared
  */
-export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
+export interface Shell<TDependencies extends SlotKey<any> = SlotKey<any>>
+    extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options' | 'getAPI'>> {
     /**
      * Unique name of the matching {EntryPoint}
      */
@@ -376,6 +378,17 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      */
     wasInitializationCompleted(): boolean
     runLateInitializer<T>(initializer: () => T): T
+
+    /**
+     * Get an implementation of API previously contributed to the {AppHost}
+     * This API must be declared as a dependency in getDependencyAPIs()
+     *
+     * @template TAPI The type represented by the API key
+     * @param {TDependencies & SlotKey<TAPI>} key API Key that must be included in dependencies
+     * @return {TAPI} The implementation of the API
+     * @throws {Error} If the API is not declared as a dependency or doesn't exist
+     */
+    getAPI<TAPI>(key: TDependencies & SlotKey<TAPI>): TAPI
     /**
      * Create an {ExtensionSlot}
      *
@@ -479,8 +492,16 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     lazyEvaluator<F extends AnyFunction, T extends ReturnType<F>>(func: F): Lazy<T>
 }
 
-export interface PrivateShell extends Shell {
-    readonly entryPoint: EntryPoint
+/**
+ * Extended shell interface for internal framework use
+ * Provides additional capabilities needed by the framework implementation
+ *
+ * @interface PrivateShell
+ * @extends {Shell<TDependencies>}
+ * @template TDependencies The specific API keys this Shell can access
+ */
+export interface PrivateShell<TDependencies extends SlotKey<any> = SlotKey<any>> extends Shell<TDependencies> {
+    readonly entryPoint: EntryPoint<TDependencies>
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
@@ -507,6 +528,15 @@ export interface EntryPointInterceptor {
 
 export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
 export type LogSpanFlag = 'begin' | 'end' //TODO:deprecated-kept-for-backward-compat
+
+/**
+ * Utility type to extract the dependency SlotKeys from an EntryPoint
+ * Used to enforce type-safety when using an EntryPoint's Shell
+ *
+ * @template T The EntryPoint type
+ * @returns The union type of all API keys that the EntryPoint depends on
+ */
+export type ExtractDependencyAPIs<T extends EntryPoint<any>> = T extends EntryPoint<infer R> ? R : never
 
 export interface HostLogger {
     log(severity: LogSeverity, id: string, error?: Error, keyValuePairs?: Object): void
