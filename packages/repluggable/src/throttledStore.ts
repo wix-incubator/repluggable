@@ -18,39 +18,39 @@ interface AnyShellAction extends AnyAction {
 
 
 function createTimeOutPublisher ( notify: () => void)  {
-    let id : null | NodeJS.Timeout =  null 
+    let id : undefined | NodeJS.Timeout =  undefined 
     return () => {
-        if (id === null) {
+        if (id === undefined) {
             id = setTimeout(() => {
-                id = null
+                id = undefined
                 notify()
             },0)
         }
         return () => {
-            if(id === null) {
+            if(id === undefined) {
                 return
             }
             clearTimeout(id)
-            id = null
+            id = undefined
         }
     }
 }
 
 function createAnimationFramePublisher ( notify: () => void)  {
-    let id : null | number =  null 
+    let id : undefined | number =  undefined 
     return () => {
-        if (id === null) {
+        if (id === undefined) {
             id = requestAnimationFrame(() => {
-                id = null
+                id = undefined
                 notify()
             })
         }
         return () => {
-            if(id === null) {
+            if(id === undefined) {
                 return
             }
             cancelAnimationFrame(id)
-            id = null
+            id = undefined
         }
     }
 }
