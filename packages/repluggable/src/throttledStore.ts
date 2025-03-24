@@ -16,47 +16,25 @@ interface AnyShellAction extends AnyAction {
     __shellName?: string
 }
 
+const curry = _.curry
 
-function createTimeOutPublisher ( notify: () => void)  {
-    let id : null | NodeJS.Timeout =  null 
-    return () => {
-        if (id === null) {
-            id = setTimeout(() => {
-                id = null
-                notify()
-            },0)
-        }
+const animationFrameRenderer = curry(
+    (requestAnimationFrame: Window['requestAnimationFrame'], cancelAnimationFrame: Window['cancelAnimationFrame'], render: () => void) => {
+        let requestId: number | null = null
         return () => {
-            if(id === null) {
-                return
+            if (!requestId) {
+                requestId = requestAnimationFrame(() => {
+                    requestId = null
+                    render()
+                })
             }
-            clearTimeout(id)
-            id = null
+            return () => {
+                cancelAnimationFrame(requestId || -1)
+                requestId = null
+            }
         }
     }
-}
-
-function createAnimationFramePublisher ( notify: () => void)  {
-    let id : null | number =  null 
-    return () => {
-        if (id === null) {
-            id = requestAnimationFrame(() => {
-                id = null
-                notify()
-            })
-        }
-        return () => {
-            if(id === null) {
-                return
-            }
-            cancelAnimationFrame(id)
-            id = null
-        }
-    }
-}
-
-
-
+)
 
 type Subscriber = () => void
 
@@ -252,15 +230,12 @@ export const createThrottledStore = (
         notifyAll()
     }
 
-
-   
-
-    const notifyAllOnPublish = typeof window === 'undefined' ? createTimeOutPublisher(scheduledNotifyAll) : createAnimationFramePublisher(scheduledNotifyAll)
+    const notifyAllOnAnimationFrame = animationFrameRenderer(requestAnimationFrame, cancelAnimationFrame, scheduledNotifyAll)
 
     let cancelRender = _.noop
 
     store.subscribe(() => {
-        cancelRender = notifyAllOnPublish()
+        cancelRender = notifyAllOnAnimationFrame()
     })
 
     const flush = (config = { excecutionType: 'default' }) => {
