@@ -1,5 +1,6 @@
 import * as React from 'react'
 import * as Redux from 'redux'
+import { AnySlotKey, SlotKey } from 'repluggable-core'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 
@@ -53,14 +54,14 @@ export interface EntryPointTags {
 }
 export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
+export type DeclarationsChangedCallback = () => void
+export type UnsubscribeFromDeclarationsChanged = () => void
 export type ShellBoundaryAspect = React.FunctionComponent<React.PropsWithChildren<unknown>>
 
 export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
 }
-
-
 
 /**
  * Application part that will receive a {Shell} when loaded into the {AppHost}
@@ -207,10 +208,6 @@ export interface ExtensionItem<T> {
     readonly uniqueId: string
 }
 
-// addEntryPoints(entryPoints: EntryPoint[])
-// addPackages(packages: EntryPointOrPackage[])
-//
-
 /**
  * An application content container that will accept {EntryPoint} and provide registry for contracts
  *
@@ -291,6 +288,16 @@ export interface AppHost {
      * @return {Promise<void>}
      */
     removeShells(names: string[]): Promise<void>
+    /**
+     * Subscribe to changes in host declarations. This includes:
+     * - API additions and removals
+     * - Extension slot additions and removals
+     *
+     * @param {DeclarationsChangedCallback} callback Function to be called when host declarations change
+     * @return {UnsubscribeFromDeclarationsChanged} Function to unsubscribe from host declarations changes
+     */
+
+    onDeclarationsChanged(callback: DeclarationsChangedCallback): UnsubscribeFromDeclarationsChanged
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     readonly log: HostLogger

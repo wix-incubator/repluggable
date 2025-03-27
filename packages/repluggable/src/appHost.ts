@@ -1,4 +1,5 @@
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
+import _ from 'lodash'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -10,6 +11,7 @@ import {
     ContributeAPIOptions,
     CustomExtensionSlot,
     CustomExtensionSlotHandler,
+    DeclarationsChangedCallback,
     EntryPoint,
     EntryPointOrPackage,
     EntryPointsInfo,
@@ -31,7 +33,8 @@ import {
     ShellsChangedCallback,
     SlotKey,
     StatisticsMemoization,
-    Trace
+    Trace,
+    UnsubscribeFromDeclarationsChanged
 } from './API'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
 import { declaredAPIs, dependentAPIs } from './appHostUtils'
@@ -51,7 +54,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import _ from 'lodash'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -129,6 +131,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     let isStoreSubscribersNotifyInProgress = false
     let isObserversNotifyInProgress = false
     let shouldFlushMemoizationSync = false
+    let isBatchingDeclarationsChangedCallbacks = false
     const entryPointsInstallationEndCallbacks: Map<string, () => void> = new Map()
 
     verifyLayersUniqueness(options.layers)
@@ -144,13 +147,36 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     const readyAPIs = new Set<AnySlotKey>()
 
+    const createExtentionSlotsMap = (): Map<AnySlotKey, AnyExtensionSlot> => {
+        const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
+
+        const handler = {
+            get(target: Map<AnySlotKey, AnyExtensionSlot>, prop: keyof Map<AnySlotKey, AnyExtensionSlot>) {
+                if (prop === 'set') {
+                    return function (key: AnySlotKey, value: AnyExtensionSlot) {
+                        return batchDeclarationsChangedCallbacks(() => target[prop](key, value))
+                    }
+                }
+                if (prop === 'delete') {
+                    return function (key: AnySlotKey) {
+                        return batchDeclarationsChangedCallbacks(() => target[prop](key))
+                    }
+                }
+                return target[prop]
+            }
+        }
+
+        return new Proxy(extensionSlots, handler)
+    }
+
     const uniqueShellNames = new Set<string>()
-    const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
+    const extensionSlots = createExtentionSlotsMap()
     const slotKeysByName = new Map<string, AnySlotKey>()
     const addedShells = new Map<string, PrivateShell>()
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
     const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
+    const declarationsChangedCallbacks = new Map<string, DeclarationsChangedCallback>()
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
 
     const memoizedFunctions: IterableWeakMap<AnyFunction, MemoizedFunctionData> = new IterableWeakMap()
@@ -174,6 +200,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         addShells,
         removeShells,
         onShellsChanged,
+        onDeclarationsChanged,
         removeShellsChangedCallback,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
         log: options.logger ? options.logger : ConsoleHostLogger,
@@ -433,44 +460,64 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function executeReadyEntryPoints(shells: PrivateShell[]): void {
-        isInstallingEntryPoints = true
-        try {
-            invokeEntryPointPhase(
-                'getDependencyAPIs',
-                shells,
-                f => f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs()),
-                f => !!f.entryPoint.getDependencyAPIs
-            )
+        batchDeclarationsChangedCallbacks(() => {
+            isInstallingEntryPoints = true
+            try {
+                invokeEntryPointPhase(
+                    'getDependencyAPIs',
+                    shells,
+                    f => f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs()),
+                    f => !!f.entryPoint.getDependencyAPIs
+                )
 
-            invokeEntryPointPhase(
-                'attach',
-                shells,
-                f => f.entryPoint.attach && f.entryPoint.attach(f),
-                f => !!f.entryPoint.attach
-            )
+                invokeEntryPointPhase(
+                    'attach',
+                    shells,
+                    f => f.entryPoint.attach && f.entryPoint.attach(f),
+                    f => !!f.entryPoint.attach
+                )
 
-            buildStore()
-            shells.forEach(f => f.setLifecycleState(true, true, false))
+                buildStore()
+                shells.forEach(f => f.setLifecycleState(true, true, false))
 
-            invokeEntryPointPhase(
-                'extend',
-                shells,
-                f => f.entryPoint.extend && f.entryPoint.extend(f),
-                f => !!f.entryPoint.extend
-            )
+                invokeEntryPointPhase(
+                    'extend',
+                    shells,
+                    f => f.entryPoint.extend && f.entryPoint.extend(f),
+                    f => !!f.entryPoint.extend
+                )
 
-            shells.forEach(f => {
-                addedShells.set(f.entryPoint.name, f)
-                f.setLifecycleState(true, true, true)
-            })
-        } finally {
-            isInstallingEntryPoints = false
-        }
-        executeInstallShell(unReadyEntryPointsStore.get())
+                shells.forEach(f => {
+                    addedShells.set(f.entryPoint.name, f)
+                    f.setLifecycleState(true, true, true)
+                })
+            } finally {
+                isInstallingEntryPoints = false
+            }
+            executeInstallShell(unReadyEntryPointsStore.get())
+        })
     }
 
     function executeShellsChangedCallbacks() {
         shellsChangedCallbacks.forEach(f => f(_.keys(InstalledShellsSelectors.getInstalledShellsSet(getStore().getState()))))
+    }
+
+    function executeDeclarationsChangedCallbacks() {
+        declarationsChangedCallbacks.forEach(f => f())
+    }
+
+    function batchDeclarationsChangedCallbacks<T>(action: () => T): T {
+        if (isBatchingDeclarationsChangedCallbacks) {
+            return action()
+        }
+        try {
+            isBatchingDeclarationsChangedCallbacks = true
+            const result = action()
+            executeDeclarationsChangedCallbacks()
+            return result
+        } finally {
+            isBatchingDeclarationsChangedCallbacks = false
+        }
     }
 
     function setInstalledShellNames(names: string[]) {
@@ -483,6 +530,14 @@ miss: ${memoizedWithMissHit.miss}
         const updates = toShellToggleSet(names, false)
         getStore().dispatch(InstalledShellsActions.updateInstalledShells(updates))
         executeShellsChangedCallbacks()
+    }
+
+    function onDeclarationsChanged(callback: DeclarationsChangedCallback): UnsubscribeFromDeclarationsChanged {
+        const callbackId = _.uniqueId('declarations-changed-callback-')
+        declarationsChangedCallbacks.set(callbackId, callback)
+        return () => {
+            declarationsChangedCallbacks.delete(callbackId)
+        }
     }
 
     function onShellsChanged(callback: ShellsChangedCallback) {
@@ -807,33 +862,34 @@ miss: ${memoizedWithMissHit.miss}
             return dependencyAPIs.find(key => getAPIContributor(key)?.name === declaringShell.name)
         })
     }
-
     function executeDetachOnShellReadyForRemoval(shellsToBeDetached: PrivateShell[], originalRequestedRemovalNames: string[]) {
-        invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
+        batchDeclarationsChangedCallbacks(() => {
+            invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
 
-        const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
+            const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
 
-        const slotKeysToDiscard = findContributedAPIs(detachedShellsNames).concat(findDeclaredSlotKeys(detachedShellsNames))
+            const slotKeysToDiscard = findContributedAPIs(detachedShellsNames).concat(findDeclaredSlotKeys(detachedShellsNames))
 
-        extensionSlots.forEach(extensionSlot =>
-            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem =>
-                doesExtensionItemBelongToShells(extensionItem, detachedShellsNames)
+            extensionSlots.forEach(extensionSlot =>
+                (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem =>
+                    doesExtensionItemBelongToShells(extensionItem, detachedShellsNames)
+                )
             )
-        )
 
-        detachedShellsNames.forEach(name => {
-            const isResultOfMissingDependency = !originalRequestedRemovalNames.includes(name)
-            if (isResultOfMissingDependency) {
-                const entryPoint = addedShells.get(name)?.entryPoint
-                entryPoint && unReadyEntryPointsStore.get().push(entryPoint)
-            }
-            addedShells.delete(name)
-            uniqueShellNames.delete(name)
+            detachedShellsNames.forEach(name => {
+                const isResultOfMissingDependency = !originalRequestedRemovalNames.includes(name)
+                if (isResultOfMissingDependency) {
+                    const entryPoint = addedShells.get(name)?.entryPoint
+                    entryPoint && unReadyEntryPointsStore.get().push(entryPoint)
+                }
+                addedShells.delete(name)
+                uniqueShellNames.delete(name)
+            })
+
+            slotKeysToDiscard.forEach(discardSlotKey)
+
+            host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
         })
-
-        slotKeysToDiscard.forEach(discardSlotKey)
-
-        host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
     }
 
     function executeUninstallShells(names: string[]): void {
@@ -928,6 +984,7 @@ miss: ${memoizedWithMissHit.miss}
             hasShell: host.hasShell,
             isLazyEntryPoint: host.isLazyEntryPoint,
             onShellsChanged: host.onShellsChanged,
+            onDeclarationsChanged: host.onDeclarationsChanged,
             removeShellsChangedCallback: host.removeShellsChangedCallback,
 
             declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
