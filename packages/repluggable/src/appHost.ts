@@ -147,30 +147,38 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     const readyAPIs = new Set<AnySlotKey>()
 
-    const createExtentionSlotsMap = (): Map<AnySlotKey, AnyExtensionSlot> => {
-        const extensionSlots = new Map<AnySlotKey, AnyExtensionSlot>()
+    const createExtensionSlotsMap = (): Map<AnySlotKey, AnyExtensionSlot> => {
+        const originalMap = new Map<AnySlotKey, AnyExtensionSlot>();
 
-        const handler = {
-            get(target: Map<AnySlotKey, AnyExtensionSlot>, prop: keyof Map<AnySlotKey, AnyExtensionSlot>) {
-                if (prop === 'set') {
-                    return function (key: AnySlotKey, value: AnyExtensionSlot) {
-                        return batchDeclarationsChangedCallbacks(() => target[prop](key, value))
-                    }
+        const proxyHandler = {
+            get(target: Map<AnySlotKey, AnyExtensionSlot>, propertyName: string | symbol) {
+                if (propertyName === 'set') {
+                    return function(key: AnySlotKey, value: AnyExtensionSlot) {
+                        return batchDeclarationsChangedCallbacks(() => target.set(key, value));
+                    };
                 }
-                if (prop === 'delete') {
-                    return function (key: AnySlotKey) {
-                        return batchDeclarationsChangedCallbacks(() => target[prop](key))
-                    }
+                
+                if (propertyName === 'delete') {
+                    return function(key: AnySlotKey) {
+                        return batchDeclarationsChangedCallbacks(() => target.delete(key));
+                    };
                 }
-                return target[prop]
+                
+                const originalProperty = target[propertyName as keyof Map<AnySlotKey, AnyExtensionSlot>];
+                
+                if (typeof originalProperty === 'function') {
+                    return originalProperty.bind(target);
+                }
+                
+                return originalProperty;
             }
-        }
+        };
 
-        return new Proxy(extensionSlots, handler)
+        return new Proxy(originalMap, proxyHandler);
     }
 
     const uniqueShellNames = new Set<string>()
-    const extensionSlots = createExtentionSlotsMap()
+    const extensionSlots = createExtensionSlotsMap()
     const slotKeysByName = new Map<string, AnySlotKey>()
     const addedShells = new Map<string, PrivateShell>()
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
