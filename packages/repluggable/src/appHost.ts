@@ -148,33 +148,33 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const readyAPIs = new Set<AnySlotKey>()
 
     const createExtensionSlotsMap = (): Map<AnySlotKey, AnyExtensionSlot> => {
-        const originalMap = new Map<AnySlotKey, AnyExtensionSlot>();
+        const originalMap = new Map<AnySlotKey, AnyExtensionSlot>()
 
         const proxyHandler = {
             get(target: Map<AnySlotKey, AnyExtensionSlot>, propertyName: string | symbol) {
                 if (propertyName === 'set') {
-                    return function(key: AnySlotKey, value: AnyExtensionSlot) {
-                        return batchDeclarationsChangedCallbacks(() => target.set(key, value));
-                    };
+                    return function (key: AnySlotKey, value: AnyExtensionSlot) {
+                        return batchDeclarationsChangedCallbacks(() => target.set(key, value))
+                    }
                 }
-                
-                if (propertyName === 'delete') {
-                    return function(key: AnySlotKey) {
-                        return batchDeclarationsChangedCallbacks(() => target.delete(key));
-                    };
-                }
-                
-                const originalProperty = target[propertyName as keyof Map<AnySlotKey, AnyExtensionSlot>];
-                
-                if (typeof originalProperty === 'function') {
-                    return originalProperty.bind(target);
-                }
-                
-                return originalProperty;
-            }
-        };
 
-        return new Proxy(originalMap, proxyHandler);
+                if (propertyName === 'delete') {
+                    return function (key: AnySlotKey) {
+                        return batchDeclarationsChangedCallbacks(() => target.delete(key))
+                    }
+                }
+
+                const originalProperty = target[propertyName as keyof Map<AnySlotKey, AnyExtensionSlot>]
+
+                if (typeof originalProperty === 'function') {
+                    return originalProperty.bind(target)
+                }
+
+                return originalProperty
+            }
+        }
+
+        return new Proxy(originalMap, proxyHandler)
     }
 
     const uniqueShellNames = new Set<string>()
@@ -871,54 +871,54 @@ miss: ${memoizedWithMissHit.miss}
         })
     }
     function executeDetachOnShellReadyForRemoval(shellsToBeDetached: PrivateShell[], originalRequestedRemovalNames: string[]) {
-        batchDeclarationsChangedCallbacks(() => {
-            invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
+        invokeEntryPointPhase('detach', shellsToBeDetached, f => _.invoke(f.entryPoint, 'detach', f))
 
-            const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
+        const detachedShellsNames = shellsToBeDetached.map(({ name }) => name)
 
-            const slotKeysToDiscard = findContributedAPIs(detachedShellsNames).concat(findDeclaredSlotKeys(detachedShellsNames))
+        const slotKeysToDiscard = findContributedAPIs(detachedShellsNames).concat(findDeclaredSlotKeys(detachedShellsNames))
 
-            extensionSlots.forEach(extensionSlot =>
-                (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem =>
-                    doesExtensionItemBelongToShells(extensionItem, detachedShellsNames)
-                )
+        extensionSlots.forEach(extensionSlot =>
+            (extensionSlot as ExtensionSlot<any>).discardBy(extensionItem =>
+                doesExtensionItemBelongToShells(extensionItem, detachedShellsNames)
             )
+        )
 
-            detachedShellsNames.forEach(name => {
-                const isResultOfMissingDependency = !originalRequestedRemovalNames.includes(name)
-                if (isResultOfMissingDependency) {
-                    const entryPoint = addedShells.get(name)?.entryPoint
-                    entryPoint && unReadyEntryPointsStore.get().push(entryPoint)
-                }
-                addedShells.delete(name)
-                uniqueShellNames.delete(name)
-            })
-
-            slotKeysToDiscard.forEach(discardSlotKey)
-
-            host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
+        detachedShellsNames.forEach(name => {
+            const isResultOfMissingDependency = !originalRequestedRemovalNames.includes(name)
+            if (isResultOfMissingDependency) {
+                const entryPoint = addedShells.get(name)?.entryPoint
+                entryPoint && unReadyEntryPointsStore.get().push(entryPoint)
+            }
+            addedShells.delete(name)
+            uniqueShellNames.delete(name)
         })
+
+        slotKeysToDiscard.forEach(discardSlotKey)
+
+        host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
     }
 
     function executeUninstallShells(names: string[]): void {
-        host.log.log('debug', `-- Uninstalling ${names} --`)
+        batchDeclarationsChangedCallbacks(() => {
+            host.log.log('debug', `-- Uninstalling ${names} --`)
 
-        const shellsCandidatesToBeDetached = _(names)
-            .map(name => addedShells.get(name))
-            .compact()
-            .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
-            .uniqBy('name')
-            .value()
+            const shellsCandidatesToBeDetached = _(names)
+                .map(name => addedShells.get(name))
+                .compact()
+                .flatMap<PrivateShell>(shell => [shell, ...findDependantShells(shell)])
+                .uniqBy('name')
+                .value()
 
-        let queue = shellsCandidatesToBeDetached
-        while (!_.isEmpty(queue)) {
-            const shellsToBeDetached = queue.filter(ep => !isShellBeingDependantOnInGroup(ep, queue))
-            if (_.isEmpty(shellsToBeDetached)) {
-                throw new Error(`Some shells could not detach: ${queue.map(({ name }) => name).join()}`)
+            let queue = shellsCandidatesToBeDetached
+            while (!_.isEmpty(queue)) {
+                const shellsToBeDetached = queue.filter(ep => !isShellBeingDependantOnInGroup(ep, queue))
+                if (_.isEmpty(shellsToBeDetached)) {
+                    throw new Error(`Some shells could not detach: ${queue.map(({ name }) => name).join()}`)
+                }
+                executeDetachOnShellReadyForRemoval(shellsToBeDetached, names)
+                queue = _.differenceBy(queue, shellsToBeDetached, 'name')
             }
-            executeDetachOnShellReadyForRemoval(shellsToBeDetached, names)
-            queue = _.differenceBy(queue, shellsToBeDetached, 'name')
-        }
+        })
     }
 
     function findContributedAPIs(shellNames: string[]) {
