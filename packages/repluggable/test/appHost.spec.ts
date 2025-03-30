@@ -467,42 +467,50 @@ describe('App Host', () => {
         })
 
         describe('private API slot key', () => {
-            it('should equal itself', () => {
-                const host = createAppHost([mockPackage], testHostOptions)
+            const testHostOptionsForPrivateAPI: AppHostOptions[] = [
+                testHostOptions,
+                {...testHostOptions, disablePrivateCheck: true as any}, // we do type case here to emulate possible input from consumers
+                {...testHostOptions, disablePrivateCheck: 'true' as any}, // we do type case here to emulate possible input from consumers
+            ]
 
-                const API = host.getAPI(MockAPI)
-
-                expect(API).toBeTruthy()
-            })
-
-            it('should not equal another key with same name', () => {
-                const host = createAppHost([mockPackage], testHostOptions)
-                const fakeKey: SlotKey<MockAPI> = { name: MockAPI.name }
-
-                expect(() => {
-                    host.getAPI(fakeKey)
-                }).toThrowError(new RegExp(MockAPI.name))
-            })
-
-            it('should not equal another key with same name that claims it is public', () => {
-                const host = createAppHost([mockPackage], testHostOptions)
-                const fakeKey1: SlotKey<MockAPI> = {
-                    name: MockAPI.name,
-                    public: true
-                }
-                const fakeKey2: SlotKey<MockAPI> = {
-                    name: MockAPI.name,
-                    public: false
-                }
-                const fakeKey3: any = {
-                    name: MockAPI.name,
-                    public: 'zzz'
-                }
-
-                expect(() => host.getAPI(fakeKey1)).toThrowError(new RegExp(MockAPI.name))
-                expect(() => host.getAPI(fakeKey2)).toThrowError(new RegExp(MockAPI.name))
-                expect(() => host.getAPI(fakeKey3)).toThrowError(new RegExp(MockAPI.name))
-            })
+            for (const _testHostOptions of testHostOptionsForPrivateAPI ) {
+                it('should equal itself', () => {
+                    const host = createAppHost([mockPackage], _testHostOptions)
+    
+                    const API = host.getAPI(MockAPI)
+    
+                    expect(API).toBeTruthy()
+                })
+    
+                it('should not equal another key with same name', () => {
+                    const host = createAppHost([mockPackage], _testHostOptions)
+                    const fakeKey: SlotKey<MockAPI> = { name: MockAPI.name }
+    
+                    expect(() => {
+                        host.getAPI(fakeKey)
+                    }).toThrowError(new RegExp(MockAPI.name))
+                })
+    
+                it('should not equal another key with same name that claims it is public', () => {
+                    const host = createAppHost([mockPackage], _testHostOptions)
+                    const fakeKey1: SlotKey<MockAPI> = {
+                        name: MockAPI.name,
+                        public: true
+                    }
+                    const fakeKey2: SlotKey<MockAPI> = {
+                        name: MockAPI.name,
+                        public: false
+                    }
+                    const fakeKey3: any = {
+                        name: MockAPI.name,
+                        public: 'zzz'
+                    }
+    
+                    expect(() => host.getAPI(fakeKey1)).toThrowError(new RegExp(MockAPI.name))
+                    expect(() => host.getAPI(fakeKey2)).toThrowError(new RegExp(MockAPI.name))
+                    expect(() => host.getAPI(fakeKey3)).toThrowError(new RegExp(MockAPI.name))
+                })
+            }
         })
 
         describe('public API slot key', () => {
