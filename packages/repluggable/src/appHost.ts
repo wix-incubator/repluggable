@@ -137,6 +137,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     verifyLayersUniqueness(options.layers)
 
+    const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
     const disablePrivateCheck = options.disablePrivateCheck === INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT;
 
     const layers: InternalAPILayer[][] = _.map(options.layers ? castMultiArray(options.layers) : [], (singleDimension, i) =>
