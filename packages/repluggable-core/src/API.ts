@@ -43,6 +43,8 @@ export interface EntryPointTags {
 }
 export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
+export type DeclarationsChangedCallback = () => void
+export type UnsubscribeFromDeclarationsChanged = () => void
 export type ShellBoundaryAspect = React.FunctionComponent<React.PropsWithChildren<unknown>>
 
 export interface LazyEntryPointDescriptor {
@@ -259,6 +261,16 @@ export interface AppHost {
      * @return {Promise<void>}
      */
     removeShells(names: string[]): Promise<void>
+        /**
+     * Subscribe to changes in host declarations. This includes:
+     * - API additions and removals
+     * - Extension slot additions and removals
+     *
+     * @param {DeclarationsChangedCallback} callback Function to be called when host declarations change
+     * @return {UnsubscribeFromDeclarationsChanged} Function to unsubscribe from host declarations changes
+     */
+
+    onDeclarationsChanged(callback: DeclarationsChangedCallback): UnsubscribeFromDeclarationsChanged
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
     readonly log: HostLogger

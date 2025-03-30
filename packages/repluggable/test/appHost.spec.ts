@@ -16,14 +16,16 @@ import {
 } from '../src/API'
 import {
     addMockShell,
+    asyncLoadMockPackage,
+    dependsOnMockPackageEntryPoint,
     emptyLoggerOptions,
     MockAPI,
     mockPackage,
     mockPackageWithPublicAPI,
+    mockPackageWithSlot,
     MockPublicAPI,
     mockShellInitialState,
     mockShellStateKey,
-    mockPackageWithSlot,
     MockSlot
 } from '../testKit'
 
@@ -1723,6 +1725,41 @@ describe('App Host', () => {
 
             await host.addShells(entryPoints)
             expect(spy).toBeCalledTimes(1)
+        })
+    })
+
+    describe('Host.onDeclarationsChanged', () => {
+        it('should be called once for an entry point attach phase', () => {
+            const host = createAppHost([], testHostOptions)
+            const spy = jest.fn()
+            host.onDeclarationsChanged(spy)
+            host.addShells([mockPackage, dependsOnMockPackageEntryPoint, mockPackageWithSlot])
+            expect(spy).toBeCalledTimes(1)
+        })
+        it('should be called once for an entry point detach phase', () => {
+            const host = createAppHost([], testHostOptions)
+            const spy = jest.fn()
+            host.onDeclarationsChanged(spy)
+            host.addShells([mockPackage, dependsOnMockPackageEntryPoint, mockPackageWithSlot])
+            expect(spy).toBeCalledTimes(1)
+            host.removeShells([mockPackage.name])
+            expect(spy).toBeCalledTimes(2)
+        })
+        it('should be called once for an async api contribution in the extend phase', () => {
+            const host = createAppHost([], testHostOptions)
+            const spy = jest.fn()
+            host.onDeclarationsChanged(spy)
+            host.addShells([asyncLoadMockPackage])
+            expect(spy).toBeCalledTimes(1)
+        })
+        it('should be called for a slot declaration outside of an entry point', () => {
+            const host = createAppHost([], testHostOptions)
+            const spy = jest.fn()
+            host.onDeclarationsChanged(spy)
+            const shell = addMockShell(host)
+            expect(spy).toBeCalledTimes(1)
+            shell.declareSlot(MockSlot)
+            expect(spy).toBeCalledTimes(2)
         })
     })
 })
