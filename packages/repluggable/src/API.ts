@@ -1,6 +1,5 @@
 import * as React from 'react'
 import * as Redux from 'redux'
-import { AnySlotKey, SlotKey } from 'repluggable-core'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 
