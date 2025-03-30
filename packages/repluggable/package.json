@@ -1,6 +1,6 @@
 {
   "name": "repluggable",
-  "version": "1.302.64",
+  "version": "1.302.65",
   "license": "MIT",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "main": "dist/src/index.js",
@@ -36,7 +36,7 @@
     "react-test-renderer": "^18.0.0",
     "redux": "^4.0.5",
     "redux-devtools-extension": "^2.13.8",
-    "repluggable-core": "1.302.64",
+    "repluggable-core": "1.302.65",
     "tslib": "^2.0.0"
   },
   "devDependencies": {
