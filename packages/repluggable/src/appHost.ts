@@ -1,5 +1,6 @@
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
 import _ from 'lodash'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
+import { INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT } from './__internal'
 import { AnyAction, Store } from 'redux'
 import {
     AnyEntryPoint,
@@ -136,7 +137,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
 
     verifyLayersUniqueness(options.layers)
 
-    const unReadyEntryPointsStore = createUnreadyEntryPointsStore()
+    const disablePrivateCheck = options.disablePrivateCheck === INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT;
 
     const layers: InternalAPILayer[][] = _.map(options.layers ? castMultiArray(options.layers) : [], (singleDimension, i) =>
         _.map(singleDimension, layer => ({ ...layer, dimension: i }))
@@ -662,9 +663,9 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
-        if (key.public === true) {
+        if (key.public === true || disablePrivateCheck ) {
             const ownKey = slotKeysByName.get(slotKeyToName(key))
-            if (ownKey && ownKey.public) {
+            if (ownKey && ownKey.public || disablePrivateCheck) {
                 return ownKey as SlotKey<T>
             }
         }

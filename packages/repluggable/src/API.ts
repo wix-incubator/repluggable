@@ -2,6 +2,7 @@ import * as React from 'react'
 import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
+import { INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT } from './__internal'
 
 
 export interface AnySlotKey {
@@ -332,6 +333,7 @@ export interface AppHostOptions {
     readonly monitoring: MonitoringOptions
     readonly layers?: APILayer[] | APILayer[][]
     readonly disableLayersValidation?: boolean
+    readonly disablePrivateCheck?: typeof INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT;
     readonly disableCheckCircularDependencies?: boolean
     readonly enableStickyErrorBoundaries?: boolean
     readonly enableReduxDevtoolsExtension?: boolean

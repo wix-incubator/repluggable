@@ -128,6 +128,27 @@ describe('App Host TestKit', () => {
         expect(host.getAPI(key).f()).toBe(1)
     })
 
+    it('should return private APIs by value', () => {
+        const PrivateAPI = {
+            name: 'private API',
+            public: false,
+        };
+
+        const host = createAppHostWithPacts([{
+            name: 'MOCK',
+            declareAPIs() {
+                return [PrivateAPI]
+            },
+            attach(shell) {
+                shell.contributeAPI(PrivateAPI, () => ({ getSomething: () => 'something' }))
+            }
+        }], [])
+
+        const privateAPI = host.getAPI({...PrivateAPI});
+
+        expect(privateAPI).toBeDefined();
+    })
+
     describe('createAppHostAndWaitForLoading', () => {
         beforeAll(() => {
             jest.useFakeTimers()

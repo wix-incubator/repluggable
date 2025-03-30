@@ -8,6 +8,7 @@ import { ShellRenderer } from '../src/renderSlotComponents'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
+import { INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT } from '../src/__internal'
 
 export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
@@ -79,7 +80,7 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
         }
     }
 
-    return createAppHost([...packages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true })
+    return createAppHost([...packages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true, disablePrivateCheck: INTERNAL_DISABLE_PRIVATE_CHECK_IN_TESTKIT })
 }
 
 export async function createAppHostAndWaitForLoading(packages: EntryPointOrPackage[], pacts: PactAPIBase[]): Promise<AppHost> {
