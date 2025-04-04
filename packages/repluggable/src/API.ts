@@ -1,8 +1,7 @@
 import * as React from 'react'
 import * as Redux from 'redux'
-import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
-
+import { ThrottledStore } from './throttledStore'
 
 export interface AnySlotKey {
     readonly name: string
@@ -17,13 +16,9 @@ export interface AnySlotKey {
  * @export
  * @interface SlotKey
  * @extends {AnySlotKey}
- * @template T
+ * @template T - holds the type of the API
  */
 export interface SlotKey<T> extends AnySlotKey {
-    /**
-     * Holds no value, only triggers type-checking of T
-     */
-    readonly empty?: T
     /**
      * Application layer/layers that will restrict usage of APIs contributed by this entry point.
      * Layers hierarchy is defined in the host options
@@ -520,9 +515,8 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
-    getHostOptions(): AppHostOptions,
-    readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
-  
+    getHostOptions(): AppHostOptions
+    [INTERNAL_DONT_USE_SHELL_GET_APP_HOST](): AppHost
 }
 
 export interface EntryPointsInfo {
