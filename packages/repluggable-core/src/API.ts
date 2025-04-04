@@ -13,7 +13,7 @@ export interface AnySlotKey {
  * @export
  * @interface SlotKey
  * @extends {AnySlotKey}
- * @template T - holds the type of the API
+ * @template _T - holds the type of the API
  */
 export interface SlotKey<_T> extends AnySlotKey {
     /**
