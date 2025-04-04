@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as Redux from 'redux'
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 import { ThrottledStore } from './throttledStore'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 
 export interface AnySlotKey {
     readonly name: string
@@ -515,8 +515,8 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
-    getHostOptions(): AppHostOptions
-    [INTERNAL_DONT_USE_SHELL_GET_APP_HOST](): AppHost
+    getHostOptions(): AppHostOptions,
+    readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
 }
 
 export interface EntryPointsInfo {
