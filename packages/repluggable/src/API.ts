@@ -517,7 +517,7 @@ export interface PrivateShell extends Shell {
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions,
     readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
-
+  
 }
 
 export interface EntryPointsInfo {
