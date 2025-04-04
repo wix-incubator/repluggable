@@ -3,6 +3,7 @@ import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core/'
 
+
 export interface AnySlotKey {
     readonly name: string
     readonly public?: boolean // TODO: Move to new interface - APIKey
