@@ -13,13 +13,9 @@ export interface AnySlotKey {
  * @export
  * @interface SlotKey
  * @extends {AnySlotKey}
- * @template T
+ * @template _T - holds the type of the API
  */
-export interface SlotKey<T> extends AnySlotKey {
-    /**
-     * Holds no value, only triggers type-checking of T
-     */
-    readonly empty?: T
+export interface SlotKey<_T> extends AnySlotKey {
     /**
      * Application layer/layers that will restrict usage of APIs contributed by this entry point.
      * Layers hierarchy is defined in the host options
