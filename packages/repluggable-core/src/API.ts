@@ -1,4 +1,7 @@
 import * as Redux from 'redux'
+import { ThrottledStore } from './throttledStore'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
+
 
 export interface AnySlotKey {
     readonly name: string
@@ -32,6 +35,12 @@ export interface SlotKey<T> extends AnySlotKey {
     readonly version?: number // TODO: Move to new interface - APIKey
 }
 
+export { AppHostAPI } from './appHostServices'
+
+export type ScopedStore<S> = Pick<
+    ThrottledStore<S>,
+    'dispatch' | 'getState' | 'subscribe' | 'flush' | 'hasPendingSubscribers' | 'deferSubscriberNotifications'
+>
 export type ReactComponentContributor<TProps = {}> = (props?: TProps) => React.ReactNode
 export type ReducersMapObjectContributor<TState = {}, TAction extends Redux.AnyAction = Redux.AnyAction> = () => Redux.ReducersMapObject<
     TState,
@@ -51,8 +60,6 @@ export interface LazyEntryPointDescriptor {
     readonly name: string
     readonly factory: LazyEntryPointFactory
 }
-
-
 
 /**
  * Application part that will receive a {Shell} when loaded into the {AppHost}
@@ -199,10 +206,6 @@ export interface ExtensionItem<T> {
     readonly uniqueId: string
 }
 
-// addEntryPoints(entryPoints: EntryPoint[])
-// addPackages(packages: EntryPointOrPackage[])
-//
-
 /**
  * An application content container that will accept {EntryPoint} and provide registry for contracts
  *
@@ -210,6 +213,12 @@ export interface ExtensionItem<T> {
  * @interface AppHost
  */
 export interface AppHost {
+    /**
+     * Get the root store of the application
+     *
+     * @return {ThrottledStore}
+     */
+    getStore(): ThrottledStore
     /**
      * Get an implementation of API previously contributed to the {AppHost}
      *
@@ -219,6 +228,14 @@ export interface AppHost {
      */
     getAPI<TAPI>(key: SlotKey<TAPI>): TAPI
     /**
+     * Check if an API implementation has been contributed to the {AppHost}
+     *
+     * @template TAPI
+     * @param {SlotKey<TAPI>} key API Key
+     * @return {*}  {boolean}
+     */
+    hasAPI<TAPI>(key: SlotKey<TAPI>): boolean
+    /**
      * Get an extension slot defined on the host
      *
      * @template TItem
@@ -226,6 +243,14 @@ export interface AppHost {
      * @return {ExtensionSlot<TItem>}
      */
     getSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem>
+    /**
+     * Check if an extension slot has been contributed to the {AppHost}
+     *
+     * @template TItem
+     * @param {SlotKey<TItem>} key
+     * @return {boolean}
+     */
+    hasSlot<TItem>(key: SlotKey<TItem>): boolean
     /**
      * Get all the extension slots defined on the host
      *
@@ -261,7 +286,7 @@ export interface AppHost {
      * @return {Promise<void>}
      */
     removeShells(names: string[]): Promise<void>
-        /**
+    /**
      * Subscribe to changes in host declarations. This includes:
      * - API additions and removals
      * - Extension slot additions and removals
@@ -355,6 +380,18 @@ export interface Lazy<T> {
  * @extends {(Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>>)}
  */
 export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' | 'log' | 'options'>> {
+    /**
+     * Unique name of the matching {EntryPoint}
+     */
+    readonly name: string
+    readonly log: ShellLogger
+    /**
+     * Get store that is scoped for this {Shell}
+     *
+     * @template TState
+     * @return {ScopedStore<TState>} Scoped store for this {Shell}
+     */
+    getStore<TState>(): ScopedStore<TState>
     /**
      * Are APIs ready to be requested
      *
@@ -482,8 +519,9 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
-    getHostOptions(): AppHostOptions
-    wrapWithShellRenderer(component: JSX.Element): JSX.Element
+    getHostOptions(): AppHostOptions,
+    readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
+  
 }
 
 export interface EntryPointsInfo {

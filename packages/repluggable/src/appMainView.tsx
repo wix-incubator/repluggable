@@ -2,12 +2,10 @@ import _ from 'lodash'
 import React, { FunctionComponent } from 'react'
 import { connect, Provider } from 'react-redux'
 import { AppHost } from './API'
-import { mainViewSlotKey } from './appHost'
-import { AppHostServicesProvider } from './appHostServices'
-import { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { SlotRenderer } from './renderSlotComponents'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
+import { mainViewSlotKey, AppHostServicesProvider, InstalledShellsSelectors, ShellToggleSet } from 'repluggable-core'
 
 export interface AppMainViewProps {
     host: AppHost
