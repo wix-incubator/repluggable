@@ -5,7 +5,7 @@ import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
 // this is hack for someone who is using the testKit 
-export * from '../src/repluggableAppDebug/debug'
+export type * from '../src/repluggableAppDebug/debug'
 
 export {createShellLogger}
 export { emptyLoggerOptions }

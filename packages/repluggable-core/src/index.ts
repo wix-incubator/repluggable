@@ -43,4 +43,4 @@ export { monitorAPI } from './monitorAPI'
 export { hot } from './hot'
 
 
-export * from './__internal'
+export {INTERNAL_DONT_USE_SHELL_GET_APP_HOST} from './__internal'
