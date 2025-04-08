@@ -25,41 +25,26 @@ export {
     ScopedStore
 } from './API'
 
-export { AppHostAPI,
-     ConsoleHostLogger,
-     createAppHost,
-      makeLazyEntryPoint,
-       mainViewSlotKey,
-        stateSlotKey,
-        invokeSlotCallbacks,
-        interceptAnyObject,
-        monitorAPI,
-        hot,
-     } from 'repluggable-core'
+export { 
+    AppHostAPI,
+    ConsoleHostLogger,
+    createAppHost,
+    makeLazyEntryPoint,
+    mainViewSlotKey,
+    stateSlotKey,
+    invokeSlotCallbacks,
+    interceptAnyObject,
+    monitorAPI,
+    hot,
+} from 'repluggable-core'
 
 export { AppMainView } from './appMainView'
 
-
-
-
 export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
-
 
 export * from './connectWithShell'
 export { ErrorBoundary } from './errorBoundary'
 export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
 
-// export 
-// { 
-//     // AppHostAPI,
-// //     ConsoleHostLogger,
-// //     createAppHost,
-// //      makeLazyEntryPoint,
-// //       mainViewSlotKey,
-// //        stateSlotKey,
-// //        invokeSlotCallbacks,
-// //        interceptAnyObject,
-// //        monitorAPI,
-//        hot,
-//     } from 'repluggable-core'
+
 
