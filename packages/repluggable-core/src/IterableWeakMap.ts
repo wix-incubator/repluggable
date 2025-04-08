@@ -79,9 +79,9 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
         }
     }
 
-    forEach(callbackfn: (value: V, key: K, map: IterableWeakMap<K, V>) => void, thisArg?: any) {
+    forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
         for (const [key, value] of this) {
-            callbackfn(value, key, this)
+            callbackfn(value, key, this as unknown as Map<K, V>)
         }
     }
 
@@ -89,7 +89,7 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
         return '[object IterableWeakMap]'
     }
 
-    *[Symbol.iterator]() {
+    *[Symbol.iterator](): MapIterator<[K, V]> {
         for (const ref of this.refSet) {
             const key = isWeakRef(ref) ? ref.deref() : ref
 
@@ -103,19 +103,21 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
         }
     }
 
-    entries() {
-        return this[Symbol.iterator]()
+    entries(): ReturnType<Map<K, V>['entries']> {
+        return this[Symbol.iterator]() as unknown as ReturnType<Map<K, V>['entries']>
     }
 
-    *keys() {
+    *keys(): ReturnType<Map<K, V>['keys']>  {
         for (const [key] of this) {
             yield key
         }
     }
 
-    *values() {
+    *values():  ReturnType<Map<K, V>['values']> {
         for (const [_, value] of this) {
             yield value
         }
     }
 }
+
+
