@@ -54,7 +54,8 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from '../src'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
+
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
