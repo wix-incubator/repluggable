@@ -4,7 +4,11 @@ import { AnySlotKey, AppHost, createAppHost as _createAppHost, EntryPointOrPacka
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
-// this is hack for someone who is using the testKit 
+/**
+ * When using the testKit you are not directly depends on the global of the repluggableAppDebug,
+ * So in order of it to populate global 'only' when import testKit we re-export it here.
+ * And not in repluggable-core so it will not pollute the global when using repluggable-core 
+ * */ 
 export type * from '../src/repluggableAppDebug/debug'
 
 export {createShellLogger}
