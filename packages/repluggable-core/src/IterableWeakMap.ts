@@ -79,9 +79,9 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
         }
     }
 
-    forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
+    forEach(callbackfn: (value: V, key: K, map: this) => void, thisArg?: any): void {
         for (const [key, value] of this) {
-            callbackfn(value, key, this as unknown as Map<K, V>)
+            callbackfn(value, key, this )
         }
     }
 
