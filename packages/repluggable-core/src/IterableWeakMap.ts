@@ -88,8 +88,9 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
     get [Symbol.toStringTag]() {
         return '[object IterableWeakMap]'
     }
-
-    *[Symbol.iterator](): MapIterator<[K, V]> {
+1
+    // can't use private type of MapIterator
+    *[Symbol.iterator](): any {
         for (const ref of this.refSet) {
             const key = isWeakRef(ref) ? ref.deref() : ref
 
