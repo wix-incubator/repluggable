@@ -36,6 +36,7 @@ export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
 export { invokeSlotCallbacks } from './invokeSlotCallbacks'
 
 export * from './connectWithShell'
+export * from './lazyCreateConnectedComponent'
 export { ErrorBoundary } from './errorBoundary'
 export { interceptEntryPoints, interceptEntryPointsMap } from './interceptEntryPoints'
 export { interceptAnyObject } from './interceptAnyObject'
