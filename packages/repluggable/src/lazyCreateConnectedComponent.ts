@@ -5,6 +5,21 @@ import { Shell } from './API'
 type CreateConnectedComponent<T extends React.ComponentType<any>> = (boundShell: Shell) => T
 
 export interface LazyConnectedComponent<T extends React.ComponentType<any>> extends React.LazyExoticComponent<T> {
+    /**
+     * Preloads the connected component to ensure it is ready before rendering.
+     * Useful for optimizing performance in scenarios where the component will be needed soon.
+     *
+     * @example
+     *
+     * ```ts
+     * const Component = lazyCreateConnectedComponent(shell, () => import('./AddPanel'));
+     *
+     * // preload the component
+     * onMouseHover(() => {
+     *   Component.preload();
+     * });
+     * ```
+     */
     preload(): Promise<void>
 }
 
@@ -59,6 +74,8 @@ export function lazyCreateConnectedComponent<T extends React.ComponentType<any>>
     /**
      * Preloads the connected component to ensure it is ready before rendering.
      * Useful for optimizing performance in scenarios where the component will be needed soon.
+     *
+     * @example
      *
      * ```ts
      * const Component = lazyCreateConnectedComponent(shell, () => import('./AddPanel'));
