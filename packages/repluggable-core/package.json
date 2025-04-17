@@ -1,6 +1,6 @@
 {
   "name": "repluggable-core",
-  "version": "1.302.66",
+  "version": "1.302.67",
   "license": "MIT",
   "description": "Allows composition of a React-with-Redux application entirely from a list of pluggable packages",
   "main": "dist/src/index.js",
