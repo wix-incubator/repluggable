@@ -1,2 +1,3 @@
-export type { RepluggableAppDebugInfo } from './debug'
 export { setupDebugInfo } from './repluggableAppDebug'
+
+export type { RepluggableAppDebugInfo } from './types'
