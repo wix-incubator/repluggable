@@ -36,6 +36,7 @@ export {
     interceptAnyObject,
     monitorAPI,
     hot,
+    RepluggableAppDebugInfo
 } from 'repluggable-core'
 
 export { AppMainView } from './appMainView'

@@ -44,3 +44,5 @@ export { hot } from './hot'
 
 
 export {INTERNAL_DONT_USE_SHELL_GET_APP_HOST} from './__internal'
+
+export type { RepluggableAppDebugInfo } from './repluggableAppDebug'
