@@ -61,6 +61,16 @@ export const getPackagesDependencies = (
     return _.uniq(packagesList)
 }
 
+const filteredPackagesByPacts = (packages: EntryPointOrPackage[], pacts: PactAPIBase[]) => {
+    const pactAPINameSet = new Set(pacts.map(pact => pact.getAPIKey().name))
+    const flatPackages: EntryPoint[] = _.flatten(packages)
+
+    return flatPackages.filter(pkg => {
+        const declaredAPIs = pkg.declareAPIs?.() ?? []
+        return !declaredAPIs.some(api => pactAPINameSet.has(api.name))
+    })
+}
+
 export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: PactAPIBase[]) {
     const pactsEntryPoint: EntryPoint = {
         name: 'PACTS_ENTRY_POINT',
@@ -74,7 +84,9 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
         }
     }
 
-    return createAppHost([...packages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true })
+    const filteredPackages = filteredPackagesByPacts(packages, pacts)
+
+    return createAppHost([...filteredPackages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true })
 }
 
 export async function createAppHostAndWaitForLoading(packages: EntryPointOrPackage[], pacts: PactAPIBase[]): Promise<AppHost> {

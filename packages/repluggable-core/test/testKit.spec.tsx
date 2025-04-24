@@ -12,7 +12,7 @@ import {
     asyncLoadMockPackage,
     dependsOnMockPackageEntryPoint,
     MockPublicAPI,
-    createAppHostAndWaitForLoading
+    createAppHostAndWaitForLoading, mockPackageWithPublicAPI
 } from '../testKit'
 
 interface APIKeys {
@@ -148,6 +148,19 @@ describe('App Host TestKit', () => {
             const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [])
             jest.runAllTimers()
             await expect(hostPromise).rejects.toThrow(new RegExp(MockPublicAPI.name))
+        })
+
+        it('should replace the api with pact if provided', async () => {
+            const pactAPI: MockPublicAPI & PactAPI<MockPublicAPI> = {
+                getAPIKey: () => MockPublicAPI,
+                stubTrue: () => false
+            }
+
+            const hostPromise = createAppHostAndWaitForLoading([mockPackageWithPublicAPI], [pactAPI])
+            jest.runAllTimers()
+            const host = await hostPromise
+            const api = host.getAPI(MockPublicAPI)
+            expect(api.stubTrue()).toBeFalsy()
         })
     })
 })
