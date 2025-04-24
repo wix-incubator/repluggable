@@ -23,9 +23,10 @@
   ],
   "scripts": {
     "start": "webpack-dev-server --hot --config webpack.local.config.js",
-    "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-bundle-dev && yarn build-bundle-prod",
+    "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-debug && yarn build-bundle-dev && yarn build-bundle-prod",
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
+    "build-debug": "tsc --project tsconfig.debug.json",
     "build-bundle-dev": "webpack --config webpack.dev.config.js",
     "build-bundle-prod": "webpack --config webpack.prod.config.js",
     "test": "jest --coverage",
