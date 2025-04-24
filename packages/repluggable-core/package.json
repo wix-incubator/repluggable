@@ -11,9 +11,10 @@
     "email": "responsive-feds@wix.com"
   },
   "scripts": {
-    "build": "rm -rf dist && yarn build-cjs && yarn build-es",
+    "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-debug",
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
+    "build-debug": "tsc --project tsconfig.debug.json",
     "test": "jest --coverage",
     "posttest": "tslint --project ."
   },
