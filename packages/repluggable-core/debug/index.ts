@@ -1,1 +1,4 @@
-export { RepluggableAppDebugInfo, APIDebugInfo } from '../src/repluggableAppDebug/debug'
+export type {
+  RepluggableAppDebugInfo,
+  APIDebugInfo,
+} from "../src/repluggableAppDebug/debug.d.ts";
