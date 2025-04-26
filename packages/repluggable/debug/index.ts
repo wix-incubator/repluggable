@@ -1,1 +1,1 @@
-export { RepluggableAppDebugInfo, APIDebugInfo } from 'repluggable-core/debug'
+export type * from "repluggable-core/debug";
