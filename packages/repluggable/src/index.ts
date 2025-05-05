@@ -38,6 +38,8 @@ export {
     hot,
 } from 'repluggable-core'
 
+export type { RepluggableAppDebugInfo } from 'repluggable-core'
+
 export { AppMainView } from './appMainView'
 
 export { SlotRenderer, ShellRenderer } from './renderSlotComponents'
