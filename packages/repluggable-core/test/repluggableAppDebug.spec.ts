@@ -14,7 +14,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual([])
+            expect(unreadyAPIs).toBeUndefined()
         })
 
         it('should not report any issues in case all entry points are loaded', async () => {
@@ -27,7 +27,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual([])
+            expect(unreadyAPIs).toBeUndefined()
         })
 
         it('should return an API if its not ready', async () => {
@@ -40,7 +40,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
+            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
         })
 
         it('should return the root unready API when there are multiple entry points that depend on the same API', async () => {
@@ -61,7 +61,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
+            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
         })
 
         it('should return the root unready API when there is a graph of dependencies', async () => {
@@ -85,7 +85,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }, { name: 'API C' }, { name: 'API B' }])
+            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
         })
 
         it('should return the root unready API when there is a graph of dependencies (declation order is reversed)', async () => {
@@ -112,7 +112,7 @@ describe('RepluggableAppDebug', () => {
             const unreadyAPIs = await getUnreadyAPIs()
             // because we take the first unready entry point, and in this case its the root,
             // we don't get the rest of the unready APIs
-            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
+            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
         })
     })
 })

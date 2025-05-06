@@ -84,7 +84,7 @@ const getRootUnreadyAPI = (host: AppHost) => {
                 dependenciesOfUnreadyEntryPoint = declarer?.getDependencyAPIs?.()
             }
         }
-        return unReadyAPIsArray.reverse()
+        return unReadyAPIsArray.reverse()[0]
     }
 }
 
