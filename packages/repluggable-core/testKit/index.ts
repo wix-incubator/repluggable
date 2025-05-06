@@ -88,10 +88,14 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         setTimeout(() => {
             const readyAPIs = Array.from(globalThis.repluggableAppDebug.readyAPIs)
             const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
+            const rootUnreadyAPI = globalThis.repluggableAppDebug.utils.getRootUnreadyAPI();
+
             reject(
                 new Error(
-                    'createAppHostAndWaitForLoading - waiting for loading timed out - the following declaredAPIs were not contributed ' +
-                        JSON.stringify(unreadyAPIs)
+                    `createAppHostAndWaitForLoading - waiting for loading timed out.
+there's a high chance this missing API is the main reason for it: ${JSON.stringify(rootUnreadyAPI)}
+
+in addition here's the full list of declared APIs that have not been contributed: ${JSON.stringify(unreadyAPIs)}`
                 )
             )
         }, 3000)
