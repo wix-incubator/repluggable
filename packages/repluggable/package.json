@@ -37,8 +37,8 @@
     "lodash": "^4.17.20",
     "react-redux": "^8.0.0",
     "react-test-renderer": "^18.0.0",
-    "redux-devtools-extension": "^2.13.8",
     "redux": "^4.0.5",
+    "redux-devtools-extension": "^2.13.8",
     "repluggable-core": "1.302.71",
     "tslib": "^2.0.0"
   },
