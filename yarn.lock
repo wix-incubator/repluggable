@@ -7568,6 +7568,7 @@ __metadata:
     lodash: "npm:^4.17.20"
     prettier: "npm:^2.1.2"
     redux: "npm:^4.0.5"
+    redux-devtools-extension: "npm:^2.13.8"
     ts-jest: "npm:^26.4.1"
     ts-loader: "npm:^8.0.6"
     tslint: "npm:^6.1.3"
