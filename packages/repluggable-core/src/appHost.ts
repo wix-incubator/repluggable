@@ -390,8 +390,6 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void> {
-        host.log.log('debug', `Adding ${entryPointsOrPackages.length} packages.`)
-
         const entryPoints = _.flatten(entryPointsOrPackages)
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
         const allEntryPoints = existingEntryPoints.concat(unReadyEntryPointsStore.get(), entryPoints)
@@ -790,21 +788,15 @@ miss: ${memoizedWithMissHit.miss}
         action: (shell: PrivateShell) => void,
         predicate?: (shell: PrivateShell) => boolean
     ): void {
-        host.log.log('debug', `--- ${phase} phase ---`)
-
         try {
             shell.filter(f => !predicate || predicate(f)).forEach(f => invokeShell(f, action, phase))
         } catch (err) {
             console.error(`${phase} phase FAILED`, err)
             throw err
         }
-
-        host.log.log('debug', `--- End of ${phase} phase ---`)
     }
 
     function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
-        host.log.log('debug', `${phase} : ${shell.entryPoint.name}`)
-
         try {
             action(shell)
         } catch (err) {
@@ -837,8 +829,6 @@ miss: ${memoizedWithMissHit.miss}
         readyAPIs.delete(ownKey)
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(slotKeyToName(ownKey))
-
-        host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
     function findDependantShells(entryShell: PrivateShell): PrivateShell[] {
@@ -897,13 +887,10 @@ miss: ${memoizedWithMissHit.miss}
 
         slotKeysToDiscard.forEach(discardSlotKey)
 
-        host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
     }
 
     function executeUninstallShells(names: string[]): void {
         batchDeclarationsChangedCallbacks(() => {
-            host.log.log('debug', `-- Uninstalling ${names} --`)
-
             const shellsCandidatesToBeDetached = _(names)
                 .map(name => addedShells.get(name))
                 .compact()
@@ -1073,8 +1060,6 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
-                host.log.log('debug', `Contributing API ${slotKeyToName(key)}.`)
-
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(
                         `Entry point '${entryPoint.name}' is trying to contribute API '${slotKeyToName(key)}' which it didn't declare`
