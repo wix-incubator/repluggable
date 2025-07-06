@@ -36,6 +36,9 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
         log(severity: LogSeverity, id: string, keyValuePairs?: Object): void {
             host.log.log(severity, id, undefined, withEntryPointTags(keyValuePairs))
         },
+        verbose(messageId: string, keyValuePairs?: Object): void {
+            host.log.log('verbose', messageId, undefined, withEntryPointTags(keyValuePairs))
+        },
         debug(messageId: string, keyValuePairs?: Object): void {
             host.log.log('debug', messageId, undefined, withEntryPointTags(keyValuePairs))
         },
