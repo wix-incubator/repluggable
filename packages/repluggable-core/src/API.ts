@@ -540,7 +540,7 @@ export interface EntryPointInterceptor {
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }
 
-export type LogSeverity = 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
+export type LogSeverity = 'verbose' | 'debug' | 'info' | 'event' | 'warning' | 'error' | 'critical'
 export type LogSpanFlag = 'begin' | 'end' //TODO:deprecated-kept-for-backward-compat
 
 export interface HostLogger {
@@ -550,6 +550,7 @@ export interface HostLogger {
 }
 
 export interface ShellLogger extends HostLogger {
+    verbose(messageId: string, keyValuePairs?: Object): void
     debug(messageId: string, keyValuePairs?: Object): void
     info(messageId: string, keyValuePairs?: Object): void
     warning(messageId: string, keyValuePairs?: Object): void

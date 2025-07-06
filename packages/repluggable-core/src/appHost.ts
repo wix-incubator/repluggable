@@ -390,7 +390,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function addShells(entryPointsOrPackages: EntryPointOrPackage[]): Promise<void> {
-        host.log.log('debug', `Adding ${entryPointsOrPackages.length} packages.`)
+        host.log.log('verbose', `Adding ${entryPointsOrPackages.length} packages.`)
 
         const entryPoints = _.flatten(entryPointsOrPackages)
         const existingEntryPoints = Object.values(addedShells).map(shell => shell.entryPoint)
@@ -790,7 +790,7 @@ miss: ${memoizedWithMissHit.miss}
         action: (shell: PrivateShell) => void,
         predicate?: (shell: PrivateShell) => boolean
     ): void {
-        host.log.log('debug', `--- ${phase} phase ---`)
+        host.log.log('verbose', `--- ${phase} phase ---`)
 
         try {
             shell.filter(f => !predicate || predicate(f)).forEach(f => invokeShell(f, action, phase))
@@ -799,11 +799,11 @@ miss: ${memoizedWithMissHit.miss}
             throw err
         }
 
-        host.log.log('debug', `--- End of ${phase} phase ---`)
+        host.log.log('verbose', `--- End of ${phase} phase ---`)
     }
 
     function invokeShell(shell: PrivateShell, action: (shell: PrivateShell) => void, phase: string): void {
-        host.log.log('debug', `${phase} : ${shell.entryPoint.name}`)
+        host.log.log('verbose', `${phase} : ${shell.entryPoint.name}`)
 
         try {
             action(shell)
@@ -838,7 +838,7 @@ miss: ${memoizedWithMissHit.miss}
         extensionSlots.delete(ownKey)
         slotKeysByName.delete(slotKeyToName(ownKey))
 
-        host.log.log('debug', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
+        host.log.log('verbose', `-- Removed slot keys: ${slotKeyToName(ownKey)} --`)
     }
 
     function findDependantShells(entryShell: PrivateShell): PrivateShell[] {
@@ -897,12 +897,12 @@ miss: ${memoizedWithMissHit.miss}
 
         slotKeysToDiscard.forEach(discardSlotKey)
 
-        host.log.log('debug', `Done uninstalling ${detachedShellsNames}`)
+        host.log.log('verbose', `Done uninstalling ${detachedShellsNames}`)
     }
 
     function executeUninstallShells(names: string[]): void {
         batchDeclarationsChangedCallbacks(() => {
-            host.log.log('debug', `-- Uninstalling ${names} --`)
+            host.log.log('verbose', `-- Uninstalling ${names} --`)
 
             const shellsCandidatesToBeDetached = _(names)
                 .map(name => addedShells.get(name))
@@ -1073,7 +1073,7 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
-                host.log.log('debug', `Contributing API ${slotKeyToName(key)}.`)
+                host.log.log('verbose', `Contributing API ${slotKeyToName(key)}.`)
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(
