@@ -100,6 +100,8 @@ export function createShellLogger(host: AppHost, entryPoint: EntryPoint): ShellL
 
 function getConsoleOutputFunc(severity: LogSeverity): Console['log'] {
     switch (severity) {
+        case 'verbose':
+            return console.debug
         case 'debug':
             return console.debug
         case 'event':
