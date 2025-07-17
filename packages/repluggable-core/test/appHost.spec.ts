@@ -1762,4 +1762,34 @@ describe('App Host', () => {
             expect(spy).toBeCalledTimes(2)
         })
     })
+
+    describe('Host.verifyPendingEntryPointsAPIsMismatch', () => {
+        it("should throw an error on verification if there's a pending entry points that waits for an API that is contributed but is not available", () => {
+            const PrivateAPI = { name: 'PrivateAPI' }
+            const entryPointA: EntryPoint = {
+                name: 'EntryPointA',
+                declareAPIs: () => [PrivateAPI],
+                attach(shell) {
+                    shell.contributeAPI(PrivateAPI, () => ({}))
+                }
+            }
+            const PrivateAPIUsedAsPublicAPI = _.cloneDeep(PrivateAPI)
+            const entryPointB: EntryPoint = {
+                name: 'EntryPointB',
+                getDependencyAPIs: () => [PrivateAPIUsedAsPublicAPI],
+                extend(shell) {
+                    shell.getAPI(PrivateAPIUsedAsPublicAPI)
+                }
+            }
+            const host = createAppHost([entryPointA, entryPointB], testHostOptions)
+
+            expect(() => host.verifyPendingEntryPointsAPIsMismatch()).toThrowError(
+                new RegExp(
+                    `Entry point 'EntryPointB' is waiting for API '${PrivateAPI.name}' that will never be available for it to use.
+This usually happens when trying to consume a private API as a public API.
+If the API is intended to be public, it should be declared as "public: true" in the API key, and built in both bundles.`
+                )
+            )
+        })
+    })
 })

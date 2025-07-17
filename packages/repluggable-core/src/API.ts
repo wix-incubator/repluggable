@@ -298,6 +298,13 @@ export interface AppHost {
     onDeclarationsChanged(callback: DeclarationsChangedCallback): UnsubscribeFromDeclarationsChanged
     onShellsChanged(callback: ShellsChangedCallback): string
     removeShellsChangedCallback(callbackId: string): void
+    /**
+     * Verify if there are pending entry points waiting for APIs that will never be available.
+     * This usually happens when trying to consume a private API as a public API.
+     *
+     * @throws {Error} If there are pending entry points with API mismatches
+     */
+    verifyPendingEntryPointsAPIsMismatch(): void
     readonly log: HostLogger
     readonly options: AppHostOptions
 }
