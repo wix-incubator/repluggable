@@ -1,4 +1,3 @@
-
 import _ from 'lodash'
 import { AnyAction, Store } from 'redux'
 import {
@@ -55,7 +54,6 @@ import {
     updateThrottledStore
 } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
-
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -212,6 +210,7 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         onShellsChanged,
         onDeclarationsChanged,
         removeShellsChangedCallback,
+        verifyPendingEntryPointsAPIsMismatch,
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
         log: options.logger ? options.logger : ConsoleHostLogger,
         options,
@@ -996,6 +995,7 @@ miss: ${memoizedWithMissHit.miss}
             onShellsChanged: host.onShellsChanged,
             onDeclarationsChanged: host.onDeclarationsChanged,
             removeShellsChangedCallback: host.removeShellsChangedCallback,
+            verifyPendingEntryPointsAPIsMismatch: host.verifyPendingEntryPointsAPIsMismatch,
 
             declareSlot<TItem>(key: SlotKey<TItem>): ExtensionSlot<TItem> {
                 return declareSlot<TItem>(key, shell)
@@ -1218,5 +1218,33 @@ miss: ${memoizedWithMissHit.miss}
 
     function normalizeApiName(name: string) {
         return name.charAt(0).toLowerCase() + name.substring(1).replace(new RegExp(' ', 'g'), '')
+    }
+
+    function verifyPendingEntryPointsAPIsMismatch(): void {
+        const pendingEntryPoints = unReadyEntryPointsStore.get()
+
+        for (const entryPoint of pendingEntryPoints) {
+            verifyEntryPointAPIsMismatch(entryPoint)
+        }
+    }
+
+    function verifyEntryPointAPIsMismatch(entryPoint: EntryPoint): void {
+        const dependencies = entryPoint.getDependencyAPIs?.() || []
+
+        const mismatchedAPI = dependencies.find(dependencyAPI => {
+            const isPrivateAPI = !dependencyAPI.public
+            const foundDeclaredAPIKeyWithSameName = slotKeysByName.get(slotKeyToName(dependencyAPI))
+            const isDeclaredAPIReady = foundDeclaredAPIKeyWithSameName ? readyAPIs.has(foundDeclaredAPIKeyWithSameName) : false
+
+            return isPrivateAPI && isDeclaredAPIReady && dependencyAPI !== foundDeclaredAPIKeyWithSameName
+        })
+
+        if (mismatchedAPI) {
+            throw new Error(
+                `Entry point '${entryPoint.name}' is waiting for API '${mismatchedAPI.name}' that will never be available for it to use.\n` +
+                    `This usually happens when trying to consume a private API as a public API.\n` +
+                    `If the API is intended to be public, it should be declared as "public: true" in the API key, and built in both bundles.`
+            )
+        }
     }
 }
