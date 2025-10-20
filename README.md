@@ -2,7 +2,7 @@
   <img class="logo" src="https://raw.githubusercontent.com/wix/repluggable/master/media/repluggable-logo.svg" height="280">
 </p>
 
-# Repluggable
+# 2Repluggable
 
 [![master build](https://github.com/wix/repluggable/workflows/Master%20Build/badge.svg)](https://github.com/wix/repluggable/actions?query=workflow%3A%22Master+Build%22)
 [![npm version](https://img.shields.io/npm/v/repluggable)](https://www.npmjs.com/package/repluggable)
