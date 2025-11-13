@@ -58,6 +58,13 @@ jobs:
           git commit -m "Bump prerelease version" || true
 
       # ---- PUBLISH WITH TRUSTED PUBLISHING ----
+      
+      - name: npm publish repluggable (trusted)
+        run: |
+          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
+          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" --provenance
+          echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
+
 
       - name: npm publish repluggable-core (trusted)
         run: |
@@ -65,8 +72,3 @@ jobs:
           npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG" --provenance
           echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
 
-      - name: npm publish repluggable (trusted)
-        run: |
-          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" --provenance
-          echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
