@@ -52,13 +52,9 @@ jobs:
           echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
           npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG"
           echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
       
       - name: npm publish repluggable
         run: |
           echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
           npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG"
           echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
