@@ -2,6 +2,10 @@ name: Pull Request Build
 
 on: pull_request
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
