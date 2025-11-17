@@ -3,7 +3,7 @@ name: Pull Request Build
 on: pull_request
 
 permissions:
-  id-token: write     # REQUIRED for npm Trusted Publishing
+  id-token: write # REQUIRED for npm Trusted Publishing
   contents: read
 
 jobs:
@@ -14,13 +14,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # IMPORTANT: full history for yarn version
+          fetch-depth: 0 # IMPORTANT: full history for yarn version
 
       - name: Setup Node with trusted publishing
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://registry.npmjs.org   # REQUIRED for OIDC → npm
+          registry-url: https://registry.npmjs.org # REQUIRED for OIDC → npm
 
       - name: Set PR version
         run: |
@@ -58,13 +58,6 @@ jobs:
           git commit -m "Bump prerelease version" || true
 
       # ---- PUBLISH WITH TRUSTED PUBLISHING ----
-      
-      - name: npm publish repluggable (trusted)
-        run: |
-          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" --provenance
-          echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
-
 
       - name: npm publish repluggable-core (trusted)
         run: |
@@ -72,3 +65,8 @@ jobs:
           npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG" --provenance
           echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
 
+      - name: npm publish repluggable (trusted)
+        run: |
+          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
+          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" --provenance
+          echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
