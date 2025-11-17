@@ -2,8 +2,30 @@ name: Main workflow
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      yarnVersionArgs:
+        description: 'Arguments for "yarn version"'
+        required: true
+        type: string
+        default: "patch"
 
 jobs:
   run-pr:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/pr.yml
+
+  run-release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if not on master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "Error: Release workflow can only be triggered on the master branch."
+          exit 1
+      - name: Run release workflow
+        if: github.ref == 'refs/heads/master'
+        uses: ./.github/workflows/release.yml
+        with:
+          yarnVersionArgs: ${{ github.event.inputs.yarnVersionArgs }}
