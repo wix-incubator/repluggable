@@ -1,0 +1,22 @@
+name: Pull Request Build
+
+on:
+  workflow_call:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 20
+      - name: Set PR version
+        run: |
+          echo "trying pr 1"
+          echo "DEPLOY_PREVIEW_VERSION=0.0.0-pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "DEPLOY_PREVIEW_TAG=pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
+        env:
+          PR_ID: ${{ github.event.number }}
+          BUILD_NUMBER: ${{ github.run_number }}
