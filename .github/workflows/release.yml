@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # IMPORTANT: full history for yarn version
+          fetch-depth: 0 # full history for yarn version
 
       - name: Setup Node with trusted publishing
         uses: actions/setup-node@v4
