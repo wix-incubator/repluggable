@@ -22,6 +22,7 @@
     "*"
   ],
   "scripts": {
+    "daniel": "echo 'daniel'",
     "start": "webpack-dev-server --hot --config webpack.local.config.js",
     "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-debug && yarn build-bundle-dev && yarn build-bundle-prod",
     "build-cjs": "tsc --outDir dist --module commonjs",
