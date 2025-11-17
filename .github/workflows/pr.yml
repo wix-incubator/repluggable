@@ -2,16 +2,28 @@ name: Pull Request Build
 
 on: pull_request
 
+permissions:
+  id-token: write # REQUIRED for npm Trusted Publishing
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: 20
+          fetch-depth: 0 # IMPORTANT: full history for yarn version
+
+      - name: Setup Node with trusted publishing
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
       - name: Set PR version
-        run: | 
+        run: |
           echo "DEPLOY_PREVIEW_VERSION=0.0.0-pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
           echo "DEPLOY_PREVIEW_TAG=pr$PR_ID.$BUILD_NUMBER" >> $GITHUB_ENV
         env:
@@ -19,7 +31,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       - name: Build packages
         run: yarn build
@@ -32,7 +44,7 @@ jobs:
           git reset --hard
           echo "Deploy preview version: '$DEPLOY_PREVIEW_VERSION'"
 
-          # Bumping repluggable-core & repluggable versions
+          # Bumping versions in both workspaces
           yarn workspace repluggable-core version "$DEPLOY_PREVIEW_VERSION"
           yarn workspace repluggable version "$DEPLOY_PREVIEW_VERSION"
 
@@ -40,25 +52,20 @@ jobs:
           export CORE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
           echo "repluggable-core version is $CORE_VERSION, adding it to repluggable"
           yarn workspace repluggable add repluggable-core@$CORE_VERSION
-          
-          git status -vv
+
           git add . || true
           git commit -m "Bump prerelease version" || true
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-      - name: npm publish repluggable-core
+      # ---- PUBLISH WITH TRUSTED PUBLISHING ----
+
+      - name: npm publish repluggable-core (trusted)
         run: |
-          echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG"
+          echo "Publishing repluggable-core with tag: [$DEPLOY_PREVIEW_TAG]"
+          npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG" 
           echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
-      
-      - name: npm publish repluggable
+
+      - name: npm publish repluggable (trusted)
         run: |
           echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG"
+          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" 
           echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
