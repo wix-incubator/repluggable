@@ -1,21 +1,33 @@
 name: Bump And Publish
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       yarnVersionArgs:
         description: 'Arguments for "yarn version"'
         required: true
-        default: "patch"
+        type: string
+
+permissions:
+  id-token: write # REQUIRED for npm Trusted Publishing
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: 20
+          fetch-depth: 0 # full history for yarn version
+
+      - name: Setup Node with trusted publishing
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
       - run: yarn
       - run: yarn build
       - run: yarn test
@@ -34,8 +46,8 @@ jobs:
       - name: Bump version
         run: |
           git reset --hard
-          yarn workspace repluggable-core version ${{ github.event.inputs.yarnVersionArgs }}
-          yarn workspace repluggable version ${{ github.event.inputs.yarnVersionArgs }}
+          yarn workspace repluggable-core version ${{ inputs.yarnVersionArgs }}
+          yarn workspace repluggable version ${{ inputs.yarnVersionArgs }}
           export NEW_CORE_RELEASE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
           export NEW_REPLUGGABLE_RELEASE_VERSION=$(npm pkg get version --workspace=repluggable | jq -r '."repluggable"')
           echo repluggable-core New Release Version is: [$NEW_CORE_RELEASE_VERSION]
@@ -53,14 +65,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-      - name: npm publish repluggable-core
+      # ---- PUBLISH WITH TRUSTED PUBLISHING ----
+
+      - name: npm publish repluggable-core (trusted)
         run: |
           npm publish --workspace repluggable-core
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
-      - name: npm publish repluggable
+      - name: npm publish repluggable (trusted)
         run: |
           npm publish --workspace repluggable
-        env:
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}

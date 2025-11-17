@@ -1,0 +1,22 @@
+name: Main workflow
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      yarnVersionArgs:
+        description: 'Arguments for "yarn version"'
+        required: true
+        type: string
+        default: "patch"
+
+jobs:
+  run-pr:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr.yml
+
+  run-release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    uses: ./.github/workflows/release.yml
+    with:
+      yarnVersionArgs: ${{ github.event.inputs.yarnVersionArgs }}

@@ -10,6 +10,10 @@
     "name": "Wix.com",
     "email": "responsive-feds@wix.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wix-incubator/repluggable"
+  },
   "scripts": {
     "build": "rm -rf dist && yarn build-cjs && yarn build-es && yarn build-debug",
     "build-cjs": "tsc --outDir dist --module commonjs",
@@ -41,10 +45,6 @@
     "tslint-react": "^5.0.0",
     "tslint-react-hooks": "^2.2.2",
     "typescript": "^5.4.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/wix/repluggable"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
