@@ -1,6 +1,6 @@
 name: Pull Request Build
 
-on: pull_request
+on: workflow_call: 
 
 permissions:
   id-token: write # REQUIRED for npm Trusted Publishing

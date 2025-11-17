@@ -1,0 +1,9 @@
+name: Main workflow
+
+on:
+  pull_request:
+
+jobs:
+  run-pr:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr.yml
