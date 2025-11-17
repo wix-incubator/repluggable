@@ -42,6 +42,9 @@ jobs:
 
       - name: Bump versions
         run: |
+          echo "GH_EMAIL=[${GH_EMAIL}]"
+          echo "GH_USER=[${GH_USER}]"
+          echo "GITHUB_TOKEN starts with: [${GITHUB_TOKEN:0:3}]***"
           git reset --hard
           echo "Deploy preview version: '$DEPLOY_PREVIEW_VERSION'"
 
@@ -56,6 +59,10 @@ jobs:
 
           git add . || true
           git commit -m "Bump prerelease version" || true
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GH_EMAIL: ${{secrets.GH_EMAIL}}
+          GH_USER: ${{secrets.GH_USER}}
 
       # ---- PUBLISH WITH TRUSTED PUBLISHING ----
 
