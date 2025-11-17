@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node with trusted publishing
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org # REQUIRED for OIDC → npm
 
       - name: Set PR version
@@ -62,11 +62,11 @@ jobs:
       - name: npm publish repluggable-core (trusted)
         run: |
           echo "Publishing repluggable-core with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG" --provenance
+          npm publish --workspace repluggable-core --tag "$DEPLOY_PREVIEW_TAG" 
           echo "::notice::repluggable-core@$DEPLOY_PREVIEW_VERSION"
 
       - name: npm publish repluggable (trusted)
         run: |
           echo "Publishing repluggable with tag: [$DEPLOY_PREVIEW_TAG]"
-          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" --provenance
+          npm publish --workspace repluggable --tag "$DEPLOY_PREVIEW_TAG" 
           echo "::notice::repluggable@$DEPLOY_PREVIEW_VERSION"
