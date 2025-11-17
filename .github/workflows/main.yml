@@ -20,3 +20,7 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       yarnVersionArgs: ${{ github.event.inputs.yarnVersionArgs }}
+    secrets:
+      GH_EMAIL: ${{ secrets.GH_EMAIL }}
+      GH_USER: ${{ secrets.GH_USER }}
+      USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
