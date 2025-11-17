@@ -8,26 +8,14 @@ on:
         required: true
         default: "patch"
 
-permissions:
-  id-token: write # REQUIRED for npm Trusted Publishing
-  contents: read
-
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
         with:
-          fetch-depth: 0 # full history for yarn version
-
-      - name: Setup Node with trusted publishing
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
+          node-version: 20
       - run: yarn
       - run: yarn build
       - run: yarn test
@@ -62,13 +50,17 @@ jobs:
           git push "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY" --tags
           echo "::notice::repluggable-core@NEW_CORE_RELEASE_VERSION"
           echo "::notice::repluggable@NEW_REPLUGGABLE_RELEASE_VERSION"
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-      # ---- PUBLISH WITH TRUSTED PUBLISHING ----
-
-      - name: npm publish repluggable-core (trusted)
+      - name: npm publish repluggable-core
         run: |
           npm publish --workspace repluggable-core
+        env:
+          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
-      - name: npm publish repluggable (trusted)
+      - name: npm publish repluggable
         run: |
           npm publish --workspace repluggable
+        env:
+          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
