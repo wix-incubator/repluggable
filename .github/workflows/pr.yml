@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org # REQUIRED for OIDC → npm
+          registry-url: https://registry.npmjs.org
 
       - name: Set PR version
         run: |
@@ -39,7 +39,6 @@ jobs:
       - name: Run tests
         run: yarn test
 
-      # Your original version bump logic — unchanged
       - name: Bump versions
         run: |
           git reset --hard
