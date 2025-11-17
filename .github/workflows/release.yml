@@ -1,11 +1,12 @@
 name: Bump And Publish
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       yarnVersionArgs:
         description: 'Arguments for "yarn version"'
         required: true
+        type: string
         default: "patch"
 
 jobs:
