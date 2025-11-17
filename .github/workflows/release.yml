@@ -10,7 +10,7 @@ on:
 
 permissions:
   id-token: write # REQUIRED for npm Trusted Publishing
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -46,8 +46,6 @@ jobs:
       - name: Bump version
         run: |
           git reset --hard
-          git config user.email "$GH_EMAIL"
-          git config user.name "$GH_USER"
           yarn workspace repluggable-core version ${{ inputs.yarnVersionArgs }}
           yarn workspace repluggable version ${{ inputs.yarnVersionArgs }}
           export NEW_CORE_RELEASE_VERSION=$(npm pkg get version --workspace=repluggable-core | jq -r '."repluggable-core"')
@@ -66,8 +64,6 @@ jobs:
           echo "::notice::repluggable@NEW_REPLUGGABLE_RELEASE_VERSION"
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          GH_EMAIL: ${{secrets.GH_EMAIL}}
-          GH_USER: ${{secrets.GH_USER}}
 
       # ---- PUBLISH WITH TRUSTED PUBLISHING ----
 
