@@ -62,8 +62,6 @@ jobs:
           git push "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY" --tags
           echo "::notice::repluggable-core@NEW_CORE_RELEASE_VERSION"
           echo "::notice::repluggable@NEW_REPLUGGABLE_RELEASE_VERSION"
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       # ---- PUBLISH WITH TRUSTED PUBLISHING ----
 
