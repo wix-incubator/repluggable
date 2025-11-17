@@ -7,6 +7,13 @@ on:
         description: 'Arguments for "yarn version"'
         required: true
         type: string
+    secrets:
+      GH_EMAIL:
+        required: true
+      GH_USER:
+        required: true
+      USER_GITHUB_TOKEN:
+        required: true
 
 permissions:
   id-token: write # REQUIRED for npm Trusted Publishing
@@ -37,11 +44,12 @@ jobs:
           git reset --hard
           git config --local --list
           git checkout master
+          echo "Configured git as $GH_USER <$GH_EMAIL>"
           git config user.email "$GH_EMAIL"
           git config user.name "$GH_USER"
         env:
-          GH_EMAIL: ${{secrets.GH_EMAIL}}
-          GH_USER: ${{secrets.GH_USER}}
+          GH_EMAIL: ${{ secrets.GH_EMAIL }}
+          GH_USER: ${{ secrets.GH_USER }}
 
       - name: Bump version
         run: |
@@ -55,8 +63,8 @@ jobs:
           yarn workspace repluggable add repluggable-core@$NEW_CORE_RELEASE_VERSION
           yarn build
           yarn test
-          git add . || true
-          git commit -m "Release v$NEW_REPLUGGABLE_RELEASE_VERSION" || true
+          git add . 
+          git commit -m "Release v$NEW_REPLUGGABLE_RELEASE_VERSION" 
           git tag -a "v$NEW_REPLUGGABLE_RELEASE_VERSION" -m "Release v$NEW_REPLUGGABLE_RELEASE_VERSION"
           git push "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY"
           git push "https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY" --tags
