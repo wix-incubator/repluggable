@@ -7557,7 +7557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"repluggable-core@npm:1.302.76, repluggable-core@workspace:packages/repluggable-core":
+"repluggable-core@npm:1.302.77, repluggable-core@workspace:packages/repluggable-core":
   version: 0.0.0-use.local
   resolution: "repluggable-core@workspace:packages/repluggable-core"
   dependencies:
@@ -7614,7 +7614,7 @@ __metadata:
     react-test-renderer: "npm:^18.0.0"
     redux: "npm:^4.0.5"
     redux-devtools-extension: "npm:^2.13.8"
-    repluggable-core: "npm:1.302.76"
+    repluggable-core: "npm:1.302.77"
     terser-webpack-plugin: "npm:^4.1.0"
     ts-jest: "npm:^26.4.1"
     ts-loader: "npm:^8.0.6"
