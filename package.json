@@ -36,5 +36,5 @@
       "tslint --project . --fix"
     ]
   },
-  "packageManager": "yarn@4.6.0"
+  "packageManager": "yarn@4.10.3"
 }
