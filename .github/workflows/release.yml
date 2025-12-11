@@ -35,7 +35,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - run: yarn
+      - run: NPQ_PKG_MGR=yarn npx npq install
       - run: yarn build
       - run: yarn test
 

@@ -32,7 +32,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: NPQ_PKG_MGR=yarn npx npq install --frozen-lockfile
 
       - name: Build packages
         run: yarn build
