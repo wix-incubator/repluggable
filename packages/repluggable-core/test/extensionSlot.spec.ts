@@ -8,6 +8,7 @@ import {
 } from "../src/API";
 import { createExtensionSlot } from "../src/extensionSlot";
 import { addMockShell } from "../testKit";
+import { createSignalItemsDataStructure } from "./createSignalItemsDataStructure";
 
 describe("ExtensionSlot", () => {
   describe("Subscribe", () => {
@@ -106,76 +107,16 @@ describe("ExtensionSlot", () => {
   });
 
   describe("Custom Items Data Structure with Signals", () => {
-    // Naive signals implementation
-    type Signal<T> = {
-      get: () => T;
-      set: (value: T) => void;
-    };
-
-    let currentEffect: (() => void) | null = null;
-
-    const signal = <T>(initialValue: T): Signal<T> => {
-      let value = initialValue;
-      const subscribers = new Set<() => void>();
-
-      return {
-        get: () => {
-          if (currentEffect) {
-            subscribers.add(currentEffect);
-          }
-          return value;
-        },
-        set: (newValue: T) => {
-          value = newValue;
-          subscribers.forEach((fn) => fn());
-        },
-      };
-    };
-
-    const effect = (fn: () => void): (() => void) => {
-      const execute = () => {
-        currentEffect = execute;
-        fn();
-        currentEffect = null;
-      };
-      execute();
-      return () => {
-        currentEffect = null;
-      };
-    };
-
-    const createSignalItemsDataStructure = () => {
-      let signalToTrack: Signal<ExtensionItem<any>[]> | null = null;
-      return {
-        dataStructure: <U>() => {
-          const itemsSignal = signal<ExtensionItem<U>[]>([]);
-          signalToTrack = itemsSignal;
-          return {
-            get: () => itemsSignal.get(),
-            add: (item: ExtensionItem<U>) => {
-              itemsSignal.set([...itemsSignal.get(), item]);
-            },
-            filter: (predicate: (item: ExtensionItem<U>) => boolean) => {
-              itemsSignal.set(itemsSignal.get().filter(predicate));
-            },
-          };
-        },
-        getSignalToTrack: () => {
-          if (!signalToTrack) {
-            throw new Error("Signal to track is not set");
-          }
-          return signalToTrack;
-        },
-      };
-    };
-
     it("should notify effect when items are added", () => {
       const slotKey: SlotKey<{ value: string }> = { name: "signal_slot" };
       const host = createAppHost([]) as PrivateAppHost;
       const shell = addMockShell(host);
 
-      const { dataStructure, getSignalToTrack } =
-        createSignalItemsDataStructure();
+      const {
+        createDataStructure: dataStructure,
+        getSignalToTrack,
+        effect,
+      } = createSignalItemsDataStructure();
       const effectSpy = jest.fn();
 
       const slot = createExtensionSlot(slotKey, host, {
@@ -201,8 +142,11 @@ describe("ExtensionSlot", () => {
       const host = createAppHost([]) as PrivateAppHost;
       const shell = addMockShell(host);
 
-      const { dataStructure, getSignalToTrack } =
-        createSignalItemsDataStructure();
+      const {
+        createDataStructure: dataStructure,
+        getSignalToTrack,
+        effect,
+      } = createSignalItemsDataStructure();
       const effectSpy = jest.fn();
 
       const slot = createExtensionSlot(slotKey, host, {
@@ -231,8 +175,11 @@ describe("ExtensionSlot", () => {
       const host = createAppHost([]) as PrivateAppHost;
       const shell = addMockShell(host);
 
-      const { dataStructure, getSignalToTrack } =
-        createSignalItemsDataStructure();
+      const {
+        createDataStructure: dataStructure,
+        getSignalToTrack,
+        effect,
+      } = createSignalItemsDataStructure();
       let capturedItems: ExtensionItem<{ name: string }>[] = [];
 
       const slot = createExtensionSlot(slotKey, host, {

@@ -4,10 +4,5 @@
     "lib": ["dom", "esnext"],
     "jsx": "react"
   },
-  "include": [
-    "src",
-    "test",
-    "testKit",
-    "../repluggable-core/test/extensionSlot.spec.ts"
-  ]
+  "include": ["src", "test", "testKit"]
 }
