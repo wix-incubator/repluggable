@@ -26,13 +26,11 @@ export {
     ScopedStore
 } from './API'
 
-
-
 export { ConsoleHostLogger } from './loggers'
 
 export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './appHost'
 
-export {AppHostServicesProvider} from './appHostServices'
+export { AppHostServicesProvider } from './appHostServices'
 
 export { InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 
@@ -42,5 +40,4 @@ export { interceptAnyObject } from './interceptAnyObject'
 export { monitorAPI } from './monitorAPI'
 export { hot } from './hot'
 
-
-export {INTERNAL_DONT_USE_SHELL_GET_APP_HOST} from './__internal'
+export { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
