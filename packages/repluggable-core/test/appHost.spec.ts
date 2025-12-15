@@ -7,6 +7,7 @@ import {
     AppHost,
     AppHostOptions,
     EntryPoint,
+    ExtensionItem,
     HostLogger,
     ObservableState,
     PrivateAppHost,
@@ -1790,6 +1791,109 @@ This usually happens when trying to consume a private API as a public API.
 If the API is intended to be public, it should be declared as "public: true" in the API key, and built in both bundles.`
                 )
             )
+        })
+    })
+
+    describe('Custom Items Data Structure via AppHost Options (plugins)', () => {
+        it('should use customItemsDataStructure from appHostOptions when contributing and removing items', async () => {
+            interface SlotItem {
+                value: string
+            }
+            const slotKey: SlotKey<SlotItem> = { name: 'host_options_signal_slot' }
+
+            // API that allows contributing to the slot
+            interface SlotContributionAPI {
+                contributeItem(fromShell: Shell, item: SlotItem): void
+            }
+            const SlotContributionAPIKey: SlotKey<SlotContributionAPI> = { name: 'SLOT_CONTRIBUTION_API' }
+
+            // Tracking spies for add and filter operations
+            const addSpy = jest.fn()
+            const filterSpy = jest.fn()
+
+            // Custom items data structure that tracks operations
+            const customItemsDataStructure = <T>() => {
+                let items: ExtensionItem<T>[] = []
+                return {
+                    get: () => items,
+                    add: (item: ExtensionItem<T>) => {
+                        addSpy(item)
+                        items = [...items, item]
+                    },
+                    filter: (predicate: (item: ExtensionItem<T>) => boolean) => {
+                        filterSpy(predicate)
+                        items = items.filter(predicate)
+                    }
+                }
+            }
+
+            // Entry point that declares the slot and exposes an API for contributing
+            const slotOwnerEntryPoint: EntryPoint = {
+                name: 'SLOT_OWNER_ENTRY_POINT',
+                declareAPIs() {
+                    return [SlotContributionAPIKey]
+                },
+                attach(shell: Shell) {
+                    shell.declareSlot(slotKey)
+                    shell.contributeAPI(SlotContributionAPIKey, () => ({
+                        contributeItem(fromShell: Shell, item: SlotItem) {
+                            shell.getSlot(slotKey).contribute(fromShell, item)
+                        }
+                    }))
+                }
+            }
+
+            // Entry point that contributes items via the API
+            const contributorEntryPoint: EntryPoint = {
+                name: 'CONTRIBUTOR_ENTRY_POINT',
+                getDependencyAPIs() {
+                    return [SlotContributionAPIKey]
+                },
+                extend(shell: Shell) {
+                    const api = shell.getAPI(SlotContributionAPIKey)
+                    api.contributeItem(shell, { value: 'item1' })
+                    api.contributeItem(shell, { value: 'item2' })
+                }
+            }
+
+            // Create app host with the custom items data structure plugin
+            const host = createAppHost([slotOwnerEntryPoint, contributorEntryPoint], {
+                monitoring: {},
+                plugins: {
+                    extensionSlot: {
+                        customItemsDataStructure
+                    }
+                }
+            })
+
+            // Verify add was called for the contributed items
+            // Note: add is called for each slot, so we check that at least 2 items were added
+            // (the two items from the contributor entry point)
+            const addedItems = addSpy.mock.calls.filter(
+                (call: [ExtensionItem<SlotItem>]) => 
+                    call[0]?.contribution && 
+                    typeof call[0].contribution === 'object' && 
+                    'value' in call[0].contribution
+            )
+            expect(addedItems).toHaveLength(2)
+            expect(addedItems[0][0].contribution.value).toBe('item1')
+            expect(addedItems[1][0].contribution.value).toBe('item2')
+
+            // Verify items are in the slot
+            const slot = host.getSlot(slotKey)
+            expect(slot.getItems()).toHaveLength(2)
+
+            // Record filter call count before unload
+            const filterCallsBeforeUnload = filterSpy.mock.calls.length
+
+            // Unload the contributor entry point
+            await host.removeShells([contributorEntryPoint.name])
+
+            // Verify filter was called when shell was removed
+            expect(filterSpy.mock.calls.length).toBeGreaterThan(filterCallsBeforeUnload)
+
+            // Verify items are removed from the slot
+            expect(slot.getItems()).toHaveLength(0)
         })
     })
 })
