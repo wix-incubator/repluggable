@@ -19,7 +19,9 @@
     "build-cjs": "tsc --outDir dist --module commonjs",
     "build-es": "tsc --outDir dist/es --module esNext",
     "build-debug": "tsc --project tsconfig.debug.json",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "posttest": "tslint --project .",
+    "lintfix": "tslint --fix --project ."
   },
   "dependencies": {
     "lodash": "^4.17.20",
