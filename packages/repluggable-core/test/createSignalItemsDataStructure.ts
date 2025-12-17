@@ -49,7 +49,7 @@ export const createSignalItemsDataStructure = () => {
                 add: (item: ExtensionItem<U>) => {
                     itemsSignal.set([...itemsSignal.get(), item])
                 },
-                filter: (predicate: (item: ExtensionItem<U>) => boolean) => {
+                discardBy: (predicate: (item: ExtensionItem<U>) => boolean) => {
                     itemsSignal.set(itemsSignal.get().filter(predicate))
                 }
             }

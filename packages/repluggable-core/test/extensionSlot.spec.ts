@@ -104,7 +104,7 @@ describe('ExtensionSlot', () => {
             const effectSpy = jest.fn()
 
             const slot = createExtensionSlot(slotKey, host, {
-                customItemsDataStructure: dataStructure
+                customCreateExtensionSlot: dataStructure
             })
 
             effect(() => {
@@ -130,7 +130,7 @@ describe('ExtensionSlot', () => {
             const effectSpy = jest.fn()
 
             const slot = createExtensionSlot(slotKey, host, {
-                customItemsDataStructure: dataStructure
+                customCreateExtensionSlot: dataStructure
             })
 
             effect(() => {
@@ -157,7 +157,7 @@ describe('ExtensionSlot', () => {
             let capturedItems: ExtensionItem<{ name: string }>[] = []
 
             const slot = createExtensionSlot(slotKey, host, {
-                customItemsDataStructure: dataStructure
+                customCreateExtensionSlot: dataStructure
             })
 
             effect(() => {

@@ -566,7 +566,7 @@ miss: ${memoizedWithMissHit.miss}
         const newSlot = registerSlotOrThrow(key, () =>
             createExtensionSlot(key, host, {
                 declaringShell,
-                customItemsDataStructure: options.plugins?.extensionSlot?.customItemsDataStructure
+                customCreateExtensionSlot: options.plugins?.extensionSlot?.customCreateExtensionSlot
             })
         )
         return newSlot

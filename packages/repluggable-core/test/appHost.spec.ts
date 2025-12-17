@@ -1795,7 +1795,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
     })
 
     describe('Custom Items Data Structure via AppHost Options (plugins)', () => {
-        it('should use customItemsDataStructure from appHostOptions when contributing and removing items', async () => {
+        it('should use customCreateExtensionSlot from appHostOptions when contributing and removing items', async () => {
             interface SlotItem {
                 value: string
             }
@@ -1869,7 +1869,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 monitoring: {},
                 plugins: {
                     extensionSlot: {
-                        customItemsDataStructure: createDataStructure
+                        customCreateExtensionSlot: createDataStructure
                     }
                 }
             })

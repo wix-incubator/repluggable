@@ -24,7 +24,7 @@ type Unsubscribe = () => void
 interface ItemsDataStructure<T> {
     get(): ExtensionItem<T>[]
     add(item: ExtensionItem<T>): void
-    filter(predicate: (item: ExtensionItem<T>) => boolean): void
+    discardBy(predicate: (item: ExtensionItem<T>) => boolean): void
 }
 
 const itemsDataStructure = <T>(): ItemsDataStructure<T> => {
@@ -34,17 +34,17 @@ const itemsDataStructure = <T>(): ItemsDataStructure<T> => {
         add: (item: ExtensionItem<T>) => {
             items.push(item)
         },
-        filter: (predicate: (item: ExtensionItem<T>) => boolean) => {
+        discardBy: (predicate: (item: ExtensionItem<T>) => boolean) => {
             items = items.filter(predicate)
         }
     }
 }
 
-export type CustomItemsDataStructure = <T>() => ItemsDataStructure<T>
+export type CustomCreateExtensionSlot = <T>() => ItemsDataStructure<T>
 
 export interface CreateExtensionSlotOptions {
     declaringShell?: Shell
-    customItemsDataStructure?: CustomItemsDataStructure
+    customCreateExtensionSlot?: CustomCreateExtensionSlot
 }
 
 export function createExtensionSlot<T>(
@@ -52,7 +52,7 @@ export function createExtensionSlot<T>(
     host: PrivateAppHost,
     options?: CreateExtensionSlotOptions
 ): PrivateExtensionSlot<T> & AnyExtensionSlot {
-    const items = options?.customItemsDataStructure ? options.customItemsDataStructure<T>() : itemsDataStructure<T>()
+    const items = options?.customCreateExtensionSlot ? options.customCreateExtensionSlot<T>() : itemsDataStructure<T>()
     let subscribers: (() => void)[] = []
     const slotUniqueId = _.uniqueId()
 
@@ -92,7 +92,7 @@ export function createExtensionSlot<T>(
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
         const originalContributionCount = items.get().length
-        items.filter(v => !predicate(v))
+        items.discardBy(v => !predicate(v))
         if (items.get().length !== originalContributionCount) {
             subscribers.forEach(func => func())
         }

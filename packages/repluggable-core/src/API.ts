@@ -1,7 +1,7 @@
 import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
-import { CustomItemsDataStructure } from './extensionSlot'
+import { CustomCreateExtensionSlot } from './extensionSlot'
 
 export interface AnySlotKey {
     readonly name: string
@@ -335,7 +335,7 @@ export interface APILayer {
 
 interface AppHostPlugins {
     extensionSlot?: {
-        customItemsDataStructure: CustomItemsDataStructure
+        customCreateExtensionSlot: CustomCreateExtensionSlot
     }
 }
 
