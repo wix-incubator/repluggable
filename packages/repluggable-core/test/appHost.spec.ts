@@ -32,6 +32,7 @@ import {
 import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
 import { ConsoleHostLogger } from '../src/loggers'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
+import { createSignalItemsDataStructure } from './createSignalItemsDataStructure'
 
 const testHostOptions: AppHostOptions = {
     monitoring: { disableMonitoring: true }
@@ -1790,6 +1791,94 @@ This usually happens when trying to consume a private API as a public API.
 If the API is intended to be public, it should be declared as "public: true" in the API key, and built in both bundles.`
                 )
             )
+        })
+    })
+
+    describe('Custom Items Data Structure via AppHost Options (plugins)', () => {
+        it('should use customCreateExtensionSlot from appHostOptions when contributing and removing items', async () => {
+            interface SlotItem {
+                value: string
+            }
+            const slotKey: SlotKey<SlotItem> = { name: 'host_options_signal_slot' }
+
+            interface SlotContributionAPI {
+                contributeItem(fromShell: Shell, item: SlotItem): void
+                getItems(): SlotItem[]
+            }
+            const SlotContributionAPIKey: SlotKey<SlotContributionAPI> = {
+                name: 'SLOT_CONTRIBUTION_API'
+            }
+
+            const itemsSpy = jest.fn()
+
+            const { createDataStructure, effect } = createSignalItemsDataStructure()
+
+            const slotOwnerEntryPoint: EntryPoint = {
+                name: 'SLOT_OWNER_ENTRY_POINT',
+                declareAPIs() {
+                    return [SlotContributionAPIKey]
+                },
+                attach(shell: Shell) {
+                    const slot = shell.declareSlot(slotKey)
+                    shell.contributeAPI(SlotContributionAPIKey, () => ({
+                        contributeItem(fromShell: Shell, item: SlotItem) {
+                            slot.contribute(fromShell, item)
+                        },
+                        getItems() {
+                            return slot.getItems().map(item => item.contribution)
+                        }
+                    }))
+                }
+            }
+
+            const ContributorEntryPoint: EntryPoint = {
+                name: 'CONTRIBUTOR_ENTRY_POINT',
+                getDependencyAPIs() {
+                    return [SlotContributionAPIKey, ListenerAPI]
+                },
+                extend(shell: Shell) {
+                    const api = shell.getAPI(SlotContributionAPIKey)
+                    api.contributeItem(shell, { value: 'item1' })
+                    api.contributeItem(shell, { value: 'item2' })
+                }
+            }
+
+            const ListenerAPI: SlotKey<{}> = { name: 'LISTENER_API' }
+
+            const ListenerEntryPoint: EntryPoint = {
+                name: 'LISTENER_ENTRY_POINT',
+                declareAPIs() {
+                    return [ListenerAPI]
+                },
+                getDependencyAPIs() {
+                    return [SlotContributionAPIKey]
+                },
+                // move to attach to make sure
+                attach(shell: Shell) {
+                    const slotContributionAPI = shell.getAPI(SlotContributionAPIKey)
+                    effect(() => {
+                        slotContributionAPI.getItems()
+                        itemsSpy()
+                    })
+                    // contribute an api to make sure that the contribution depends on it and happens after.
+                    shell.contributeAPI(ListenerAPI, () => ({}))
+                }
+            }
+
+            const host = createAppHost([slotOwnerEntryPoint, ContributorEntryPoint, ListenerEntryPoint], {
+                monitoring: {},
+                plugins: {
+                    extensionSlot: {
+                        customCreateExtensionSlot: createDataStructure
+                    }
+                }
+            })
+
+            // first was created and then two time
+            expect(itemsSpy).toBeCalledTimes(3)
+
+            await host.removeShells([ContributorEntryPoint.name])
+            expect(itemsSpy).toBeCalledTimes(4)
         })
     })
 })

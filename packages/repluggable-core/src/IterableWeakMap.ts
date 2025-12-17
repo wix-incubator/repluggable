@@ -81,7 +81,7 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
 
     forEach(callbackfn: (value: V, key: K, map: this) => void, thisArg?: any): void {
         for (const [key, value] of this) {
-            callbackfn(value, key, this )
+            callbackfn(value, key, this)
         }
     }
 
@@ -107,17 +107,15 @@ export class IterableWeakMap<K extends object = object, V = any> implements Map<
         return this[Symbol.iterator]() as unknown as ReturnType<Map<K, V>['entries']>
     }
 
-    *keys(): ReturnType<Map<K, V>['keys']>  {
+    *keys(): ReturnType<Map<K, V>['keys']> {
         for (const [key] of this) {
             yield key
         }
     }
 
-    *values():  ReturnType<Map<K, V>['values']> {
+    *values(): ReturnType<Map<K, V>['values']> {
         for (const [_, value] of this) {
             yield value
         }
     }
 }
-
-

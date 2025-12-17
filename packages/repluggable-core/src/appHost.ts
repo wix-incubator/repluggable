@@ -251,7 +251,10 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         const memoized = _.memoize(func, resolver)
 
         if (options.monitoring.debugMemoization) {
-            Object.defineProperty(memoized, 'name', { value: `${func.name}_memoized`, writable: false })
+            Object.defineProperty(memoized, 'name', {
+                value: `${func.name}_memoized`,
+                writable: false
+            })
         }
 
         if (options.monitoring.disableMonitoring) {
@@ -560,7 +563,12 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function declareSlot<TItem>(key: SlotKey<TItem>, declaringShell?: Shell): ExtensionSlot<TItem> {
-        const newSlot = registerSlotOrThrow(key, () => createExtensionSlot(key, host, declaringShell))
+        const newSlot = registerSlotOrThrow(key, () =>
+            createExtensionSlot(key, host, {
+                declaringShell,
+                customCreateExtensionSlot: options.plugins?.extensionSlot?.customCreateExtensionSlot
+            })
+        )
         return newSlot
     }
 

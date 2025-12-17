@@ -4,13 +4,14 @@ import { AnySlotKey, AppHost, createAppHost as _createAppHost, EntryPointOrPacka
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
-export {createShellLogger}
+export { createShellLogger }
 export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
 
 export { withConsoleErrors } from './withConsoleErrors'
 export { withThrowOnError } from './withThrowOnError'
 export * from './mockPackage'
+export { createSignalItemsDataStructure } from '../test/createSignalItemsDataStructure'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)
@@ -74,7 +75,10 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
         }
     }
 
-    return createAppHost([...packages, pactsEntryPoint], { ...emptyLoggerOptions, disableLayersValidation: true })
+    return createAppHost([...packages, pactsEntryPoint], {
+        ...emptyLoggerOptions,
+        disableLayersValidation: true
+    })
 }
 
 export async function createAppHostAndWaitForLoading(packages: EntryPointOrPackage[], pacts: PactAPIBase[]): Promise<AppHost> {
@@ -88,7 +92,7 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         setTimeout(() => {
             const readyAPIs = Array.from(globalThis.repluggableAppDebug.readyAPIs)
             const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
-            const rootUnreadyAPI = globalThis.repluggableAppDebug.utils.getRootUnreadyAPI();
+            const rootUnreadyAPI = globalThis.repluggableAppDebug.utils.getRootUnreadyAPI()
 
             reject(
                 new Error(
@@ -117,7 +121,6 @@ in addition here's the full list of declared APIs that have not been contributed
 
     return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
 }
-
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
@@ -159,8 +162,6 @@ export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverr
     return shell
 }
 
-
-
 export function mockObservable<T>(value: T): ObservableState<T> {
     return {
         subscribe: () => {
@@ -171,4 +172,3 @@ export function mockObservable<T>(value: T): ObservableState<T> {
         }
     }
 }
-

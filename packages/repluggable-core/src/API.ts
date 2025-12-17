@@ -1,7 +1,7 @@
 import * as Redux from 'redux'
 import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
-
+import { CustomCreateExtensionSlot } from './extensionSlot'
 
 export interface AnySlotKey {
     readonly name: string
@@ -333,6 +333,12 @@ export interface APILayer {
     name: string
 }
 
+interface AppHostPlugins {
+    extensionSlot?: {
+        customCreateExtensionSlot: CustomCreateExtensionSlot
+    }
+}
+
 export interface AppHostOptions {
     readonly logger?: HostLogger
     readonly monitoring: MonitoringOptions
@@ -343,6 +349,7 @@ export interface AppHostOptions {
     readonly enableReduxDevtoolsExtension?: boolean
     readonly experimentalCyclicMode?: boolean
     readonly shouldScopeReducers?: boolean
+    readonly plugins?: AppHostPlugins
 }
 
 export interface MemoizeMissHit {
@@ -526,9 +533,8 @@ export interface PrivateShell extends Shell {
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
-    getHostOptions(): AppHostOptions,
-    readonly [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => AppHost
-  
+    getHostOptions(): AppHostOptions
+    [INTERNAL_DONT_USE_SHELL_GET_APP_HOST](): AppHost
 }
 
 export interface EntryPointsInfo {

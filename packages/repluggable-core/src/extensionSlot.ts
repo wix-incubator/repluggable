@@ -21,18 +21,44 @@ const alwaysTrue = () => true
 
 type Unsubscribe = () => void
 
+interface ItemsDataStructure<T> {
+    get(): ExtensionItem<T>[]
+    add(item: ExtensionItem<T>): void
+    discardBy(predicate: (item: ExtensionItem<T>) => boolean): void
+}
+
+const itemsDataStructure = <T>(): ItemsDataStructure<T> => {
+    let items: ExtensionItem<T>[] = []
+    return {
+        get: () => items,
+        add: (item: ExtensionItem<T>) => {
+            items.push(item)
+        },
+        discardBy: (predicate: (item: ExtensionItem<T>) => boolean) => {
+            items = items.filter(predicate)
+        }
+    }
+}
+
+export type CustomCreateExtensionSlot = <T>() => ItemsDataStructure<T>
+
+export interface CreateExtensionSlotOptions {
+    declaringShell?: Shell
+    customCreateExtensionSlot?: CustomCreateExtensionSlot
+}
+
 export function createExtensionSlot<T>(
     key: SlotKey<T>,
     host: PrivateAppHost,
-    declaringShell?: Shell
+    options?: CreateExtensionSlotOptions
 ): PrivateExtensionSlot<T> & AnyExtensionSlot {
-    let items: ExtensionItem<T>[] = []
+    const items = options?.customCreateExtensionSlot ? options.customCreateExtensionSlot<T>() : itemsDataStructure<T>()
     let subscribers: (() => void)[] = []
     const slotUniqueId = _.uniqueId()
 
     return {
         host,
-        declaringShell,
+        declaringShell: options?.declaringShell,
         name: key.name,
         contribute,
         getItems,
@@ -43,7 +69,7 @@ export function createExtensionSlot<T>(
     }
 
     function contribute(fromShell: Shell, item: T, condition?: ContributionPredicate): void {
-        items.push({
+        items.add({
             shell: fromShell,
             contribution: item,
             condition: condition || alwaysTrue,
@@ -53,21 +79,21 @@ export function createExtensionSlot<T>(
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
-        return forceAll ? items : items.filter(item => item.condition())
+        return forceAll ? items.get() : items.get().filter(item => item.condition())
     }
 
     function getSingleItem(): ExtensionItem<T> | undefined {
-        return items.find(item => item.condition())
+        return items.get().find(item => item.condition())
     }
 
     function getItemByName(name: string): ExtensionItem<T> | undefined {
-        return items.find(item => item.name === name && item.condition())
+        return items.get().find(item => item.name === name && item.condition())
     }
 
     function discardBy(predicate: ExtensionItemFilter<T>) {
-        const originalContributionCount = items.length
-        items = items.filter(v => !predicate(v))
-        if (items.length !== originalContributionCount) {
+        const originalContributionCount = items.get().length
+        items.discardBy(v => !predicate(v))
+        if (items.get().length !== originalContributionCount) {
             subscribers.forEach(func => func())
         }
     }
