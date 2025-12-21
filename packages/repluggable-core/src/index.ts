@@ -13,6 +13,7 @@ export {
     AnySlotKey,
     SlotKey,
     ReactComponentContributor,
+    CustomCreateExtensionSlot,
     ReducersMapObjectContributor,
     EntryPointInterceptor,
     ShellLogger,
