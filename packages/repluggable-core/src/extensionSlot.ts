@@ -1,16 +1,16 @@
+import _ from 'lodash'
 import {
     AppHost,
     ContributionPredicate,
-    ExtensionItem,
-    ExtensionItemFilter,
-    PrivateExtensionSlot,
-    Shell,
-    SlotKey,
     CustomExtensionSlot,
     CustomExtensionSlotHandler,
-    PrivateAppHost
+    ExtensionItem,
+    ExtensionItemFilter,
+    PrivateAppHost,
+    PrivateExtensionSlot,
+    Shell,
+    SlotKey
 } from './API'
-import _ from 'lodash'
 
 export interface AnyExtensionSlot {
     readonly name: string
@@ -75,7 +75,12 @@ export function createExtensionSlot<T>(
             condition: condition || alwaysTrue,
             uniqueId: _.uniqueId(`${fromShell.name}_extItem_`)
         })
-        host.executeWhenFree(slotUniqueId, () => subscribers.forEach(func => func()))
+        host.executeWhenFree(slotUniqueId, () => {
+            subscribers.forEach(func => func())
+            // Inform host that this slot now has a new contribution.
+            // This is used to drive implementation-dependency based scheduling.
+            host.notifyExtensionSlotContribution && host.notifyExtensionSlotContribution(key)
+        })
     }
 
     function getItems(forceAll: boolean = false): ExtensionItem<T>[] {
