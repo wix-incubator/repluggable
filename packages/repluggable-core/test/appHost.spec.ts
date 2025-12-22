@@ -173,6 +173,140 @@ describe('App Host', () => {
             expect(() => createAppHost(circularPackages, testHostOptions)).toThrowError()
         })
 
+        it('should delay extend until implementation dependencies are satisfied', async () => {
+            interface SomeAPIImplementation {
+                implementation: () => any
+            }
+
+            const implementationSlotKey: SlotKey<SomeAPIImplementation> = {
+                name: 'IMPLEMENTATION_SLOT'
+            }
+
+            interface SomeAPI {
+                getImplementation(): SomeAPIImplementation
+            }
+
+            interface SomeAPIContributionAPI {
+                contributeImplementation(fromShell: Shell, implementation: SomeAPIImplementation): void
+                getContributedImplementation(): SomeAPIImplementation
+            }
+
+            const someAPIKey: SlotKey<SomeAPI> = {
+                name: 'SOME_API'
+            }
+
+            const someAPIContributionKey: SlotKey<SomeAPIContributionAPI> = {
+                name: 'SOME_API_CONTRIBUTION'
+            }
+
+            let getImplementationSpy: jest.SpyInstance | null = null
+
+            const createSomeAPIContributionAPI = (shell: Shell): SomeAPIContributionAPI => {
+                const implementationSlot = shell.declareSlot(implementationSlotKey)
+                return {
+                    contributeImplementation(fromShell: Shell, implementation: SomeAPIImplementation) {
+                        implementationSlot.contribute(fromShell, implementation)
+                    },
+                    getContributedImplementation() {
+                        const firstItem = implementationSlot.getItems()[0]
+                        return firstItem.contribution
+                    }
+                }
+            }
+
+            const createSomeAPI = (shell: Shell): SomeAPI => {
+                const someAPIContributionAPI = shell.getAPI(someAPIContributionKey)
+                const api: SomeAPI = {
+                    getImplementation() {
+                        return someAPIContributionAPI.getContributedImplementation()
+                    }
+                }
+
+                // Jest spy directly on the API method implementation so we can assert
+                // exactly when it is invoked.
+                getImplementationSpy = jest.spyOn(api, 'getImplementation')
+
+                return api
+            }
+
+            const contributionProviderEntryPoint: EntryPoint = {
+                name: 'CONTRIBUTION_PROVIDER_EP',
+                declareAPIs() {
+                    return [someAPIContributionKey]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(someAPIContributionKey, () => createSomeAPIContributionAPI(shell))
+                }
+            }
+
+            const interfaceProviderEntryPoint: EntryPoint = {
+                name: 'INTERFACE_PROVIDER_EP',
+                declareAPIs() {
+                    return [someAPIKey]
+                },
+                getInterfaceDependencies() {
+                    return [someAPIContributionKey]
+                },
+                declareIOCSlots() {
+                    return [implementationSlotKey]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(someAPIKey, () => createSomeAPI(shell))
+                }
+            }
+
+            const implementationProviderEntryPoint: EntryPoint = {
+                name: 'IMPLEMENTATION_PROVIDER_EP',
+                getInterfaceDependencies() {
+                    return [someAPIContributionKey]
+                },
+
+                extend(shell: Shell) {
+                    const contributionAPI = shell.getAPI(someAPIContributionKey)
+                    contributionAPI.contributeImplementation(shell, { implementation: () => {} })
+                }
+            }
+
+            const consumerEntryPoint: EntryPoint = {
+                name: 'CONSUMER_EP',
+
+                getInterfaceDependencies() {
+                    return [someAPIKey]
+                },
+
+                getImplementationDependencies() {
+                    return [implementationSlotKey]
+                },
+                extend(shell: Shell) {
+                    const someAPI = shell.getAPI(someAPIKey)
+                    const impl = someAPI.getImplementation()
+                    expect(impl).toBeDefined()
+                }
+            }
+
+            // Create host with base infrastructure and consumer entry point
+            const host = createAppHost(
+                [contributionProviderEntryPoint, interfaceProviderEntryPoint, consumerEntryPoint],
+                testHostOptions
+            )
+
+            // At this point, implementation provider is not yet installed, so consumer's extend should NOT have run, so getImplementation
+            expect(getImplementationSpy).not.toHaveBeenCalled()
+
+            // Verify consumer shell is not yet installed and implementation slot is still empty
+            // (consumer's extend is delayed waiting for implementation)
+            expect(host.hasShell('CONSUMER_EP')).toBe(false)
+            expect(host.getSlot(implementationSlotKey).getItems().length).toBe(0)
+
+            // Now add the implementation provider
+            await host.addShells([implementationProviderEntryPoint])
+
+            // After the implementation is contributed, consumer's extend should run
+            // and call getImplementation exactly once, and the consumer shell should be installed.
+            expect(getImplementationSpy).toHaveBeenCalledTimes(1)
+            expect(host.hasShell('CONSUMER_EP')).toBe(true)
+        })
+
         it('should throw when dynamically adding a shell with circular dependency', () => {
             const circularPackages = createCircularEntryPoints(true)
             const nonCircular = circularPackages.slice(0, 3)

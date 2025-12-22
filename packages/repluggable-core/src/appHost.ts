@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { AnyAction, Store } from 'redux'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import {
     AnyEntryPoint,
     AnyFunction,
@@ -53,7 +54,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -195,6 +195,8 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAppHostOptions: () => options
     }
     const appHostServicesEntryPoint = createAppHostServicesEntryPoint(() => hostAPI)
+    const shellsPendingExtend = new Set<PrivateShell>()
+
     const host: PrivateAppHost & AppHostServicesProvider = {
         getStore,
         getAPI,
@@ -214,7 +216,8 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAppHostServicesShell: appHostServicesEntryPoint.getAppHostServicesShell,
         log: options.logger ? options.logger : ConsoleHostLogger,
         options,
-        executeWhenFree
+        executeWhenFree,
+        notifyExtensionSlotContribution: onExtensionSlotContribution
     }
 
     setupDebugInfo({
@@ -346,11 +349,26 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     type Dependency = { layer?: InternalAPILayer; apiKey: SlotKey<any> } | undefined
+    function getInterfaceDependencies(entryPoint: EntryPoint): SlotKey<any>[] {
+        if (entryPoint.getInterfaceDependencies) {
+            return entryPoint.getInterfaceDependencies() || []
+        }
+        if (entryPoint.getDependencyAPIs) {
+            return entryPoint.getDependencyAPIs() || []
+        }
+        return []
+    }
+
+    function getImplementationDependencies(entryPoint: EntryPoint): SlotKey<any>[] {
+        return entryPoint.getImplementationDependencies ? entryPoint.getImplementationDependencies() || [] : []
+    }
+
     function validateEntryPointLayer(entryPoint: EntryPoint) {
-        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
+        const interfaceDeps = getInterfaceDependencies(entryPoint)
+        if (!interfaceDeps.length || !entryPoint.layer || _.isEmpty(layers)) {
             return
         }
-        const highestLevelDependencies: Dependency[] = _.chain(entryPoint.getDependencyAPIs())
+        const highestLevelDependencies: Dependency[] = _.chain(interfaceDeps)
             .flatMap<Dependency>(apiKey =>
                 apiKey.layer
                     ? _(apiKey.layer)
@@ -428,7 +446,7 @@ miss: ${memoizedWithMissHit.miss}
             return false
         }
 
-        const dependencies = keyDeclarerEntryPoint.getDependencyAPIs && keyDeclarerEntryPoint.getDependencyAPIs()
+        const dependencies = getInterfaceDependencies(keyDeclarerEntryPoint)
         const uncheckDependencies = _.differenceWith(dependencies, passed, _.isEqual)
 
         const everyDependenciesReadyOrPending = _.every(
@@ -450,9 +468,25 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
+    function areImplementationDependenciesReady(entryPoint: EntryPoint): boolean {
+        const dependencies = getImplementationDependencies(entryPoint)
+        if (!dependencies.length) {
+            return true
+        }
+        return _.every(dependencies, k => {
+            const ownKey = getOwnSlotKey(k)
+            if (!hasSlot(ownKey)) {
+                return false
+            }
+            const slot = getSlot<any>(ownKey)
+            // Implementation is considered ready once there is at least one contributed item.
+            return slot.getItems(true).length > 0
+        })
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
-            const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
+            const dependencies = getInterfaceDependencies(entryPoint)
             return _.every(
                 dependencies,
                 k =>
@@ -475,11 +509,12 @@ miss: ${memoizedWithMissHit.miss}
         batchDeclarationsChangedCallbacks(() => {
             isInstallingEntryPoints = true
             try {
+                // Record interface dependencies (new explicit hook takes precedence, legacy is supported).
                 invokeEntryPointPhase(
                     'getDependencyAPIs',
                     shells,
-                    f => f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs()),
-                    f => !!f.entryPoint.getDependencyAPIs
+                    f => f.setDependencyAPIs(getInterfaceDependencies(f.entryPoint)),
+                    f => !!(f.entryPoint.getInterfaceDependencies || f.entryPoint.getDependencyAPIs)
                 )
 
                 invokeEntryPointPhase(
@@ -492,21 +527,36 @@ miss: ${memoizedWithMissHit.miss}
                 buildStore()
                 shells.forEach(f => f.setLifecycleState(true, true, false))
 
-                invokeEntryPointPhase(
-                    'extend',
-                    shells,
-                    f => f.entryPoint.extend && f.entryPoint.extend(f),
-                    f => !!f.entryPoint.extend
+                const [shellsReadyForExtend, shellsWaitingForExtend] = _.partition(shells, shell =>
+                    areImplementationDependenciesReady(shell.entryPoint)
                 )
 
-                shells.forEach(f => {
-                    addedShells.set(f.entryPoint.name, f)
-                    f.setLifecycleState(true, true, true)
+                if (!_.isEmpty(shellsReadyForExtend)) {
+                    executeExtendOnShells(shellsReadyForExtend)
+                }
+
+                shellsWaitingForExtend.forEach(shell => {
+                    shellsPendingExtend.add(shell)
                 })
             } finally {
                 isInstallingEntryPoints = false
             }
             executeInstallShell(unReadyEntryPointsStore.get())
+        })
+    }
+
+    function executeExtendOnShells(shellsToExtend: PrivateShell[]): void {
+        invokeEntryPointPhase(
+            'extend',
+            shellsToExtend,
+            f => f.entryPoint.extend && f.entryPoint.extend(f),
+            f => !!f.entryPoint.extend
+        )
+
+        shellsToExtend.forEach(f => {
+            shellsPendingExtend.delete(f)
+            addedShells.set(f.entryPoint.name, f)
+            f.setLifecycleState(true, true, true)
         })
     }
 
@@ -516,6 +566,24 @@ miss: ${memoizedWithMissHit.miss}
 
     function executeDeclarationsChangedCallbacks() {
         declarationsChangedCallbacks.forEach(f => f())
+    }
+
+    function onExtensionSlotContribution(slotKey: AnySlotKey): void {
+        if (shellsPendingExtend.size === 0) {
+            return
+        }
+
+        const shellsToExtend: PrivateShell[] = []
+        shellsPendingExtend.forEach(shell => {
+            if (areImplementationDependenciesReady(shell.entryPoint)) {
+                shellsToExtend.push(shell)
+            }
+        })
+
+        if (!_.isEmpty(shellsToExtend)) {
+            executeExtendOnShells(shellsToExtend)
+            setInstalledShellNames(getInstalledShellNames())
+        }
     }
 
     function batchDeclarationsChangedCallbacks<T>(action: () => T): T {

@@ -1,7 +1,7 @@
 import * as Redux from 'redux'
-import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import { CustomCreateExtensionSlot } from './extensionSlot'
+import { ThrottledStore } from './throttledStore'
 
 export interface AnySlotKey {
     readonly name: string
@@ -79,6 +79,36 @@ export interface EntryPoint {
      */
     readonly layer?: string | string[]
     /**
+     * Define which API keys (a.k.a. contracts) are mandatory for this entry point
+     * in order for its attach phase to execute.
+     *
+     * Prefer this over {@link EntryPoint.getDependencyAPIs} for new code.
+     *
+     * @return {SlotKey<any>[]} API keys to wait for interface availability
+     */
+    getInterfaceDependencies?(): SlotKey<any>[]
+    /**
+     * Define which implementation dependencies must be satisfied before the extend
+     * phase of this entry point is allowed to run.
+     *
+     * These typically represent required IoC slots whose implementations must be
+     * contributed elsewhere before this entry point can safely extend.
+     *
+     * @return {SlotKey<any>[]} implementation dependency keys
+     */
+    getImplementationDependencies?(): SlotKey<any>[]
+    /**
+     * Define which extension slots are used as inversion-of-control (IoC)
+     * implementation points owned by this entry point.
+     *
+     * Declaring a slot here marks it as an implementation contract: other
+     * entry points may list these keys in {@link EntryPoint.getImplementationDependencies}
+     * to signal that they must wait for implementations to be contributed to
+     * these slots before their extend phase can safely run.
+     */
+    declareIOCSlots?(): SlotKey<any>[]
+    /**
+     * @deprecated Use {@link EntryPoint.getInterfaceDependencies} instead.
      * Define which API keys (a.k.a. contracts) are mandatory for this entry point to be executed
      * @return {SlotKey<any>[]} API keys to wait for implementation
      */
@@ -311,6 +341,14 @@ export interface AppHost {
 
 export interface PrivateAppHost extends AppHost {
     executeWhenFree(identifier: string, callback: () => void): void
+    /**
+     * Internal hook used by extension slots to notify the host that an item
+     * was contributed to a slot represented by the given key.
+     *
+     * This is used to drive implementation-dependency based scheduling of
+     * entry points' extend phases.
+     */
+    notifyExtensionSlotContribution?(slotKey: AnySlotKey): void
 }
 
 export interface MonitoringOptions {
