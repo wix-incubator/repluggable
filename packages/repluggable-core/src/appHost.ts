@@ -18,8 +18,6 @@ import {
     ExtensionSlot,
     FunctionWithSameArgs,
     Lazy,
-    LazyEntryPointDescriptor,
-    LazyEntryPointFactory,
     MemoizeMissHit,
     ObservableState,
     PrivateAppHost,
@@ -60,13 +58,6 @@ function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
 }
 function castMultiArray<T>(v: T[] | T[][]): T[][] {
     return isMultiArray(v) ? v : [v]
-}
-
-export const makeLazyEntryPoint = (name: string, factory: LazyEntryPointFactory): LazyEntryPointDescriptor => {
-    return {
-        name,
-        factory
-    }
 }
 
 export const mainViewSlotKey: SlotKey<ReactComponentContributor> = {
@@ -182,7 +173,6 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     const slotKeysByName = new Map<string, AnySlotKey>()
     const addedShells = new Map<string, PrivateShell>()
     const shellInstallers = new WeakMap<PrivateShell, string[]>()
-    const lazyShells = new Map<string, LazyEntryPointFactory>()
     const shellsChangedCallbacks = new Map<string, ShellsChangedCallback>()
     const declarationsChangedCallbacks = new Map<string, DeclarationsChangedCallback>()
     const APILayers = new WeakMap<AnySlotKey, APILayer[] | undefined>()
@@ -204,7 +194,6 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         getAllSlotKeys,
         getAllEntryPoints,
         hasShell,
-        isLazyEntryPoint,
         addShells,
         removeShells,
         onShellsChanged,
@@ -224,7 +213,6 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
         extensionSlots,
         addedShells,
         shellInstallers,
-        lazyShells,
 
         performance: {
             options,
@@ -299,11 +287,6 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     addShells(initialEntryPointsOrPackages)
 
     return host
-
-    //TODO: get rid of LazyEntryPointDescriptor
-    function isLazyEntryPointDescriptor(value: AnyEntryPoint): value is LazyEntryPointDescriptor {
-        return typeof (value as LazyEntryPointDescriptor).factory === 'function'
-    }
 
     function enrichMemoization<T extends _.MemoizedFunction & Partial<MemoizeMissHit>>(memoized: T): T & MemoizeMissHit {
         const memoizedWithMissHit = _.assign(memoized, {
@@ -404,15 +387,9 @@ miss: ${memoizedWithMissHit.miss}
         validateUniqueShellNames(entryPoints)
         !options.disableCheckCircularDependencies && !options.experimentalCyclicMode && validateCircularDependency(allEntryPoints)
 
-        const [lazyEntryPointsList, readyEntryPointsList] = _.partition(entryPoints, isLazyEntryPointDescriptor) as [
-            LazyEntryPointDescriptor[],
-            EntryPoint[]
-        ]
+        executeInstallShell(entryPoints)
 
-        executeInstallShell(readyEntryPointsList)
-        lazyEntryPointsList.forEach(registerLazyEntryPoint)
-
-        setInstalledShellNames(getInstalledShellNames().concat(_.map(lazyEntryPointsList, 'name')))
+        setInstalledShellNames(getInstalledShellNames().concat(_.map(entryPoints, 'name')))
         return Promise.resolve()
     }
 
@@ -660,14 +637,6 @@ miss: ${memoizedWithMissHit.miss}
     function hasShell(name: string): boolean {
         const installedShellsSet = InstalledShellsSelectors.getInstalledShellsSet(getStore().getState())
         return installedShellsSet[name] === true
-    }
-
-    function isLazyEntryPoint(name: string): boolean {
-        return lazyShells.has(name)
-    }
-
-    function registerLazyEntryPoint(descriptor: LazyEntryPointDescriptor): void {
-        lazyShells.set(descriptor.name, descriptor.factory)
     }
 
     function getOwnSlotKey<T>(key: SlotKey<T>): SlotKey<T> {
@@ -999,7 +968,6 @@ miss: ${memoizedWithMissHit.miss}
             getAllSlotKeys: host.getAllSlotKeys,
             getAllEntryPoints: host.getAllEntryPoints,
             hasShell: host.hasShell,
-            isLazyEntryPoint: host.isLazyEntryPoint,
             onShellsChanged: host.onShellsChanged,
             onDeclarationsChanged: host.onDeclarationsChanged,
             removeShellsChangedCallback: host.removeShellsChangedCallback,
