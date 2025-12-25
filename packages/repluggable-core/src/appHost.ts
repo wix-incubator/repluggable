@@ -36,7 +36,7 @@ import {
     UnsubscribeFromDeclarationsChanged
 } from './API'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
-import { declaredAPIs, dependentAPIs } from './appHostUtils'
+import { coldDependentAPIs, declaredAPIs, dependentAPIs } from './appHostUtils'
 import { AnyExtensionSlot, createCustomExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { IterableWeakMap } from './IterableWeakMap'
@@ -128,6 +128,7 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let isInstallingEntryPoints: boolean = false
+    let isInAttachPhase: boolean = false
     let isStoreSubscribersNotifyInProgress = false
     let isObserversNotifyInProgress = false
     let shouldFlushMemoizationSync = false
@@ -347,10 +348,17 @@ miss: ${memoizedWithMissHit.miss}
 
     type Dependency = { layer?: InternalAPILayer; apiKey: SlotKey<any> } | undefined
     function validateEntryPointLayer(entryPoint: EntryPoint) {
-        if (!entryPoint.getDependencyAPIs || !entryPoint.layer || _.isEmpty(layers)) {
+        if (!entryPoint.layer || _.isEmpty(layers)) {
             return
         }
-        const highestLevelDependencies: Dependency[] = _.chain(entryPoint.getDependencyAPIs())
+        const allDependencies = [
+            ...(entryPoint.getDependencyAPIs?.() || []),
+            ...(entryPoint.getColdDependencyAPIs?.() || [])
+        ]
+        if (allDependencies.length === 0) {
+            return
+        }
+        const highestLevelDependencies: Dependency[] = _.chain(allDependencies)
             .flatMap<Dependency>(apiKey =>
                 apiKey.layer
                     ? _(apiKey.layer)
@@ -450,11 +458,72 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
+    /**
+     * Computes effective real dependencies for an entry point, implementing transitive promotion:
+     * - Entry point's own getDependencyAPIs are real deps
+     * - Entry point's own getColdDependencyAPIs are NOT real deps (don't block loading)
+     * - But for each real dep, ALL of the declarer's deps (real AND cold) become effective real deps
+     */
+    function computeEffectiveRealDependencies(
+        entryPoint: EntryPoint,
+        allEntryPoints: EntryPoint[]
+    ): AnySlotKey[] {
+        // Build a map from API name to declaring entry point
+        const apiToEntryPoint = new Map<string, EntryPoint>()
+        for (const ep of allEntryPoints) {
+            for (const api of declaredAPIs(ep)) {
+                apiToEntryPoint.set(slotKeyToName(api), ep)
+            }
+        }
+
+        const effectiveDeps = new Set<string>()
+        const visited = new Set<string>()
+
+        // Helper to add all dependencies (real and cold) of an entry point
+        const addTransitiveDeps = (ep: EntryPoint) => {
+            const allDeps = [...dependentAPIs(ep), ...coldDependentAPIs(ep)]
+            for (const dep of allDeps) {
+                const depName = slotKeyToName(dep)
+                if (!visited.has(depName)) {
+                    visited.add(depName)
+                    effectiveDeps.add(depName)
+                    const declaringEp = apiToEntryPoint.get(depName)
+                    if (declaringEp) {
+                        addTransitiveDeps(declaringEp)
+                    }
+                }
+            }
+        }
+
+        // Start with entry point's own real dependencies (not cold)
+        const directRealDeps = entryPoint.getDependencyAPIs?.() || []
+        for (const dep of directRealDeps) {
+            const depName = slotKeyToName(dep)
+            if (!visited.has(depName)) {
+                visited.add(depName)
+                effectiveDeps.add(depName)
+                // For each real dep, add ALL of its deps (real AND cold) transitively
+                const declaringEp = apiToEntryPoint.get(depName)
+                if (declaringEp) {
+                    addTransitiveDeps(declaringEp)
+                }
+            }
+        }
+
+        // Convert back to SlotKeys
+        return Array.from(effectiveDeps).map(name => slotKeysByName.get(name)).filter((k): k is AnySlotKey => k !== undefined)
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
+        // Get all entry points for computing transitive dependencies
+        const existingEntryPoints = [...addedShells.values()].map(shell => shell.entryPoint)
+        const allEntryPoints = [...existingEntryPoints, ...unReadyEntryPointsStore.get(), ...entryPoints]
+
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
-            const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
+            // Compute effective real dependencies (with transitive promotion of cold deps)
+            const effectiveDependencies = computeEffectiveRealDependencies(entryPoint, allEntryPoints)
             return _.every(
-                dependencies,
+                effectiveDependencies,
                 k =>
                     readyAPIs.has(getOwnSlotKey(k)) ||
                     (options.experimentalCyclicMode && isAllAPIDependenciesAreReadyOrPending(k, entryPoints))
@@ -483,11 +552,23 @@ miss: ${memoizedWithMissHit.miss}
                 )
 
                 invokeEntryPointPhase(
-                    'attach',
+                    'getColdDependencyAPIs',
                     shells,
-                    f => f.entryPoint.attach && f.entryPoint.attach(f),
-                    f => !!f.entryPoint.attach
+                    f => f.entryPoint.getColdDependencyAPIs && f.setColdDependencyAPIs(f.entryPoint.getColdDependencyAPIs()),
+                    f => !!f.entryPoint.getColdDependencyAPIs
                 )
+
+                isInAttachPhase = true
+                try {
+                    invokeEntryPointPhase(
+                        'attach',
+                        shells,
+                        f => f.entryPoint.attach && f.entryPoint.attach(f),
+                        f => !!f.entryPoint.attach
+                    )
+                } finally {
+                    isInAttachPhase = false
+                }
 
                 buildStore()
                 shells.forEach(f => f.setLifecycleState(true, true, false))
@@ -712,7 +793,8 @@ miss: ${memoizedWithMissHit.miss}
         const graph = new Graph()
         entryPoints.forEach(ep => {
             const declaredApis = declaredAPIs(ep).map(x => slotKeyToName(x))
-            const dependencies = dependentAPIs(ep).map(x => slotKeyToName(x))
+            // Include both regular and cold dependencies in circular dependency check
+            const dependencies = [...dependentAPIs(ep), ...coldDependentAPIs(ep)].map(x => slotKeyToName(x))
             declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(d, y)))
         })
 
@@ -724,7 +806,8 @@ miss: ${memoizedWithMissHit.miss}
                 const dependentGraph: { [key: string]: string[] } = {}
                 entryPoints.forEach(ep => {
                     const declaredApis = declaredAPIs(ep).map(child => child.name)
-                    const dependencies = dependentAPIs(ep).map(child => child.name)
+                    // Include both regular and cold dependencies in cycle detection
+                    const dependencies = [...dependentAPIs(ep), ...coldDependentAPIs(ep)].map(child => child.name)
                     declaredApis.forEach(d => {
                         dependentGraph[d] = dependencies
                     })
@@ -963,11 +1046,16 @@ miss: ${memoizedWithMissHit.miss}
         let APIsEnabled = false
         let wasInitCompleted = false
         let dependencyAPIs: Set<AnySlotKey> = new Set()
+        let coldDependencyAPIs: Set<AnySlotKey> = new Set()
         let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
         function isOwnContributedAPI<TAPI>(key: SlotKey<TAPI>): boolean {
             return getAPIContributor(key) === shell
+        }
+
+        function isColdDependency<TAPI>(key: SlotKey<TAPI>): boolean {
+            return coldDependencyAPIs.has(key)
         }
 
         const shell: PrivateShell = {
@@ -1023,6 +1111,10 @@ miss: ${memoizedWithMissHit.miss}
                 dependencyAPIs = new Set(APIs)
             },
 
+            setColdDependencyAPIs(APIs: AnySlotKey[]): void {
+                coldDependencyAPIs = new Set(APIs)
+            },
+
             canUseAPIs(): boolean {
                 return APIsEnabled
             },
@@ -1066,18 +1158,43 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
+                // In cyclic mode, enforce that getAPI cannot be called during attach phase
+                if (options.experimentalCyclicMode && isInAttachPhase && !isOwnContributedAPI(key)) {
+                    throw new Error(
+                        `Cannot call getAPI('${slotKeyToName(key)}') during attach() phase in cyclic mode. ` +
+                            `Move this call to extend() or defer it to runtime (e.g., inside a contributed function).`
+                    )
+                }
                 if (dependencyAPIs.has(key) || isOwnContributedAPI(key)) {
+                    return host.getAPI(key)
+                }
+                if (isColdDependency(key)) {
+                    // Cold dependency - allowed but must check if ready
+                    if (!host.hasAPI(key)) {
+                        throw new Error(
+                            `Cold dependency '${slotKeyToName(key)}' is not ready yet. ` +
+                                `Cold dependencies should only be accessed after initialization or in event handlers.`
+                        )
+                    }
                     return host.getAPI(key)
                 }
                 throw new Error(
                     `API '${slotKeyToName(key)}' is not declared as dependency by entry point '${
                         entryPoint.name
-                    }' (forgot to return it from getDependencyAPIs?)`
+                    }' (forgot to return it from getDependencyAPIs or getColdDependencyAPIs?)`
                 )
             },
 
             hasAPI<TAPI>(key: SlotKey<TAPI>): boolean {
-                return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && host.hasAPI(key)
+                // For regular dependencies, check if declared and available
+                if (dependencyAPIs.has(key) || isOwnContributedAPI(key)) {
+                    return host.hasAPI(key)
+                }
+                // For cold dependencies, return true only if the API is actually ready
+                if (isColdDependency(key)) {
+                    return host.hasAPI(key)
+                }
+                return false
             },
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {

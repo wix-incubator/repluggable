@@ -84,6 +84,13 @@ export interface EntryPoint {
      */
     getDependencyAPIs?(): SlotKey<any>[]
     /**
+     * Define which API keys (a.k.a. contracts) this entry point may use, but doesn't need to wait for.
+     * Cold dependencies follow the same validation rules as regular dependencies (layers, circular checks),
+     * but don't block the entry point from loading. Accessing a cold dependency before it's ready will throw.
+     * @return {SlotKey<any>[]} API keys that may be used but don't block loading
+     */
+    getColdDependencyAPIs?(): SlotKey<any>[]
+    /**
      * Define which API keys (a.k.a. contracts) this entry point is going to implement and contribute
      * @return {SlotKey<any>[]} API keys that will be contributed
      */
@@ -531,6 +538,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
 export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
+    setColdDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
@@ -547,6 +555,7 @@ export interface EntryPointInterceptor {
     interceptName?(innerName: string): string
     interceptTags?(innerTags?: EntryPointTags): EntryPointTags
     interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
+    interceptGetColdDependencyAPIs?(innerGetColdDependencyAPIs?: EntryPoint['getColdDependencyAPIs']): EntryPoint['getColdDependencyAPIs']
     interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
     interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']

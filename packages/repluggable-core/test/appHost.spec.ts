@@ -1670,6 +1670,106 @@ describe('App Host', () => {
             expect(host.hasShell(entryPoints[1].name)).toBe(false)
             expect(host.hasShell(entryPoints[2].name)).toBe(false)
         })
+
+        it('should throw error when calling getAPI during attach phase', () => {
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{ doSomething: () => void }> = { name: 'API2' }
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        shell.contributeAPI(API1, () => ({}))
+                        // This should throw in cyclic mode
+                        shell.getAPI(API2)
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API1],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({ doSomething: () => {} }))
+                    }
+                }
+            ]
+
+            expect(() =>
+                createAppHost(entryPoints, {
+                    ...testHostOptions,
+                    experimentalCyclicMode: true
+                })
+            ).toThrow(/Cannot call getAPI.*during attach\(\) phase/)
+        })
+
+        it('should allow getAPI during extend phase in cyclic mode', () => {
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{ value: number }> = { name: 'API2' }
+            let api2Value: number | undefined
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        shell.contributeAPI(API1, () => ({}))
+                    },
+                    extend(shell) {
+                        // This should work - extend phase is after all attach phases
+                        api2Value = shell.getAPI(API2).value
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API1],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({ value: 42 }))
+                    }
+                }
+            ]
+
+            createAppHost(entryPoints, {
+                ...testHostOptions,
+                experimentalCyclicMode: true
+            })
+
+            expect(api2Value).toBe(42)
+        })
+
+        it('should allow getAPI for own contributed API during attach phase', () => {
+            const API1: SlotKey<{ getValue: () => number }> = { name: 'API1' }
+            const API2: SlotKey<{}> = { name: 'API2' }
+            let ownApiWorks = false
+            const entryPoints: EntryPoint[] = [
+                {
+                    name: 'Package1',
+                    getDependencyAPIs: () => [API2],
+                    declareAPIs: () => [API1],
+                    attach(shell) {
+                        shell.contributeAPI(API1, () => ({ getValue: () => 123 }))
+                        // Getting own API should still work
+                        ownApiWorks = shell.getAPI(API1).getValue() === 123
+                    }
+                },
+                {
+                    name: 'Package2',
+                    getDependencyAPIs: () => [API1],
+                    declareAPIs: () => [API2],
+                    attach(shell) {
+                        shell.contributeAPI(API2, () => ({}))
+                    }
+                }
+            ]
+
+            createAppHost(entryPoints, {
+                ...testHostOptions,
+                experimentalCyclicMode: true
+            })
+
+            expect(ownApiWorks).toBe(true)
+        })
     })
 
     describe('Host.executeWhenFree', () => {
@@ -1879,6 +1979,283 @@ If the API is intended to be public, it should be declared as "public: true" in 
 
             await host.removeShells([ContributorEntryPoint.name])
             expect(itemsSpy).toBeCalledTimes(4)
+        })
+    })
+
+    describe('Cold Dependencies (getColdDependencyAPIs)', () => {
+        const ColdAPI: SlotKey<{ getValue(): string }> = { name: 'ColdAPI' }
+        const RealAPI: SlotKey<{ getValue(): string }> = { name: 'RealAPI' }
+        const TransitiveAPI: SlotKey<{ getValue(): string }> = { name: 'TransitiveAPI' }
+
+        it('should allow entry point to load without waiting for cold dependencies', async () => {
+            const loadOrder: string[] = []
+
+            const coldProvider: EntryPoint = {
+                name: 'ColdProvider',
+                getDependencyAPIs: () => [RealAPI], // ColdProvider depends on RealAPI
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    loadOrder.push('ColdProvider')
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                getColdDependencyAPIs: () => [ColdAPI], // Cold dep - shouldn't block
+                attach() {
+                    loadOrder.push('Consumer')
+                }
+            }
+
+            const realProvider: EntryPoint = {
+                name: 'RealProvider',
+                declareAPIs: () => [RealAPI],
+                attach(shell) {
+                    loadOrder.push('RealProvider')
+                    shell.contributeAPI(RealAPI, () => ({ getValue: () => 'real' }))
+                }
+            }
+
+            // Consumer should load before ColdProvider because ColdAPI is a cold dep
+            createAppHost([coldProvider, consumer, realProvider], testHostOptions)
+
+            // Consumer loads immediately, ColdProvider waits for RealAPI
+            expect(loadOrder).toEqual(['Consumer', 'RealProvider', 'ColdProvider'])
+        })
+
+        it('should throw when accessing cold dependency that is not ready', async () => {
+            const coldProvider: EntryPoint = {
+                name: 'ColdProvider',
+                getDependencyAPIs: () => [RealAPI],
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            let capturedShell: Shell | null = null
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                getColdDependencyAPIs: () => [ColdAPI],
+                attach(shell) {
+                    capturedShell = shell
+                    // This should throw because ColdAPI is not ready yet
+                    expect(() => shell.getAPI(ColdAPI)).toThrow(/Cold dependency.*not ready/)
+                }
+            }
+
+            createAppHost([coldProvider, consumer], testHostOptions)
+            expect(capturedShell).not.toBeNull()
+        })
+
+        it('should return false for hasAPI when cold dependency is not ready', async () => {
+            const coldProvider: EntryPoint = {
+                name: 'ColdProvider',
+                getDependencyAPIs: () => [RealAPI],
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            let capturedShell: Shell | null = null
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                getColdDependencyAPIs: () => [ColdAPI],
+                attach(shell) {
+                    capturedShell = shell
+                    expect(shell.hasAPI(ColdAPI)).toBe(false)
+                }
+            }
+
+            createAppHost([coldProvider, consumer], testHostOptions)
+            expect(capturedShell).not.toBeNull()
+        })
+
+        it('should allow accessing cold dependency after it becomes ready', async () => {
+            const realProvider: EntryPoint = {
+                name: 'RealProvider',
+                declareAPIs: () => [RealAPI],
+                attach(shell) {
+                    shell.contributeAPI(RealAPI, () => ({ getValue: () => 'real' }))
+                }
+            }
+
+            const coldProvider: EntryPoint = {
+                name: 'ColdProvider',
+                getDependencyAPIs: () => [RealAPI],
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            let capturedShell: Shell | null = null
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                getColdDependencyAPIs: () => [ColdAPI],
+                extend(shell) {
+                    capturedShell = shell
+                }
+            }
+
+            createAppHost([realProvider, coldProvider, consumer], testHostOptions)
+
+            // After all entry points are loaded, cold dep should be accessible
+            expect(capturedShell!.hasAPI(ColdAPI)).toBe(true)
+            expect(capturedShell!.getAPI(ColdAPI).getValue()).toBe('cold')
+        })
+
+        it('should apply transitive promotion: real dep on entry point with cold deps promotes them to real', async () => {
+            const loadOrder: string[] = []
+
+            // TransitiveAPI is declared by TransitiveProvider
+            const transitiveProvider: EntryPoint = {
+                name: 'TransitiveProvider',
+                declareAPIs: () => [TransitiveAPI],
+                attach(shell) {
+                    loadOrder.push('TransitiveProvider')
+                    shell.contributeAPI(TransitiveAPI, () => ({ getValue: () => 'transitive' }))
+                }
+            }
+
+            // ColdProvider has TransitiveAPI as cold dep
+            const coldProvider: EntryPoint = {
+                name: 'ColdProvider',
+                getColdDependencyAPIs: () => [TransitiveAPI],
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    loadOrder.push('ColdProvider')
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            // Consumer has ColdAPI as REAL dep
+            // This means ColdProvider's cold deps (TransitiveAPI) become Consumer's effective real deps
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                getDependencyAPIs: () => [ColdAPI],
+                attach() {
+                    loadOrder.push('Consumer')
+                }
+            }
+
+            createAppHost([consumer, coldProvider, transitiveProvider], testHostOptions)
+
+            // TransitiveProvider must load first (promoted to real dep)
+            // ColdProvider loads (its cold dep is now ready)
+            // Consumer loads (its real dep ColdAPI is now ready)
+            expect(loadOrder).toEqual(['TransitiveProvider', 'ColdProvider', 'Consumer'])
+        })
+
+        it('should include cold dependencies in circular dependency detection', () => {
+            const API1: SlotKey<{}> = { name: 'API1' }
+            const API2: SlotKey<{}> = { name: 'API2' }
+
+            const ep1: EntryPoint = {
+                name: 'EP1',
+                getColdDependencyAPIs: () => [API2], // Cold dep creates cycle
+                declareAPIs: () => [API1],
+                attach(shell) {
+                    shell.contributeAPI(API1, () => ({}))
+                }
+            }
+
+            const ep2: EntryPoint = {
+                name: 'EP2',
+                getDependencyAPIs: () => [API1],
+                declareAPIs: () => [API2],
+                attach(shell) {
+                    shell.contributeAPI(API2, () => ({}))
+                }
+            }
+
+            expect(() => createAppHost([ep1, ep2], testHostOptions)).toThrow(/Circular API dependency/)
+        })
+
+        it('should include cold dependencies in layer validation', () => {
+            const InfraAPI: SlotKey<{}> = { name: 'InfraAPI', layer: 'INFRA' }
+            const ProductAPI: SlotKey<{}> = { name: 'ProductAPI', layer: 'PRODUCT' }
+
+            const layers = [
+                { level: 0, name: 'INFRA' },
+                { level: 1, name: 'PRODUCT' }
+            ]
+
+            const infraEp: EntryPoint = {
+                name: 'InfraEP',
+                layer: 'INFRA',
+                getColdDependencyAPIs: () => [ProductAPI], // Infra can't depend on Product
+                declareAPIs: () => [InfraAPI]
+            }
+
+            expect(() =>
+                createAppHost([infraEp], { ...testHostOptions, layers })
+            ).toThrow(/cannot depend on API/)
+        })
+
+        it('should not allow accessing API not declared in either getDependencyAPIs or getColdDependencyAPIs', async () => {
+            let capturedShell: Shell | null = null
+            const consumer: EntryPoint = {
+                name: 'Consumer',
+                extend(shell) {
+                    capturedShell = shell
+                }
+            }
+
+            const provider: EntryPoint = {
+                name: 'Provider',
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'cold' }))
+                }
+            }
+
+            createAppHost([provider, consumer], testHostOptions)
+
+            expect(() => capturedShell!.getAPI(ColdAPI)).toThrow(/not declared as dependency/)
+        })
+
+        it('should handle cold dependencies only transitively among themselves', async () => {
+            const loadOrder: string[] = []
+
+            // A --cold--> B --cold--> C
+            // A should NOT wait for B or C
+            const providerC: EntryPoint = {
+                name: 'ProviderC',
+                declareAPIs: () => [TransitiveAPI],
+                attach(shell) {
+                    loadOrder.push('ProviderC')
+                    shell.contributeAPI(TransitiveAPI, () => ({ getValue: () => 'C' }))
+                }
+            }
+
+            const providerB: EntryPoint = {
+                name: 'ProviderB',
+                getColdDependencyAPIs: () => [TransitiveAPI],
+                declareAPIs: () => [ColdAPI],
+                attach(shell) {
+                    loadOrder.push('ProviderB')
+                    shell.contributeAPI(ColdAPI, () => ({ getValue: () => 'B' }))
+                }
+            }
+
+            const consumerA: EntryPoint = {
+                name: 'ConsumerA',
+                getColdDependencyAPIs: () => [ColdAPI],
+                attach() {
+                    loadOrder.push('ConsumerA')
+                }
+            }
+
+            createAppHost([consumerA, providerB, providerC], testHostOptions)
+
+            // All three should load independently since they're all cold dependencies
+            // The order might vary but ConsumerA should NOT wait for B or C
+            expect(loadOrder).toContain('ConsumerA')
+            expect(loadOrder).toContain('ProviderB')
+            expect(loadOrder).toContain('ProviderC')
         })
     })
 })
