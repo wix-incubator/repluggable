@@ -389,7 +389,7 @@ miss: ${memoizedWithMissHit.miss}
 
         executeInstallShell(entryPoints)
 
-        setInstalledShellNames(getInstalledShellNames().concat(_.map(entryPoints, 'name')))
+        setInstalledShellNames(getInstalledShellNames())
         return Promise.resolve()
     }
 
