@@ -331,7 +331,7 @@ interface AppHostPlugins {
     }
 }
 
-export {CustomCreateExtensionSlot}
+export type {CustomCreateExtensionSlot}
 
 export interface AppHostOptions {
     readonly logger?: HostLogger
