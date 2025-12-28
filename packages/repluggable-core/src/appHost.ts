@@ -1166,13 +1166,6 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
-                // In cyclic mode, enforce that getAPI cannot be called during attach phase (before APIsEnabled)
-                if (options.experimentalCyclicMode && !APIsEnabled && !isOwnContributedAPI(key)) {
-                    throw new Error(
-                        `Cannot call getAPI('${slotKeyToName(key)}') during attach() phase in cyclic mode. ` +
-                            `Move this call to extend() or defer it to runtime (e.g., inside a contributed function).`
-                    )
-                }
                 if (dependencyAPIs.has(key) || isOwnContributedAPI(key)) {
                     return host.getAPI(key)
                 }
