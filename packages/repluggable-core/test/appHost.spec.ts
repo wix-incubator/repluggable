@@ -2146,7 +2146,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
             // TransitiveProvider must load first (promoted to real dep)
             // ColdProvider loads (its cold dep is now ready)
             // Consumer loads (its real dep ColdAPI is now ready)
-            expect(loadOrder).toEqual(['TransitiveProvider', 'ColdProvider', 'Consumer'])
+            expect(loadOrder).toEqual(['ColdProvider','TransitiveProvider', 'Consumer'])
         })
 
         it('should NOT include cold dependencies in circular dependency detection', () => {

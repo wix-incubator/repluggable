@@ -128,7 +128,6 @@ const verifyLayersUniqueness = (layers?: APILayer[] | APILayer[][]) => {
 export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[], options: AppHostOptions = { monitoring: {} }): AppHost {
     let store: PrivateThrottledStore | null = null
     let isInstallingEntryPoints: boolean = false
-    let isInAttachPhase: boolean = false
     let isStoreSubscribersNotifyInProgress = false
     let isObserversNotifyInProgress = false
     let shouldFlushMemoizationSync = false
@@ -462,7 +461,8 @@ miss: ${memoizedWithMissHit.miss}
      * Computes effective real dependencies for an entry point, implementing transitive promotion:
      * - Entry point's own getDependencyAPIs are real deps
      * - Entry point's own getColdDependencyAPIs are NOT real deps (don't block loading)
-     * - But for each real dep, ALL of the declarer's deps (real AND cold) become effective real deps
+     * - But for each real dep B, ALL of B's deps (real AND cold) become this entry point's effective real deps
+     * - APIs that the entry point itself declares are excluded (can't wait for yourself)
      */
     function computeEffectiveRealDependencies(
         entryPoint: EntryPoint,
@@ -470,23 +470,32 @@ miss: ${memoizedWithMissHit.miss}
     ): AnySlotKey[] {
         // Build a map from API name to declaring entry point
         const apiToEntryPoint = new Map<string, EntryPoint>()
+
         for (const ep of allEntryPoints) {
             for (const api of declaredAPIs(ep)) {
                 apiToEntryPoint.set(slotKeyToName(api), ep)
             }
         }
 
-        const effectiveDeps = new Set<string>()
+        // Get the set of APIs this entry point declares (we can't depend on ourselves)
+        const selfDeclaredAPIs = new Set(declaredAPIs(entryPoint).map(slotKeyToName))
+
+        // Store results as SlotKey objects directly, using name for deduplication
+        const effectiveDepsByName = new Map<string, AnySlotKey>()
         const visited = new Set<string>()
 
-        // Helper to add all dependencies (real and cold) of an entry point
+        // Helper to add all dependencies (real and cold) of an entry point transitively
         const addTransitiveDeps = (ep: EntryPoint) => {
             const allDeps = [...dependentAPIs(ep), ...coldDependentAPIs(ep)]
             for (const dep of allDeps) {
                 const depName = slotKeyToName(dep)
                 if (!visited.has(depName)) {
                     visited.add(depName)
-                    effectiveDeps.add(depName)
+                    // Only add if not self-declared
+                    if (!selfDeclaredAPIs.has(depName)) {
+                        // Use the original SlotKey from the dependency declaration
+                        effectiveDepsByName.set(depName, dep)
+                    }
                     const declaringEp = apiToEntryPoint.get(depName)
                     if (declaringEp) {
                         addTransitiveDeps(declaringEp)
@@ -495,14 +504,19 @@ miss: ${memoizedWithMissHit.miss}
             }
         }
 
-        // Start with entry point's own real dependencies (not cold)
+        // Start with entry point's own real dependencies (not cold - cold deps don't block)
+        // IMPORTANT: Preserve the original SlotKey objects from getDependencyAPIs
         const directRealDeps = entryPoint.getDependencyAPIs?.() || []
         for (const dep of directRealDeps) {
             const depName = slotKeyToName(dep)
             if (!visited.has(depName)) {
                 visited.add(depName)
-                effectiveDeps.add(depName)
-                // For each real dep, add ALL of its deps (real AND cold) transitively
+                // Only add if not self-declared
+                if (!selfDeclaredAPIs.has(depName)) {
+                    // Use the ORIGINAL SlotKey from this entry point's getDependencyAPIs
+                    effectiveDepsByName.set(depName, dep)
+                }
+                // For each real dep, add ALL of the declarer's deps (real AND cold) transitively
                 const declaringEp = apiToEntryPoint.get(depName)
                 if (declaringEp) {
                     addTransitiveDeps(declaringEp)
@@ -510,8 +524,7 @@ miss: ${memoizedWithMissHit.miss}
             }
         }
 
-        // Convert back to SlotKeys
-        return Array.from(effectiveDeps).map(name => slotKeysByName.get(name)).filter((k): k is AnySlotKey => k !== undefined)
+        return Array.from(effectiveDepsByName.values())
     }
 
     function executeInstallShell(entryPoints: EntryPoint[]): void {
@@ -535,7 +548,6 @@ miss: ${memoizedWithMissHit.miss}
             onInstallShellsEnd()
             return
         }
-
         const shells = readyEntryPoints.map(createShell)
         executeReadyEntryPoints(shells)
     }
@@ -558,17 +570,13 @@ miss: ${memoizedWithMissHit.miss}
                     f => !!f.entryPoint.getColdDependencyAPIs
                 )
 
-                isInAttachPhase = true
-                try {
                     invokeEntryPointPhase(
                         'attach',
                         shells,
                         f => f.entryPoint.attach && f.entryPoint.attach(f),
                         f => !!f.entryPoint.attach
                     )
-                } finally {
-                    isInAttachPhase = false
-                }
+                
 
                 buildStore()
                 shells.forEach(f => f.setLifecycleState(true, true, false))
@@ -1158,8 +1166,8 @@ miss: ${memoizedWithMissHit.miss}
             },
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
-                // In cyclic mode, enforce that getAPI cannot be called during attach phase
-                if (options.experimentalCyclicMode && isInAttachPhase && !isOwnContributedAPI(key)) {
+                // In cyclic mode, enforce that getAPI cannot be called during attach phase (before APIsEnabled)
+                if (options.experimentalCyclicMode && !APIsEnabled && !isOwnContributedAPI(key)) {
                     throw new Error(
                         `Cannot call getAPI('${slotKeyToName(key)}') during attach() phase in cyclic mode. ` +
                             `Move this call to extend() or defer it to runtime (e.g., inside a contributed function).`

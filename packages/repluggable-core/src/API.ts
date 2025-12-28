@@ -85,8 +85,9 @@ export interface EntryPoint {
     getDependencyAPIs?(): SlotKey<any>[]
     /**
      * Define which API keys (a.k.a. contracts) this entry point may use, but doesn't need to wait for.
-     * Cold dependencies follow the same validation rules as regular dependencies (layers, circular checks),
-     * but don't block the entry point from loading. Accessing a cold dependency before it's ready will throw.
+     * Cold dependencies follow the same layer validation rules as regular dependencies
+     * Cold dependencies are not included in circular dependency detection
+     * Cold dependencies don't block the entry point from loading. Accessing a cold dependency before it's ready will throw.
      * @return {SlotKey<any>[]} API keys that may be used but don't block loading
      */
     getColdDependencyAPIs?(): SlotKey<any>[]
