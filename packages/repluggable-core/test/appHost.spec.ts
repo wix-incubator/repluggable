@@ -2149,13 +2149,13 @@ If the API is intended to be public, it should be declared as "public: true" in 
             expect(loadOrder).toEqual(['TransitiveProvider', 'ColdProvider', 'Consumer'])
         })
 
-        it('should include cold dependencies in circular dependency detection', () => {
+        it('should NOT include cold dependencies in circular dependency detection', () => {
             const API1: SlotKey<{}> = { name: 'API1' }
             const API2: SlotKey<{}> = { name: 'API2' }
 
             const ep1: EntryPoint = {
                 name: 'EP1',
-                getColdDependencyAPIs: () => [API2], // Cold dep creates cycle
+                getColdDependencyAPIs: () => [API2], // Cold dep does NOT create cycle
                 declareAPIs: () => [API1],
                 attach(shell) {
                     shell.contributeAPI(API1, () => ({}))
@@ -2171,7 +2171,10 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 }
             }
 
-            expect(() => createAppHost([ep1, ep2], testHostOptions)).toThrow(/Circular API dependency/)
+            // Should NOT throw - cold dependencies are excluded from circular dependency check
+            const host = createAppHost([ep1, ep2], testHostOptions)
+            expect(host.hasShell('EP1')).toBe(true)
+            expect(host.hasShell('EP2')).toBe(true)
         })
 
         it('should include cold dependencies in layer validation', () => {

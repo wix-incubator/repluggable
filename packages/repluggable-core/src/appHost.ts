@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { AnyAction, Store } from 'redux'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import {
     AnyEntryPoint,
     AnyFunction,
@@ -53,7 +54,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -793,8 +793,8 @@ miss: ${memoizedWithMissHit.miss}
         const graph = new Graph()
         entryPoints.forEach(ep => {
             const declaredApis = declaredAPIs(ep).map(x => slotKeyToName(x))
-            // Include both regular and cold dependencies in circular dependency check
-            const dependencies = [...dependentAPIs(ep), ...coldDependentAPIs(ep)].map(x => slotKeyToName(x))
+            // Only include real dependencies in circular dependency check (not cold dependencies)
+            const dependencies = dependentAPIs(ep).map(x => slotKeyToName(x))
             declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(d, y)))
         })
 
@@ -806,8 +806,8 @@ miss: ${memoizedWithMissHit.miss}
                 const dependentGraph: { [key: string]: string[] } = {}
                 entryPoints.forEach(ep => {
                     const declaredApis = declaredAPIs(ep).map(child => child.name)
-                    // Include both regular and cold dependencies in cycle detection
-                    const dependencies = [...dependentAPIs(ep), ...coldDependentAPIs(ep)].map(child => child.name)
+                    // Only include real dependencies in cycle detection (not cold dependencies)
+                    const dependencies = dependentAPIs(ep).map(child => child.name)
                     declaredApis.forEach(d => {
                         dependentGraph[d] = dependencies
                     })
