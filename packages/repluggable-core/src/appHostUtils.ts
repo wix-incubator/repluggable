@@ -6,6 +6,10 @@ export const dependentAPIs = (entryPoint: AnyEntryPoint): AnySlotKey[] => {
     return _.chain(entryPoint).invoke('getDependencyAPIs').defaultTo([]).value()
 }
 
+export const coldDependentAPIs = (entryPoint: AnyEntryPoint): AnySlotKey[] => {
+    return _.chain(entryPoint).invoke('getColdDependencyAPIs').defaultTo([]).value()
+}
+
 export const declaredAPIs = (entryPoint: AnyEntryPoint): AnySlotKey[] => {
     return _.chain(entryPoint).invoke('declareAPIs').defaultTo([]).value()
 }
