@@ -546,6 +546,7 @@ export interface EntryPointInterceptor {
     interceptName?(innerName: string): string
     interceptTags?(innerTags?: EntryPointTags): EntryPointTags
     interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
+    interceptGetColdDependencyAPIs?(innerGetColdDependencyAPIs?: EntryPoint['getColdDependencyAPIs']): EntryPoint['getColdDependencyAPIs']
     interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
     interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']
