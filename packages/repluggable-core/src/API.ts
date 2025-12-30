@@ -78,6 +78,11 @@ export interface EntryPoint {
      */
     getDependencyAPIs?(): SlotKey<any>[]
     /**
+     * Define which API keys (a.k.a. contracts) are required for implementation but optional for this entry point to be executed
+     * @return {SlotKey<any>[]} API keys that may be used but don't block loading
+     */
+    getColdDependencyAPIs?(): SlotKey<any>[]
+    /**
      * Define which API keys (a.k.a. contracts) this entry point is going to implement and contribute
      * @return {SlotKey<any>[]} API keys that will be contributed
      */
