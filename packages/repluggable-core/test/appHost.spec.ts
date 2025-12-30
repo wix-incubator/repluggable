@@ -1904,7 +1904,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 attach(shell: Shell) {
                     shell.contributeAPI(MockPublicAPI, () => {
                         const mockAPI = shell.getAPI(MockAPI)
-                        return {    
+                        return {
                             stubTrue: () => mockAPI.stubTrue()
                         }
                     })
