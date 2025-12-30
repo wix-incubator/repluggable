@@ -1926,6 +1926,15 @@ If the API is intended to be public, it should be declared as "public: true" in 
             const host = createAppHost([], testHostOptions)
             expect(() => host.addShells([coldDependencyEntryPoint])).toThrow()
         })
+        it('should allow accessing cold dependency via getAPI after initialization completes', async () => {
+            const host = createAppHost([mockPackage], testHostOptions)
+            const shell = addMockShell(host, {
+                getColdDependencyAPIs: () => [MockAPI]
+            })
+
+            expect(() => shell.getAPI(MockAPI)).not.toThrow()
+            expect(shell.getAPI(MockAPI).stubTrue()).toBe(true)
+        })
         describe('Cyclic Cold Dependencies', () => {
             it('should load entry point with cyclic cold dependencies', async () => {
                 /**
@@ -2083,6 +2092,178 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(false)
                 await host.addShells([declaringA])
                 expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(true)
+            })
+            it('should promote cold dependencies from unready entry points added in previous batches', async () => {
+                const APIA: SlotKey<{}> = { name: 'API_A' }
+                const APIB: SlotKey<{}> = { name: 'API_B' }
+                const APIC: SlotKey<{}> = { name: 'API_C' }
+                const APIX: SlotKey<{}> = { name: 'API_X' }
+
+                // B declares APIB, depends on APIX (keeps B unready), has cold dep on APIA
+                const declaringB: EntryPoint = {
+                    name: 'ENTRY_POINT_B',
+                    getDependencyAPIs() {
+                        return [APIX]
+                    },
+                    getColdDependencyAPIs() {
+                        return [APIA]
+                    },
+                    declareAPIs() {
+                        return [APIB]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIB, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                // C depends on APIB (from unready B)
+                const declaringC: EntryPoint = {
+                    name: 'ENTRY_POINT_C',
+                    getDependencyAPIs() {
+                        return [APIB]
+                    },
+                    declareAPIs() {
+                        return [APIC]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIC, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringA: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    declareAPIs() {
+                        return [APIA]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIA, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringX: EntryPoint = {
+                    name: 'ENTRY_POINT_X',
+                    declareAPIs() {
+                        return [APIX]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIX, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const host = createAppHost([], testHostOptions)
+
+                // Batch 1: Add B (stays unready - needs APIX)
+                await host.addShells([declaringB])
+                expect(host.hasShell(declaringB.name)).toBe(false)
+
+                // Batch 2: Add C (depends on APIB from unready B)
+                // Even though B is unready, C's effective deps should include B's cold dep on APIA
+                await host.addShells([declaringC])
+                expect(host.hasShell(declaringC.name)).toBe(false)
+
+                // Add X only (provides APIX for B)
+                // B can now load and contribute APIB
+                // But C should still wait because B's cold dep (APIA) is promoted to C
+                await host.addShells([declaringX])
+                expect(host.hasShell(declaringB.name)).toBe(true)
+                expect(host.hasShell(declaringC.name)).toBe(false)
+
+                // Add A (provides APIA)
+                await host.addShells([declaringA])
+                expect(host.hasShell(declaringC.name)).toBe(true)
+            })
+            it('should promote cold dependencies through deep regular dependency chains', async () => {
+                /**
+                 *      (A)───regular───>(B)───regular───>(C)───regular───>(D)
+                 *                                                          │
+                 *                                                          cold
+                 *                                                          │
+                 *                                                          v
+                 *                                                         (E)
+                 *
+                 * A depends on B, B depends on C, C depends on D, D has cold dep on E
+                 * A should wait for E (cold dep promoted through entire chain)
+                 */
+                const APIA: SlotKey<{}> = { name: 'API_A' }
+                const APIB: SlotKey<{}> = { name: 'API_B' }
+                const APIC: SlotKey<{}> = { name: 'API_C' }
+                const APID: SlotKey<{}> = { name: 'API_D' }
+                const APIE: SlotKey<{}> = { name: 'API_E' }
+
+                const declaringE: EntryPoint = {
+                    name: 'ENTRY_POINT_E',
+                    declareAPIs() {
+                        return [APIE]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIE, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringD: EntryPoint = {
+                    name: 'ENTRY_POINT_D',
+                    getColdDependencyAPIs() {
+                        return [APIE]
+                    },
+                    declareAPIs() {
+                        return [APID]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APID, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringC: EntryPoint = {
+                    name: 'ENTRY_POINT_C',
+                    getDependencyAPIs() {
+                        return [APID]
+                    },
+                    declareAPIs() {
+                        return [APIC]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIC, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringB: EntryPoint = {
+                    name: 'ENTRY_POINT_B',
+                    getDependencyAPIs() {
+                        return [APIC]
+                    },
+                    declareAPIs() {
+                        return [APIB]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIB, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                const declaringA: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    getDependencyAPIs() {
+                        return [APIB]
+                    },
+                    declareAPIs() {
+                        return [APIA]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIA, () => ({ stubTrue: () => true }))
+                    }
+                }
+
+                // Without E, D loads (cold dep doesn't block), but A, B, C should wait
+                const host = createAppHost([declaringA, declaringB, declaringC, declaringD], testHostOptions)
+                expect(host.hasShell(declaringD.name)).toBe(true)
+                expect(host.hasShell(declaringC.name)).toBe(false)
+                expect(host.hasShell(declaringB.name)).toBe(false)
+                expect(host.hasShell(declaringA.name)).toBe(false)
+
+                // Add E, now everyone can load
+                await host.addShells([declaringE])
+                expect(host.hasShell(declaringC.name)).toBe(true)
+                expect(host.hasShell(declaringB.name)).toBe(true)
+                expect(host.hasShell(declaringA.name)).toBe(true)
             })
         })
         it('should not promote transitive cold dependencies to regular dependencies when there is no real direct dependency', async () => {
