@@ -31,6 +31,7 @@ import {
 
 import { AppHostAPI, AppHostServicesEntryPointName, AppHostServicesProvider } from '../src/appHostServices'
 import { ConsoleHostLogger } from '../src/loggers'
+import { mockPackageWithColdDependency } from '../testKit/mockPackage'
 import { createCircularEntryPoints, createDirectCircularEntryPoints } from './appHost.mock'
 import { createSignalItemsDataStructure } from './createSignalItemsDataStructure'
 
@@ -1873,6 +1874,272 @@ If the API is intended to be public, it should be declared as "public: true" in 
 
             await host.removeShells([ContributorEntryPoint.name])
             expect(itemsSpy).toBeCalledTimes(4)
+        })
+    })
+    describe('Cold Dependencies', () => {
+        it('should allow entry point to load without waiting for cold dependencies', async () => {
+            const host = createAppHost([], testHostOptions)
+            host.addShells([mockPackageWithColdDependency])
+            expect(host.hasShell(mockPackageWithColdDependency.name)).toBe(true)
+        })
+        it('should return false for hasAPI when cold dependency is not ready', async () => {
+            const host = createAppHost([], testHostOptions)
+            host.addShells([mockPackageWithColdDependency])
+            expect(host.hasAPI(MockAPI)).toBe(false)
+        })
+        it('should throw when accessing cold dependency that is not ready', async () => {
+            const host = createAppHost([], testHostOptions)
+            host.addShells([mockPackageWithColdDependency])
+            expect(() => host.getAPI(MockAPI)).toThrow()
+        })
+        it('should throw when accessing cold dependency during entry point attach', async () => {
+            const coldDependencyEntryPoint: EntryPoint = {
+                name: 'COLD_DEPENDENCY_ENTRY_POINT',
+                getColdDependencyAPIs() {
+                    return [MockAPI]
+                },
+                declareAPIs() {
+                    return [MockPublicAPI]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(MockPublicAPI, () => ({
+                        stubTrue: () => shell.getAPI(MockAPI).stubTrue()
+                    }))
+                }
+            }
+            const host = createAppHost([], testHostOptions)
+            expect(() => host.addShells([coldDependencyEntryPoint])).toThrow()
+        })
+        it('should throw when accessing cold dependency during entry point extend', async () => {
+            const coldDependencyEntryPoint: EntryPoint = {
+                name: 'COLD_DEPENDENCY_ENTRY_POINT',
+                getColdDependencyAPIs() {
+                    return [MockAPI]
+                },
+                extend(shell: Shell) {
+                    shell.getAPI(MockAPI).stubTrue()
+                }
+            }
+            const host = createAppHost([], testHostOptions)
+            expect(() => host.addShells([coldDependencyEntryPoint])).toThrow()
+        })
+        describe('Cyclic Cold Dependencies', () => {
+            it('should load entry point with cyclic cold dependencies', async () => {
+                /**
+                 *      (A)───cold───>(B)
+                 *       ^             │
+                 *       │             │
+                 *       └────cold─────┘
+                 *
+                 *   A declares APIA, has cold dep on APIB
+                 *   B declares APIB, has cold dep on APIA
+                 */
+                const APIA: SlotKey<{}> = { name: 'API_A' }
+                const APIB: SlotKey<{}> = { name: 'API_B' }
+                const declaringAWithColdDepOnB: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    getColdDependencyAPIs() {
+                        return [APIB]
+                    },
+                    declareAPIs() {
+                        return [APIA]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIA, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const declaringBWithColdDepOnA: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    getColdDependencyAPIs() {
+                        return [APIA]
+                    },
+                    declareAPIs() {
+                        return [APIB]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIB, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const host = createAppHost([declaringAWithColdDepOnB, declaringBWithColdDepOnA], testHostOptions)
+                expect(host.hasShell(declaringAWithColdDepOnB.name)).toBe(true)
+                expect(host.hasShell(declaringBWithColdDepOnA.name)).toBe(true)
+            })
+            it('should load entry points with cyclic cold and regular dependencies', async () => {
+                /**
+                 *      (A)───cold───>(B)───cold───>(C)
+                 *       ^                            │
+                 *       │                            │
+                 *       └─────────regular────────────┘
+                 *
+                 *   A declares APIA, has cold dep on APIB
+                 *   B declares APIB, has cold dep on APIC
+                 *   C declares APIC, has regular dep on APIA
+                 */
+                const APIA: SlotKey<{}> = { name: 'API_A' }
+                const APIB: SlotKey<{}> = { name: 'API_B' }
+                const APIC: SlotKey<{}> = { name: 'API_C' }
+                const declaringA: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    getColdDependencyAPIs() {
+                        return [APIB]
+                    },
+                    declareAPIs() {
+                        return [APIA]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIA, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const declaringB: EntryPoint = {
+                    name: 'ENTRY_POINT_B',
+                    getColdDependencyAPIs() {
+                        return [APIC]
+                    },
+                    declareAPIs() {
+                        return [APIB]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIB, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const declaringC: EntryPoint = {
+                    name: 'ENTRY_POINT_C',
+                    getDependencyAPIs() {
+                        return [APIA]
+                    },
+                    declareAPIs() {
+                        return [APIC]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIC, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const host = createAppHost([declaringA, declaringB, declaringC], testHostOptions)
+                expect(host.hasShell(declaringA.name)).toBe(true)
+                expect(host.hasShell(declaringB.name)).toBe(true)
+                expect(host.hasShell(declaringC.name)).toBe(true)
+            })
+        })
+        describe('Cold dependency promotion', () => {
+            it('should promote transitive cold dependencies to regular dependencies when there is a real direct dependency', async () => {
+                const APIA: SlotKey<{}> = { name: 'API_A' }
+                const APIB: SlotKey<{}> = { name: 'API_B' }
+                const APIC: SlotKey<{}> = { name: 'API_C' }
+                const declaringA: EntryPoint = {
+                    name: 'ENTRY_POINT_A',
+                    declareAPIs() {
+                        return [APIA]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIA, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const declaringBWithColdDepOnA: EntryPoint = {
+                    name: 'ENTRY_POINT_B',
+                    getColdDependencyAPIs() {
+                        return [APIA]
+                    },
+                    declareAPIs() {
+                        return [APIB]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIB, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                const declaringCWithRegularDepOnB: EntryPoint = {
+                    name: 'ENTRY_POINT_C',
+                    getDependencyAPIs() {
+                        return [APIB]
+                    },
+                    declareAPIs() {
+                        return [APIC]
+                    },
+                    attach(shell: Shell) {
+                        shell.contributeAPI(APIC, () => ({
+                            stubTrue: () => true
+                        }))
+                    }
+                }
+                // no APIA in the host
+                const host = createAppHost([declaringBWithColdDepOnA, declaringCWithRegularDepOnB], testHostOptions)
+                expect(host.hasShell(declaringBWithColdDepOnA.name)).toBe(true)
+                expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(false)
+                await host.addShells([declaringA])
+                expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(true)
+            })
+        })
+        it('should not promote transitive cold dependencies to regular dependencies when there is no real direct dependency', async () => {
+            const APIA: SlotKey<{}> = { name: 'API_A' }
+            const APIB: SlotKey<{}> = { name: 'API_B' }
+            const APIC: SlotKey<{}> = { name: 'API_C' }
+            const APID: SlotKey<{}> = { name: 'API_D' }
+            const declaringA: EntryPoint = {
+                name: 'ENTRY_POINT_A',
+                declareAPIs() {
+                    return [APIA]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(APIA, () => ({
+                        stubTrue: () => true
+                    }))
+                }
+            }
+            const declaringBWithColdDepOnA: EntryPoint = {
+                name: 'ENTRY_POINT_B',
+                getColdDependencyAPIs() {
+                    return [APIA]
+                },
+                declareAPIs() {
+                    return [APIB]
+                },
+            }
+            const declaringCWithRegularDepOnB: EntryPoint = {
+                name: 'ENTRY_POINT_C',
+                getDependencyAPIs() {
+                    return [APIB]
+                },
+                declareAPIs() {
+                    return [APIC]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(APIC, () => ({
+                        stubTrue: () => true
+                    }))
+                }
+            }
+            const declaringDWithColdDepOnC: EntryPoint = {
+                name: 'ENTRY_POINT_D',
+                getColdDependencyAPIs() {
+                    return [APIC]
+                },
+                declareAPIs() {
+                    return [APID]
+                },
+                attach(shell: Shell) {
+                    shell.contributeAPI(APID, () => ({
+                        stubTrue: () => true
+                    }))
+                }
+            }
+            const host = createAppHost([declaringBWithColdDepOnA, declaringCWithRegularDepOnB, declaringDWithColdDepOnC], testHostOptions)
+            expect(host.hasShell(declaringDWithColdDepOnC.name)).toBe(true)
+            expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(false)
+            await host.addShells([declaringA])
+            expect(host.hasShell(declaringCWithRegularDepOnB.name)).toBe(true)
         })
     })
 })
