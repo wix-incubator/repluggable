@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { AnyAction, Store } from 'redux'
+import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import {
     AnyEntryPoint,
     AnyFunction,
@@ -34,7 +35,7 @@ import {
     UnsubscribeFromDeclarationsChanged
 } from './API'
 import { AppHostAPI, AppHostServicesProvider, createAppHostServicesEntryPoint } from './appHostServices'
-import { declaredAPIs, dependentAPIs } from './appHostUtils'
+import { coldDependentAPIs, declaredAPIs, dependentAPIs } from './appHostUtils'
 import { AnyExtensionSlot, createCustomExtensionSlot, createExtensionSlot } from './extensionSlot'
 import { InstalledShellsActions, InstalledShellsSelectors, ShellToggleSet } from './installedShellsState'
 import { IterableWeakMap } from './IterableWeakMap'
@@ -51,7 +52,6 @@ import {
     ThrottledStore,
     updateThrottledStore
 } from './throttledStore'
-import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 
 function isMultiArray<T>(v: T[] | T[][]): v is T[][] {
     return _.every(v, _.isArray)
@@ -427,11 +427,49 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
+    function buildApiToEntryPointMap(entryPoints: EntryPoint[]): Map<string, EntryPoint> {
+        const map = new Map<string, EntryPoint>()
+        for (const ep of entryPoints) {
+            for (const api of declaredAPIs(ep)) {
+                map.set(slotKeyToName(api), ep)
+            }
+        }
+        return map
+    }
+
+    function getEffectiveBlockingDeps(
+        entryPoint: EntryPoint,
+        apiToEntryPoint: Map<string, EntryPoint>,
+        visited = new Set<string>()
+    ): AnySlotKey[] {
+        if (visited.has(entryPoint.name)) {
+            return []
+        }
+        visited.add(entryPoint.name)
+
+        const regularDeps = dependentAPIs(entryPoint)
+        const result = [...regularDeps]
+
+        for (const dep of regularDeps) {
+            const provider = apiToEntryPoint.get(slotKeyToName(dep))
+            if (provider) {
+                result.push(...coldDependentAPIs(provider))
+                result.push(...getEffectiveBlockingDeps(provider, apiToEntryPoint, visited))
+            }
+        }
+        return result
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
+        const allEntryPoints = [...addedShells.values()]
+            .map(s => s.entryPoint)
+            .concat(unReadyEntryPointsStore.get(), entryPoints)
+        const apiToEntryPoint = buildApiToEntryPointMap(allEntryPoints)
+
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
-            const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
+            const effectiveDeps = getEffectiveBlockingDeps(entryPoint, apiToEntryPoint)
             return _.every(
-                dependencies,
+                effectiveDeps,
                 k =>
                     readyAPIs.has(getOwnSlotKey(k)) ||
                     (options.experimentalCyclicMode && isAllAPIDependenciesAreReadyOrPending(k, entryPoints))
@@ -455,8 +493,11 @@ miss: ${memoizedWithMissHit.miss}
                 invokeEntryPointPhase(
                     'getDependencyAPIs',
                     shells,
-                    f => f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs()),
-                    f => !!f.entryPoint.getDependencyAPIs
+                    f => {
+                        f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs())
+                        f.entryPoint.getColdDependencyAPIs && f.setColdDependencyAPIs(f.entryPoint.getColdDependencyAPIs())
+                    },
+                    f => !!f.entryPoint.getDependencyAPIs || !!f.entryPoint.getColdDependencyAPIs
                 )
 
                 invokeEntryPointPhase(
@@ -932,6 +973,7 @@ miss: ${memoizedWithMissHit.miss}
         let APIsEnabled = false
         let wasInitCompleted = false
         let dependencyAPIs: Set<AnySlotKey> = new Set()
+        let coldDependencyAPIs: Set<AnySlotKey> = new Set()
         let nextObservableId = 1
         const boundaryAspects: ShellBoundaryAspect[] = []
 
@@ -991,6 +1033,10 @@ miss: ${memoizedWithMissHit.miss}
                 dependencyAPIs = new Set(APIs)
             },
 
+            setColdDependencyAPIs(APIs: AnySlotKey[]): void {
+                coldDependencyAPIs = new Set(APIs)
+            },
+
             canUseAPIs(): boolean {
                 return APIsEnabled
             },
@@ -1035,6 +1081,12 @@ miss: ${memoizedWithMissHit.miss}
 
             getAPI<TAPI>(key: SlotKey<TAPI>): TAPI {
                 if (dependencyAPIs.has(key) || isOwnContributedAPI(key)) {
+                    return host.getAPI(key)
+                }
+                if (coldDependencyAPIs.has(key)) {
+                    if (!wasInitCompleted) {
+                        throw new Error(`API '${slotKeyToName(key)}' is a cold dependency and cannot be accessed during initialization`)
+                    }
                     return host.getAPI(key)
                 }
                 throw new Error(

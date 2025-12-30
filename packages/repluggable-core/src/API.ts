@@ -530,6 +530,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
 export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
+    setColdDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
