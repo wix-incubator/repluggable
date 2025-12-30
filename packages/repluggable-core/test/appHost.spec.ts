@@ -1951,7 +1951,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     }
                 }
                 const declaringBWithColdDepOnA: EntryPoint = {
-                    name: 'ENTRY_POINT_A',
+                    name: 'ENTRY_POINT_B',
                     getColdDependencyAPIs() {
                         return [APIA]
                     },
