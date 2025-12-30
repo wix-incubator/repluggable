@@ -2109,6 +2109,11 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 declareAPIs() {
                     return [APIB]
                 },
+                attach(shell: Shell) {
+                    shell.contributeAPI(APIB, () => ({
+                        stubTrue: () => true
+                    }))
+                }
             }
             const declaringCWithRegularDepOnB: EntryPoint = {
                 name: 'ENTRY_POINT_C',
