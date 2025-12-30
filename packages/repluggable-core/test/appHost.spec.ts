@@ -1902,9 +1902,12 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     return [MockPublicAPI]
                 },
                 attach(shell: Shell) {
-                    shell.contributeAPI(MockPublicAPI, () => ({
-                        stubTrue: () => shell.getAPI(MockAPI).stubTrue()
-                    }))
+                    shell.contributeAPI(MockPublicAPI, () => {
+                        const mockAPI = shell.getAPI(MockAPI)
+                        return {    
+                            stubTrue: () => mockAPI.stubTrue()
+                        }
+                    })
                 }
             }
             const host = createAppHost([], testHostOptions)
