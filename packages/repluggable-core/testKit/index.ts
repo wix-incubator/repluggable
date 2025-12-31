@@ -1,17 +1,16 @@
 import _ from 'lodash'
-import { EntryPoint, ObservableState } from '../src/API'
-import { AnySlotKey, AppHost, createAppHost as _createAppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
+import { ColdEntryPoint, ColdShell, EntryPoint, ObservableState } from '../src/API'
+import { createAppHost as _createAppHost, AnySlotKey, AppHost, EntryPointOrPackage, Shell, SlotKey } from '../src/index'
 import { createShellLogger } from '../src/loggers'
 import { emptyLoggerOptions } from './emptyLoggerOptions'
 
-export { createShellLogger }
-export { emptyLoggerOptions }
 export { AppHost } from '../src/index'
+export { createShellLogger, emptyLoggerOptions }
 
+export { createSignalItemsDataStructure } from '../test/createSignalItemsDataStructure'
+export * from './mockPackage'
 export { withConsoleErrors } from './withConsoleErrors'
 export { withThrowOnError } from './withThrowOnError'
-export * from './mockPackage'
-export { createSignalItemsDataStructure } from '../test/createSignalItemsDataStructure'
 
 export const createAppHost: typeof _createAppHost = (packages, options = emptyLoggerOptions) => {
     return _createAppHost(packages, options)
@@ -123,25 +122,53 @@ in addition here's the full list of declared APIs that have not been contributed
 }
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+
 interface EntryPointOverrides extends Omit<EntryPoint, 'name'> {
     name?: EntryPoint['name']
 }
 
+interface ColdEntryPointOverrides extends Omit<ColdEntryPoint, 'name' | 'getColdDependencyAPIs'> {
+    name?: ColdEntryPoint['name']
+    getColdDependencyAPIs: ColdEntryPoint['getColdDependencyAPIs']
+}
+
+type AnyEntryPointOverrides = EntryPointOverrides | ColdEntryPointOverrides
+
+function isColdOverrides(overrides: AnyEntryPointOverrides): overrides is ColdEntryPointOverrides {
+    return 'getColdDependencyAPIs' in overrides
+}
+
 // this function assumes that addShells completes synchronously
-export const addMockShell = (host: AppHost, entryPointOverrides: EntryPointOverrides = {}): Shell => {
-    let shell = null
-    host.addShells([
-        {
-            name: _.uniqueId('__MOCK_SHELL_'),
-            ...entryPointOverrides,
-            attach(_shell: Shell) {
-                shell = _shell
-                if (entryPointOverrides.attach) {
-                    entryPointOverrides.attach(_shell)
+export const addMockShell = (host: AppHost, entryPointOverrides: AnyEntryPointOverrides = {}): Shell => {
+    let shell: Shell | null = null
+
+    if (isColdOverrides(entryPointOverrides)) {
+        host.addShells([
+            {
+                name: _.uniqueId('__MOCK_SHELL_'),
+                ...entryPointOverrides,
+                attachCold(_shell: ColdShell) {
+                    shell = _shell as unknown as Shell
+                    if (entryPointOverrides.attachCold) {
+                        entryPointOverrides.attachCold(_shell)
+                    }
+                }
+            } as ColdEntryPoint
+        ])
+    } else {
+        host.addShells([
+            {
+                name: _.uniqueId('__MOCK_SHELL_'),
+                ...entryPointOverrides,
+                attach(_shell: Shell) {
+                    shell = _shell
+                    if (entryPointOverrides.attach) {
+                        entryPointOverrides.attach(_shell)
+                    }
                 }
             }
-        }
-    ])
+        ])
+    }
     if (!shell) {
         const dependencies = entryPointOverrides.getDependencyAPIs ? entryPointOverrides.getDependencyAPIs() : []
         const canGetAPI = (key: AnySlotKey) => {

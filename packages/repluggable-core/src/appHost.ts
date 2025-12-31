@@ -8,6 +8,8 @@ import {
     APILayer,
     AppHost,
     AppHostOptions,
+    ColdEntryPoint,
+    ColdShell,
     ContributeAPIOptions,
     CustomExtensionSlot,
     CustomExtensionSlotHandler,
@@ -77,6 +79,10 @@ const toShellToggleSet = (names: string[], isInstalled: boolean): ShellToggleSet
         result[name] = isInstalled
         return result
     }, {})
+}
+
+const isColdEntryPoint = (entryPoint: AnyEntryPoint): entryPoint is ColdEntryPoint => {
+    return 'getColdDependencyAPIs' in entryPoint || 'attachCold' in entryPoint
 }
 
 interface UnreadyEntryPointsStore {
@@ -461,9 +467,7 @@ miss: ${memoizedWithMissHit.miss}
     }
 
     function executeInstallShell(entryPoints: EntryPoint[]): void {
-        const allEntryPoints = [...addedShells.values()]
-            .map(s => s.entryPoint)
-            .concat(unReadyEntryPointsStore.get(), entryPoints)
+        const allEntryPoints = [...addedShells.values()].map(s => s.entryPoint).concat(unReadyEntryPointsStore.get(), entryPoints)
         const apiToEntryPoint = buildApiToEntryPointMap(allEntryPoints)
 
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
@@ -494,17 +498,28 @@ miss: ${memoizedWithMissHit.miss}
                     'getDependencyAPIs',
                     shells,
                     f => {
-                        f.entryPoint.getDependencyAPIs && f.setDependencyAPIs(f.entryPoint.getDependencyAPIs())
-                        f.entryPoint.getColdDependencyAPIs && f.setColdDependencyAPIs(f.entryPoint.getColdDependencyAPIs())
+                        if (f.entryPoint.getDependencyAPIs) {
+                            f.setDependencyAPIs(f.entryPoint.getDependencyAPIs())
+                        }
+                        if (isColdEntryPoint(f.entryPoint) && f.entryPoint.getColdDependencyAPIs) {
+                            f.setColdDependencyAPIs(f.entryPoint.getColdDependencyAPIs())
+                        }
                     },
-                    f => !!f.entryPoint.getDependencyAPIs || !!f.entryPoint.getColdDependencyAPIs
+                    f => !!f.entryPoint.getDependencyAPIs ||( isColdEntryPoint(f.entryPoint) && !!f.entryPoint.getColdDependencyAPIs)
                 )
 
                 invokeEntryPointPhase(
                     'attach',
                     shells,
-                    f => f.entryPoint.attach && f.entryPoint.attach(f),
-                    f => !!f.entryPoint.attach
+                    f => {
+                        if (isColdEntryPoint(f.entryPoint) && f.entryPoint.attachCold) {
+                            const { getAPI: _getAPI, ...coldShell } = f
+                            f.entryPoint.attachCold(coldShell as ColdShell)
+                        } else if ('attach' in f.entryPoint && f.entryPoint.attach) {
+                            f.entryPoint.attach(f)
+                        }
+                    },
+                    f => (isColdEntryPoint(f.entryPoint) && !!f.entryPoint.attachCold) || (!isColdEntryPoint(f.entryPoint) && !!f.entryPoint.attach)
                 )
 
                 buildStore()
@@ -513,8 +528,12 @@ miss: ${memoizedWithMissHit.miss}
                 invokeEntryPointPhase(
                     'extend',
                     shells,
-                    f => f.entryPoint.extend && f.entryPoint.extend(f),
-                    f => !!f.entryPoint.extend
+                    f => {
+                        if ('extend' in f.entryPoint && f.entryPoint.extend) {
+                            f.entryPoint.extend(f)
+                        }
+                    },
+                    f => 'extend' in f.entryPoint && !!f.entryPoint.extend
                 )
 
                 shells.forEach(f => {
@@ -968,7 +987,7 @@ miss: ${memoizedWithMissHit.miss}
         return Promise.resolve()
     }
 
-    function createShell(entryPoint: EntryPoint): PrivateShell {
+    function createShell(entryPoint: AnyEntryPoint): PrivateShell {
         let storeEnabled = false
         let APIsEnabled = false
         let wasInitCompleted = false
@@ -1106,6 +1125,8 @@ miss: ${memoizedWithMissHit.miss}
 
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
                 host.log.log('verbose', `Contributing API ${slotKeyToName(key)}.`)
+
+
 
                 if (!_.includes(_.invoke(entryPoint, 'declareAPIs') || [], key)) {
                     throw new Error(

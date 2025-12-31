@@ -78,11 +78,6 @@ export interface EntryPoint {
      */
     getDependencyAPIs?(): SlotKey<any>[]
     /**
-     * Define which API keys (a.k.a. contracts) are required for implementation but optional for this entry point to be executed
-     * @return {SlotKey<any>[]} API keys that may be used but don't block loading
-     */
-    getColdDependencyAPIs?(): SlotKey<any>[]
-    /**
      * Define which API keys (a.k.a. contracts) this entry point is going to implement and contribute
      * @return {SlotKey<any>[]} API keys that will be contributed
      */
@@ -105,7 +100,43 @@ export interface EntryPoint {
     detach?(shell: Shell): void
 }
 
-export type AnyEntryPoint = EntryPoint
+/**
+ * Entry point with cold (non-blocking) dependencies.
+ * Cold dependencies don't block loading but are available via getColdAPI after initialization.
+ * APIs must be contributed in attachCold phase where shell doesn't have getAPI.
+ * @export
+ * @interface ColdEntryPoint
+ */
+export interface ColdEntryPoint {
+    readonly name: string
+    readonly tags?: EntryPointTags
+    readonly layer?: string | string[]
+    /**
+     * Define which API keys are required but don't block loading
+     * @return {SlotKey<any>[]} Cold dependency API keys
+     */
+    getColdDependencyAPIs(): SlotKey<any>[]
+    /**
+     * Define which API keys are mandatory for this entry point to be executed
+     */
+    getDependencyAPIs?(): SlotKey<any>[]
+    /**
+     * Define which API keys this entry point will contribute
+     */
+    declareAPIs?(): SlotKey<any>[]
+    /**
+     * Contribute APIs using a restricted shell without getAPI.
+     * Use getColdAPI for cold dependencies.
+     * @param {ColdShell} shell Restricted shell without getAPI
+     */
+    attachCold?(shell: ColdShell): void
+    /**
+     * Clean side effects
+     */
+    detach?(shell: Shell): void
+}
+
+export type AnyEntryPoint = EntryPoint | ColdEntryPoint
 export type EntryPointOrPackage = AnyEntryPoint | AnyEntryPoint[]
 export interface EntryPointOrPackagesMap {
     [name: string]: EntryPointOrPackage
@@ -536,8 +567,14 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
     lazyEvaluator<F extends AnyFunction, T extends ReturnType<F>>(func: F): Lazy<T>
 }
 
+/**
+ * Restricted shell for attachCold phase.
+ * Does not include getAPI - use getColdAPI instead for cold dependencies.
+ */
+export type ColdShell = Omit<Shell, 'getAPI'>
+
 export interface PrivateShell extends Shell {
-    readonly entryPoint: EntryPoint
+    readonly entryPoint: EntryPoint | ColdEntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
     setColdDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
@@ -556,9 +593,12 @@ export interface EntryPointInterceptor {
     interceptName?(innerName: string): string
     interceptTags?(innerTags?: EntryPointTags): EntryPointTags
     interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
-    interceptGetColdDependencyAPIs?(innerGetColdDependencyAPIs?: EntryPoint['getColdDependencyAPIs']): EntryPoint['getColdDependencyAPIs']
+    interceptGetColdDependencyAPIs?(
+        innerGetColdDependencyAPIs?: ColdEntryPoint['getColdDependencyAPIs']
+    ): ColdEntryPoint['getColdDependencyAPIs']
     interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
+    interceptAttachCold?(innerAttachCold?: ColdEntryPoint['attachCold']): ColdEntryPoint['attachCold']
     interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']
     interceptExtend?(innerExtend?: EntryPoint['extend']): EntryPoint['extend']
 }

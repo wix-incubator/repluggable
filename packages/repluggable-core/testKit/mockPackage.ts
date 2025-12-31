@@ -1,7 +1,7 @@
 import _ from 'lodash'
 
 import { AnyAction } from 'redux'
-import { EntryPoint, Shell, SlotKey } from '../src/API'
+import { ColdEntryPoint, ColdShell, EntryPoint, Shell, SlotKey } from '../src/API'
 
 export interface MockAPI {
     stubTrue(): boolean
@@ -109,7 +109,7 @@ export const mockPackageWithSlot: EntryPoint = {
     }
 }
 
-export const mockPackageWithColdDependency: EntryPoint = {
+export const mockPackageWithColdDependency: ColdEntryPoint = {
     name: 'MOCK_PACKAGE_WITH_COLD_DEPENDENCY',
     getColdDependencyAPIs() {
         return [MockAPI]
@@ -117,7 +117,7 @@ export const mockPackageWithColdDependency: EntryPoint = {
     declareAPIs() {
         return [MockPublicAPI]
     },
-    attach(shell: Shell) {
+    attachCold(shell: ColdShell) {
         shell.contributeAPI(MockPublicAPI, () => ({
             stubTrue: () => true
         }))

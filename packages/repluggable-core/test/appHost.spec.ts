@@ -6,8 +6,11 @@ import {
     AnySlotKey,
     AppHost,
     AppHostOptions,
+    ColdEntryPoint,
+    ColdShell,
     EntryPoint,
     HostLogger,
+    Lazy,
     ObservableState,
     PrivateAppHost,
     PrivateShell,
@@ -1892,59 +1895,31 @@ If the API is intended to be public, it should be declared as "public: true" in 
             host.addShells([mockPackageWithColdDependency])
             expect(() => host.getAPI(MockAPI)).toThrow()
         })
-        it('should throw when accessing cold dependency during entry point attach', async () => {
-            const coldDependencyEntryPoint: EntryPoint = {
-                name: 'COLD_DEPENDENCY_ENTRY_POINT',
-                getColdDependencyAPIs() {
-                    return [MockAPI]
-                },
-                declareAPIs() {
-                    return [MockPublicAPI]
-                },
-                attach(shell: Shell) {
-                    shell.contributeAPI(MockPublicAPI, () => {
-                        const mockAPI = shell.getAPI(MockAPI)
-                        return {
-                            stubTrue: () => mockAPI.stubTrue()
-                        }
-                    })
-                }
-            }
-            const host = createAppHost([], testHostOptions)
-            expect(() => host.addShells([coldDependencyEntryPoint])).toThrow()
-        })
-        it('should throw when accessing cold dependency during entry point extend', async () => {
-            const coldDependencyEntryPoint: EntryPoint = {
-                name: 'COLD_DEPENDENCY_ENTRY_POINT',
-                getColdDependencyAPIs() {
-                    return [MockAPI]
-                },
-                extend(shell: Shell) {
-                    shell.getAPI(MockAPI).stubTrue()
-                }
-            }
-            const host = createAppHost([], testHostOptions)
-            expect(() => host.addShells([coldDependencyEntryPoint])).toThrow()
-        })
-        it('should allow accessing cold dependency via getAPI after initialization completes', async () => {
+        // Note: With ColdEntryPoint type, attach and extend are not available - enforced at compile time
+        it('should resolve cold dependency lazily via getColdAPI after initialization completes', async () => {
             const host = createAppHost([mockPackage], testHostOptions)
-            const shell = addMockShell(host, {
-                getColdDependencyAPIs: () => [MockAPI]
+            let lazyMockAPI: Lazy<MockAPI> | undefined
+            addMockShell(host, {
+                getColdDependencyAPIs: () => [MockAPI],
+                attachCold(coldShell: ColdShell) {
+                    lazyMockAPI = coldShell.getColdAPI(MockAPI)
+                }
             })
 
-            expect(() => shell.getAPI(MockAPI)).not.toThrow()
-            expect(shell.getAPI(MockAPI).stubTrue()).toBe(true)
+            // After initialization, the lazy wrapper should resolve
+            expect(lazyMockAPI).toBeDefined()
+            expect(lazyMockAPI?.get().stubTrue()).toBe(true)
         })
         describe('getColdAPI', () => {
-            it('should allow using getColdAPI inside contributeAPI factory', async () => {
-                // Problem: You can't call getAPI(coldDep) inside contributeAPI factory because init hasn't completed
+            it('should allow using getColdAPI inside attachCold phase', async () => {
+                // Problem: You can't call getAPI(coldDep) because shell in attachCold doesn't have it
                 // Solution: getColdAPI returns a lazy wrapper that defers resolution until the method is actually called
                 const host = createAppHost([mockPackage], testHostOptions)
 
                 addMockShell(host, {
                     getColdDependencyAPIs: () => [MockAPI],
                     declareAPIs: () => [MockPublicAPI],
-                    attach(shell) {
+                    attachCold(shell) {
                         const mockAPI = shell.getColdAPI(MockAPI)
 
                         shell.contributeAPI(MockPublicAPI, () => ({
@@ -1985,6 +1960,59 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 expect(first).toBe(second)
             })
         })
+        describe('attachCold phase', () => {
+            // Note: With ColdEntryPoint type, attach is not available - enforced at compile time
+            it('should provide shell without getAPI in attachCold phase', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                let shellHasGetAPI = true
+
+                addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI],
+                    declareAPIs: () => [MockPublicAPI],
+                    attachCold(shell) {
+                        shellHasGetAPI = 'getAPI' in shell
+                        shell.contributeAPI(MockPublicAPI, () => ({ stubTrue: () => true }))
+                    }
+                })
+
+                expect(shellHasGetAPI).toBe(false)
+            })
+            it('should allow getColdAPI in attachCold phase', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+
+                addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI],
+                    declareAPIs: () => [MockPublicAPI],
+                    attachCold(shell) {
+                        const coldAPI = shell.getColdAPI(MockAPI)
+                        shell.contributeAPI(MockPublicAPI, () => ({
+                            stubTrue: () => coldAPI.get().stubTrue()
+                        }))
+                    }
+                })
+
+                expect(host.getAPI(MockPublicAPI).stubTrue()).toBe(true)
+            })
+            it('should throw when accessing cold dependency implementation during attachCold factory', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+
+                expect(() =>
+                    addMockShell(host, {
+                        getColdDependencyAPIs: () => [MockAPI],
+                        declareAPIs: () => [MockPublicAPI],
+                        attachCold(shell) {
+                            shell.contributeAPI(MockPublicAPI, () => {
+                                const coldAPI = shell.getColdAPI(MockAPI)
+                                const coldAPIImpl = coldAPI.get() // This throws!
+                                return {
+                                    stubTrue: () => coldAPIImpl.stubTrue()
+                                }
+                            })
+                        }
+                    })
+                ).toThrow(/cold dependency/)
+            })
+        })
         describe('Cyclic Cold Dependencies', () => {
             it('should load entry point with cyclic cold dependencies', async () => {
                 /**
@@ -1998,7 +2026,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                  */
                 const APIA: SlotKey<{}> = { name: 'API_A' }
                 const APIB: SlotKey<{}> = { name: 'API_B' }
-                const declaringAWithColdDepOnB: EntryPoint = {
+                const declaringAWithColdDepOnB: ColdEntryPoint = {
                     name: 'ENTRY_POINT_A',
                     getColdDependencyAPIs() {
                         return [APIB]
@@ -2006,13 +2034,13 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIA]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIA, () => ({
                             stubTrue: () => true
                         }))
                     }
                 }
-                const declaringBWithColdDepOnA: EntryPoint = {
+                const declaringBWithColdDepOnA: ColdEntryPoint = {
                     name: 'ENTRY_POINT_B',
                     getColdDependencyAPIs() {
                         return [APIA]
@@ -2020,7 +2048,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIB]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIB, () => ({
                             stubTrue: () => true
                         }))
@@ -2044,7 +2072,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 const APIA: SlotKey<{}> = { name: 'API_A' }
                 const APIB: SlotKey<{}> = { name: 'API_B' }
                 const APIC: SlotKey<{}> = { name: 'API_C' }
-                const declaringA: EntryPoint = {
+                const declaringA: ColdEntryPoint = {
                     name: 'ENTRY_POINT_A',
                     getColdDependencyAPIs() {
                         return [APIB]
@@ -2052,13 +2080,13 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIA]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIA, () => ({
                             stubTrue: () => true
                         }))
                     }
                 }
-                const declaringB: EntryPoint = {
+                const declaringB: ColdEntryPoint = {
                     name: 'ENTRY_POINT_B',
                     getColdDependencyAPIs() {
                         return [APIC]
@@ -2066,7 +2094,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIB]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIB, () => ({
                             stubTrue: () => true
                         }))
@@ -2108,7 +2136,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                         }))
                     }
                 }
-                const declaringBWithColdDepOnA: EntryPoint = {
+                const declaringBWithColdDepOnA: ColdEntryPoint = {
                     name: 'ENTRY_POINT_B',
                     getColdDependencyAPIs() {
                         return [APIA]
@@ -2116,7 +2144,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIB]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIB, () => ({
                             stubTrue: () => true
                         }))
@@ -2150,7 +2178,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 const APIX: SlotKey<{}> = { name: 'API_X' }
 
                 // B declares APIB, depends on APIX (keeps B unready), has cold dep on APIA
-                const declaringB: EntryPoint = {
+                const declaringB: ColdEntryPoint = {
                     name: 'ENTRY_POINT_B',
                     getDependencyAPIs() {
                         return [APIX]
@@ -2161,7 +2189,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APIB]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APIB, () => ({ stubTrue: () => true }))
                     }
                 }
@@ -2250,7 +2278,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     }
                 }
 
-                const declaringD: EntryPoint = {
+                const declaringD: ColdEntryPoint = {
                     name: 'ENTRY_POINT_D',
                     getColdDependencyAPIs() {
                         return [APIE]
@@ -2258,7 +2286,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     declareAPIs() {
                         return [APID]
                     },
-                    attach(shell: Shell) {
+                    attachCold(shell: ColdShell) {
                         shell.contributeAPI(APID, () => ({ stubTrue: () => true }))
                     }
                 }
@@ -2332,7 +2360,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     }))
                 }
             }
-            const declaringBWithColdDepOnA: EntryPoint = {
+            const declaringBWithColdDepOnA: ColdEntryPoint = {
                 name: 'ENTRY_POINT_B',
                 getColdDependencyAPIs() {
                     return [APIA]
@@ -2340,7 +2368,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 declareAPIs() {
                     return [APIB]
                 },
-                attach(shell: Shell) {
+                attachCold(shell: ColdShell) {
                     shell.contributeAPI(APIB, () => ({
                         stubTrue: () => true
                     }))
@@ -2360,7 +2388,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                     }))
                 }
             }
-            const declaringDWithColdDepOnC: EntryPoint = {
+            const declaringDWithColdDepOnC: ColdEntryPoint = {
                 name: 'ENTRY_POINT_D',
                 getColdDependencyAPIs() {
                     return [APIC]
@@ -2368,7 +2396,7 @@ If the API is intended to be public, it should be declared as "public: true" in 
                 declareAPIs() {
                     return [APID]
                 },
-                attach(shell: Shell) {
+                attachCold(shell: ColdShell) {
                     shell.contributeAPI(APID, () => ({
                         stubTrue: () => true
                     }))
