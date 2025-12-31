@@ -1100,6 +1100,10 @@ miss: ${memoizedWithMissHit.miss}
                 return (dependencyAPIs.has(key) || isOwnContributedAPI(key)) && host.hasAPI(key)
             },
 
+            getColdAPI<TAPI>(key: SlotKey<TAPI>): Lazy<TAPI> {
+                return shell.lazyEvaluator(() => shell.getAPI(key))
+            },
+
             contributeAPI<TAPI>(key: SlotKey<TAPI>, factory: () => TAPI, apiOptions?: ContributeAPIOptions<TAPI>): TAPI {
                 host.log.log('verbose', `Contributing API ${slotKeyToName(key)}.`)
 

@@ -1,7 +1,7 @@
 import * as Redux from 'redux'
-import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import { CustomCreateExtensionSlot } from './extensionSlot'
+import { ThrottledStore } from './throttledStore'
 
 export interface AnySlotKey {
     readonly name: string
@@ -336,7 +336,7 @@ interface AppHostPlugins {
     }
 }
 
-export type {CustomCreateExtensionSlot}
+export type { CustomCreateExtensionSlot }
 
 export interface AppHostOptions {
     readonly logger?: HostLogger
@@ -411,6 +411,15 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @return {*}  {boolean}
      */
     canUseAPIs(): boolean
+    /**
+     * Get a lazy accessor for a cold dependency API.
+     * The API is only resolved when called, allowing safe usage during attach phase.
+     *
+     * @template TAPI
+     * @param {SlotKey<TAPI>} key API Key for the cold dependency
+     * @return {Lazy<TAPI>} Lazy wrapper that resolves the API on access
+     */
+    getColdAPI<TAPI>(key: SlotKey<TAPI>): Lazy<TAPI>
     /**
      * Is store ready to be requested
      *

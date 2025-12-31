@@ -1935,6 +1935,56 @@ If the API is intended to be public, it should be declared as "public: true" in 
             expect(() => shell.getAPI(MockAPI)).not.toThrow()
             expect(shell.getAPI(MockAPI).stubTrue()).toBe(true)
         })
+        describe('getColdAPI', () => {
+            it('should allow using getColdAPI inside contributeAPI factory', async () => {
+                // Problem: You can't call getAPI(coldDep) inside contributeAPI factory because init hasn't completed
+                // Solution: getColdAPI returns a lazy wrapper that defers resolution until the method is actually called
+                const host = createAppHost([mockPackage], testHostOptions)
+
+                addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI],
+                    declareAPIs: () => [MockPublicAPI],
+                    attach(shell) {
+                        const mockAPI = shell.getColdAPI(MockAPI)
+
+                        shell.contributeAPI(MockPublicAPI, () => ({
+                            stubTrue: () => mockAPI.get().stubTrue()
+                        }))
+                    }
+                })
+
+                expect(host.getAPI(MockPublicAPI).stubTrue()).toBe(true)
+            })
+            it('should resolve cold dependency when get() is called after initialization', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const shell = addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI]
+                })
+
+                const lazyAPI = shell.getColdAPI(MockAPI)
+                expect(lazyAPI.get().stubTrue()).toBe(true)
+            })
+            it('should throw when get() is called and cold dependency is not ready', async () => {
+                const host = createAppHost([], testHostOptions)
+                const shell = addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI]
+                })
+
+                const lazyAPI = shell.getColdAPI(MockAPI)
+                expect(() => lazyAPI.get()).toThrow()
+            })
+            it('should cache the API after first get() call', async () => {
+                const host = createAppHost([mockPackage], testHostOptions)
+                const shell = addMockShell(host, {
+                    getColdDependencyAPIs: () => [MockAPI]
+                })
+
+                const lazyAPI = shell.getColdAPI(MockAPI)
+                const first = lazyAPI.get()
+                const second = lazyAPI.get()
+                expect(first).toBe(second)
+            })
+        })
         describe('Cyclic Cold Dependencies', () => {
             it('should load entry point with cyclic cold dependencies', async () => {
                 /**
