@@ -159,7 +159,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
         <ShellContext.Consumer>
             {shell => {
                 return (
-                    <ErrorBoundary shell={boundShell} componentName={options.componentName}>
+                    <ErrorBoundary shell={boundShell} componentName={options.componentName ?? component.displayName ?? component.name}>
                         {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
