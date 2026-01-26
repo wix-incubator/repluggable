@@ -86,7 +86,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
-                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()}) `, {}, () =>
+                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()})`, {}, () =>
                           mapStateToProps(this.props.shell, this.props.shell.getStore<State>().getState(), ownProps)
                       )
                   }
