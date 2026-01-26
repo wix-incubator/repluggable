@@ -86,14 +86,14 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
-                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps ${this.props.shell.name}`, {}, () =>
+                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()}) `, {}, () =>
                           mapStateToProps(this.props.shell, this.props.shell.getStore<State>().getState(), ownProps)
                       )
                   }
                 : (_.stubObject as Returns<StateProps>)
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => {
-                      return this.props.shell.log.monitor(`connectWithShell.mapDispatchToProps ${this.props.shell.name}`, {}, () =>
+                      return this.props.shell.log.monitor(`connectWithShell.mapDispatchToProps (${this.getQualifiedName()})`, {}, () =>
                           mapDispatchToProps(this.props.shell, dispatch, ownProps)
                       )
                   }
@@ -135,6 +135,11 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                       }
                     : reduxConnectOptions
             )(component as React.ComponentType<any>) as React.ComponentType<any> // TODO: Fix 'as any'
+        }
+
+        private readonly getQualifiedName = (): string => {
+            const componentName = options.componentName ?? component.displayName ?? component.name
+            return componentName ? `${boundShell.name} / ${componentName}` : boundShell.name
         }
 
         private readonly getOwnProps = () =>
