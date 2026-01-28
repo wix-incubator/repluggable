@@ -1,4 +1,4 @@
-import { EntryPoint, AppHost, AnySlotKey, PrivateShell, SlotKey } from '../API'
+import { EntryPoint, AppHost, AnySlotKey, LazyEntryPointFactory, PrivateShell, SlotKey } from '../API'
 import { AnyExtensionSlot } from '../extensionSlot'
 import { Hot } from '../hot'
 
@@ -12,6 +12,7 @@ export interface RepluggableAppDebugInfo {
     uniqueShellNames: Set<string>
     extensionSlots: Map<AnySlotKey, AnyExtensionSlot>
     addedShells: Map<string, PrivateShell>
+    lazyShells: Map<string, LazyEntryPointFactory>
     readyAPIs: Set<AnySlotKey>
     shellInstallers: WeakMap<PrivateShell, string[]>
     utils: RepluggableDebugUtils

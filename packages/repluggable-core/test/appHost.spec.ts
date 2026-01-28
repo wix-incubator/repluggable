@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import { createAppHost, mainViewSlotKey, stateSlotKey } from '../src/appHost'
+import { createAppHost, mainViewSlotKey, makeLazyEntryPoint, stateSlotKey } from '../src/appHost'
 
 import {
     AnySlotKey,
@@ -206,6 +206,12 @@ describe('App Host', () => {
 
         it('should not install multiple shells with the same name', () => {
             expect(() => createAppHost([mockPackage, _.pick(mockPackage, 'name')], testHostOptions)).toThrow()
+        })
+
+        it('should install lazy shells', () => {
+            const lazyEntryPoint = makeLazyEntryPoint(mockPackage.name, async () => mockPackage)
+            const host = createAppHost([lazyEntryPoint], testHostOptions)
+            expect(host.hasShell(lazyEntryPoint.name)).toBe(true)
         })
     })
 

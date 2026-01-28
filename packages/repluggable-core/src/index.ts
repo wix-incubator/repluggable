@@ -29,7 +29,7 @@ export {
 
 export { ConsoleHostLogger } from './loggers'
 
-export { createAppHost, mainViewSlotKey, stateSlotKey } from './appHost'
+export { createAppHost, makeLazyEntryPoint, mainViewSlotKey, stateSlotKey } from './appHost'
 
 export { AppHostServicesProvider } from './appHostServices'
 

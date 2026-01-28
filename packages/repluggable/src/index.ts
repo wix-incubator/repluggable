@@ -29,6 +29,7 @@ export {
     AppHostAPI,
     ConsoleHostLogger,
     createAppHost,
+    makeLazyEntryPoint,
     mainViewSlotKey,
     stateSlotKey,
     invokeSlotCallbacks,

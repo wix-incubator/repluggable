@@ -50,10 +50,16 @@ export type ContributionPredicate = () => boolean
 export interface EntryPointTags {
     [name: string]: string
 }
+export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
 export type DeclarationsChangedCallback = () => void
 export type UnsubscribeFromDeclarationsChanged = () => void
 export type ShellBoundaryAspect = React.FunctionComponent<React.PropsWithChildren<unknown>>
+
+export interface LazyEntryPointDescriptor {
+    readonly name: string
+    readonly factory: LazyEntryPointFactory
+}
 
 /**
  * Application part that will receive a {Shell} when loaded into the {AppHost}
@@ -100,7 +106,7 @@ export interface EntryPoint {
     detach?(shell: Shell): void
 }
 
-export type AnyEntryPoint = EntryPoint
+export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
 export type EntryPointOrPackage = AnyEntryPoint | AnyEntryPoint[]
 export interface EntryPointOrPackagesMap {
     [name: string]: EntryPointOrPackage
@@ -264,6 +270,8 @@ export interface AppHost {
      * @return {boolean}
      */
     hasShell(name: string): boolean
+    // TODO: Deprecate
+    isLazyEntryPoint(name: string): boolean
     /**
      * Dynamically add {Shell}s after the host is created
      *

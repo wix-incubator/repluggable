@@ -70,13 +70,19 @@ export type ContributionPredicate = () => boolean
 export interface EntryPointTags {
     [name: string]: string
 }
+export type LazyEntryPointFactory = () => Promise<EntryPoint> //TODO: get rid of these
 export type ShellsChangedCallback = (shellNames: string[]) => void
 export type DeclarationsChangedCallback = () => void
 export type UnsubscribeFromDeclarationsChanged = () => void
 export type ShellBoundaryAspect = React.FunctionComponent<React.PropsWithChildren<unknown>>
 
+export interface LazyEntryPointDescriptor {
+    readonly name: string
+    readonly factory: LazyEntryPointFactory
+}
 
-export type AnyEntryPoint = EntryPoint
+
+export type AnyEntryPoint = EntryPoint | LazyEntryPointDescriptor
 
 
 export type ExtensionItemFilter<T> = (extensionItem: ExtensionItem<T>) => boolean

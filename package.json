@@ -19,8 +19,22 @@
     "build": "yarn workspaces foreach --all --topological --parallel run build",
     "test": "yarn workspaces foreach --all --topological --parallel run test"
   },
+  "devDependencies": {
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.2"
+  },
   "resolutions": {
     "node-forge": "^1.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "(src|test|testKit)/**/*.{ts,tsx}": [
+      "tslint --project . --fix"
+    ]
   },
   "packageManager": "yarn@4.10.3"
 }

@@ -1,5 +1,5 @@
 import { getPerformanceDebug } from './performanceDebugInfo'
-import { AnySlotKey, AppHost, EntryPoint, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
+import { AnySlotKey, AppHost, EntryPoint, LazyEntryPointFactory, PrivateShell, SlotKey, StatisticsMemoization, Trace } from '../API'
 import _ from 'lodash'
 import { hot } from '../hot'
 import { AppHostServicesProvider } from '../appHostServices'
@@ -18,6 +18,7 @@ interface SetupDebugInfoParams {
     extensionSlots: Map<AnySlotKey, AnyExtensionSlot>
     addedShells: Map<string, PrivateShell>
     shellInstallers: WeakMap<PrivateShell, string[]>
+    lazyShells: Map<string, LazyEntryPointFactory>
 
     performance: PerformanceDebugParams
 
@@ -132,6 +133,7 @@ export function setupDebugInfo({
     getUnreadyEntryPoints,
     extensionSlots,
     addedShells,
+    lazyShells,
     shellInstallers,
     performance: { options, trace, memoizedArr }
 }: SetupDebugInfoParams) {
@@ -179,6 +181,7 @@ export function setupDebugInfo({
         uniqueShellNames,
         extensionSlots,
         addedShells,
+        lazyShells,
         readyAPIs,
         shellInstallers,
         utils,
