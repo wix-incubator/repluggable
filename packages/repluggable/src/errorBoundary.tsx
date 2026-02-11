@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import React, { ErrorInfo } from 'react'
 import { Shell, PrivateShell, AppHostOptions } from './API'
+import { isErrorLikeObject } from './typeGuards'
 import { Unsubscribe } from 'redux'
 
 interface ErrorBoundaryProps {
@@ -29,7 +30,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<Error
     public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         return {
             hasError: true,
-            errorMessage: error.message
+            errorMessage: isErrorLikeObject(error) ? error.message : String(error)
         }
     }
 
@@ -54,7 +55,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<Error
         const { shell, componentName } = this.props
         const { enableStickyErrorBoundaries } = getHostOptions(shell)
 
-        const errorType = error instanceof Error ? error.name : 'UnknownError'
+        const errorType = isErrorLikeObject(error) ? error.name : 'UnknownError'
         const qualifiedName = getQualifiedName(shell.name, componentName)
         shell.log.error(
             `ErrorBoundary(${qualifiedName}): ${errorType}`,

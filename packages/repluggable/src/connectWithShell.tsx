@@ -10,6 +10,12 @@ import { propsDeepEqual } from './propsDeepEqual'
 import { ShellRenderer } from './renderSlotComponents'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
 
+const ANONYMOUS_COMPONENT = 'Anonymous Component'
+
+function resolveComponentName(component: React.ComponentType<any>, optionsComponentName?: string): string {
+    return optionsComponentName ?? component.displayName ?? component.name ?? ANONYMOUS_COMPONENT
+}
+
 interface WrapperMembers<State, OwnProps, StateProps, DispatchProps> {
     connectedComponent: any
     mapStateToProps(state: State, ownProps?: OwnProps): StateProps
@@ -138,8 +144,8 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
         }
 
         private readonly getQualifiedName = (): string => {
-            const componentName = options.componentName ?? component.displayName ?? component.name
-            return componentName ? `${boundShell.name} / ${componentName}` : boundShell.name
+            const componentName = resolveComponentName(component, options.componentName)
+            return `${boundShell.name} / ${componentName}`
         }
 
         private readonly getOwnProps = () =>
@@ -164,7 +170,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
         <ShellContext.Consumer>
             {shell => {
                 return (
-                    <ErrorBoundary shell={boundShell} componentName={options.componentName ?? component.displayName ?? component.name}>
+                    <ErrorBoundary shell={boundShell} componentName={resolveComponentName(component, options.componentName)}>
                         {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
@@ -219,7 +225,7 @@ export function connectWithShell<State = {}, OwnProps = {}, StateProps = {}, Dis
 ): ConnectedComponentFactory<State, OwnProps, StateProps, DispatchProps> {
     const validateLifecycle = (component: React.ComponentType<any>) => {
         if (boundShell.wasInitializationCompleted() && !options.allowOutOfEntryPoint) {
-            const componentText = component.displayName || component.name || component
+            const componentText = resolveComponentName(component)
             const errorText =
                 `connectWithShell(${boundShell.name})(${componentText}): ` +
                 'attempt to create component type outside of Entry Point lifecycle. ' +
