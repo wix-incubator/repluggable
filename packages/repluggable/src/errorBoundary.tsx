@@ -56,10 +56,11 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<Error
         const { enableStickyErrorBoundaries } = getHostOptions(shell)
 
         const errorType = isErrorLikeObject(error) ? error.name : 'UnknownError'
+        const errorDescription = isErrorLikeObject(error) ? `${errorType} | ${error.message}` : errorType
         const qualifiedName = getQualifiedName(shell.name, componentName)
         shell.log.error(
-            `ErrorBoundary(${qualifiedName}): ${errorType}`,
-            new Error(`ErrorBoundary(${qualifiedName}): ${errorType}`, { cause: error }),
+            `ErrorBoundary(${qualifiedName}): ${errorDescription}`,
+            new Error(`ErrorBoundary(${qualifiedName}): ${errorDescription}`, { cause: error }),
             { componentName, componentStack: errorInfo.componentStack }
         )
 
