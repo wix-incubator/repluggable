@@ -88,6 +88,136 @@ describe('RepluggableAppDebug', () => {
             expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
         })
 
+        it('should return all traversal paths from an entry point to a transitive API', () => {
+            createAppHost([
+                {
+                    name: 'entryPoint A',
+                    getDependencyAPIs: () => [{ name: 'API B' }]
+                },
+                {
+                    name: 'entryPoint B',
+                    declareAPIs: () => [{ name: 'API B' }],
+                    getDependencyAPIs: () => [{ name: 'API C' }]
+                },
+                {
+                    name: 'entryPoint C',
+                    declareAPIs: () => [{ name: 'API C' }]
+                }
+            ])
+
+            const { traceAPIDependency } = globalThis.repluggableAppDebug.utils
+
+            expect(traceAPIDependency('entryPoint A', 'API C')).toEqual({
+                entryPoint: 'entryPoint A',
+                deps: [
+                    {
+                        api: 'API B',
+                        subtree: {
+                            entryPoint: 'entryPoint B',
+                            deps: [{ api: 'API C', subtree: null }]
+                        }
+                    }
+                ]
+            })
+
+            expect(traceAPIDependency('entryPoint A', 'API B')).toEqual({
+                entryPoint: 'entryPoint A',
+                deps: [{ api: 'API B', subtree: null }]
+            })
+
+            expect(traceAPIDependency('entryPoint C', 'API B')).toBeNull()
+            expect(traceAPIDependency('nonexistent', 'API B')).toBeNull()
+        })
+
+        it('should branch the dependency tree when multiple routes reach the target API', () => {
+            createAppHost([
+                {
+                    name: 'entryPoint A',
+                    getDependencyAPIs: () => [{ name: 'API X' }, { name: 'API Y' }]
+                },
+                {
+                    name: 'entryPoint B',
+                    declareAPIs: () => [{ name: 'API X' }],
+                    getDependencyAPIs: () => [{ name: 'API Z' }]
+                },
+                {
+                    name: 'entryPoint C',
+                    declareAPIs: () => [{ name: 'API Y' }],
+                    getDependencyAPIs: () => [{ name: 'API Z' }]
+                },
+                {
+                    name: 'entryPoint D',
+                    declareAPIs: () => [{ name: 'API Z' }]
+                }
+            ])
+
+            const { traceAPIDependency } = globalThis.repluggableAppDebug.utils
+
+            expect(traceAPIDependency('entryPoint A', 'API Z')).toEqual({
+                entryPoint: 'entryPoint A',
+                deps: [
+                    {
+                        api: 'API X',
+                        subtree: {
+                            entryPoint: 'entryPoint B',
+                            deps: [{ api: 'API Z', subtree: null }]
+                        }
+                    },
+                    {
+                        api: 'API Y',
+                        subtree: {
+                            entryPoint: 'entryPoint C',
+                            deps: [{ api: 'API Z', subtree: null }]
+                        }
+                    }
+                ]
+            })
+        })
+
+        it('should visualize the dependency tree, collapsing shared prefixes', () => {
+            createAppHost([
+                {
+                    name: 'entryPoint A',
+                    getDependencyAPIs: () => [{ name: 'API B' }]
+                },
+                {
+                    name: 'entryPoint B',
+                    declareAPIs: () => [{ name: 'API B' }],
+                    getDependencyAPIs: () => [{ name: 'API X' }, { name: 'API Y' }]
+                },
+                {
+                    name: 'entryPoint X',
+                    declareAPIs: () => [{ name: 'API X' }],
+                    getDependencyAPIs: () => [{ name: 'API Z' }]
+                },
+                {
+                    name: 'entryPoint Y',
+                    declareAPIs: () => [{ name: 'API Y' }],
+                    getDependencyAPIs: () => [{ name: 'API Z' }]
+                },
+                {
+                    name: 'entryPoint Z',
+                    declareAPIs: () => [{ name: 'API Z' }]
+                }
+            ])
+
+            const { traceAPIDependency, visualizeDependencyTree } = globalThis.repluggableAppDebug.utils
+            const tree = traceAPIDependency('entryPoint A', 'API Z')
+
+            expect(visualizeDependencyTree(tree)).toBe(
+                [
+                    'entryPoint A',
+                    '└─ API B (declared by entryPoint B)',
+                    '   ├─ API X (declared by entryPoint X)',
+                    '   │  └─ API Z',
+                    '   └─ API Y (declared by entryPoint Y)',
+                    '      └─ API Z'
+                ].join('\n')
+            )
+
+            expect(visualizeDependencyTree(null)).toBe('(no dependency paths)')
+        })
+
         it('should return the root unready API when there is a graph of dependencies (declation order is reversed)', async () => {
             createAppHost(
                 [

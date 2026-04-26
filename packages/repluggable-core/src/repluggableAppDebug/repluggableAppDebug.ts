@@ -87,6 +87,69 @@ const getRootUnreadyAPI = (host: AppHost) => {
     }
 }
 
+export type DependencyTree = {
+    entryPoint: string
+    deps: Array<{ api: string; subtree: DependencyTree | null }>
+}
+
+const traceAPIDependency = (entryPointName: string, apiName: string, entryPoints: EntryPoint[]): DependencyTree | null => {
+    const apiToDeclarer = mapApiToEntryPoint(entryPoints)
+    const entryPointByName = new Map(entryPoints.map(ep => [ep.name, ep]))
+    if (!entryPointByName.has(entryPointName)) {
+        return null
+    }
+
+    const onPath = new Set<string>()
+
+    const build = (epName: string): DependencyTree | null => {
+        if (onPath.has(epName)) {
+            return null
+        }
+        onPath.add(epName)
+
+        const deps: DependencyTree['deps'] = []
+        const epDeps = entryPointByName.get(epName)?.getDependencyAPIs?.() ?? []
+        for (const dep of epDeps) {
+            if (dep.name === apiName) {
+                deps.push({ api: dep.name, subtree: null })
+            } else {
+                const declarer = apiToDeclarer.get(dep.name)
+                const subtree = declarer ? build(declarer.name) : null
+                if (subtree) {
+                    deps.push({ api: dep.name, subtree })
+                }
+            }
+        }
+
+        onPath.delete(epName)
+        return deps.length > 0 ? { entryPoint: epName, deps } : null
+    }
+
+    return build(entryPointName)
+}
+
+const visualizeDependencyTree = (tree: DependencyTree | null): string => {
+    if (!tree) {
+        return '(no dependency paths)'
+    }
+
+    const lines: string[] = [tree.entryPoint]
+    const render = (node: DependencyTree, prefix: string): void => {
+        node.deps.forEach((edge, i) => {
+            const isLast = i === node.deps.length - 1
+            const connector = isLast ? '└─ ' : '├─ '
+            const nextPrefix = prefix + (isLast ? '   ' : '│  ')
+            const declaredBy = edge.subtree ? ` (declared by ${edge.subtree.entryPoint})` : ''
+            lines.push(`${prefix}${connector}${edge.api}${declaredBy}`)
+            if (edge.subtree) {
+                render(edge.subtree, nextPrefix)
+            }
+        })
+    }
+    render(tree, '')
+    return lines.join('\n')
+}
+
 const getAPIOrEntryPointsDependencies = (
     apisOrEntryPointsNames: string[],
     entryPoints: EntryPoint[]
@@ -167,6 +230,9 @@ export function setupDebugInfo({
             apisOrEntryPointsNames: string[],
             entryPoints = [...addedShells.values()].map(x => x.entryPoint)
         ) => getAPIOrEntryPointsDependencies(apisOrEntryPointsNames, entryPoints),
+        traceAPIDependency: (entryPointName: string, apiName: string): DependencyTree | null =>
+            traceAPIDependency(entryPointName, apiName, [...getUnreadyEntryPoints(), ...[...addedShells.values()].map(x => x.entryPoint)]),
+        visualizeDependencyTree,
         performance: getPerformanceDebug(options, trace, memoizedArr)
     }
 

@@ -18,12 +18,23 @@ export interface RepluggableAppDebugInfo {
     hmr: RepluggableHMR
 }
 
+export interface DependencyTree {
+    entryPoint: string
+    deps: { api: string; subtree: DependencyTree | null }[]
+}
+
 export interface RepluggableDebugUtils {
     apis(): APIDebugInfo[]
     unReadyEntryPoints(): EntryPoint[]
     getRootUnreadyAPI(): SlotKey<any>
     whyEntryPointUnready(name: string): void
     findAPI(name: string): APIDebugInfo[]
+    getAPIOrEntryPointsDependencies(
+        apisOrEntryPointsNames: string[],
+        entryPoints?: EntryPoint[]
+    ): { entryPoints: EntryPoint[]; apis: AnySlotKey[] }
+    traceAPIDependency(entryPointName: string, apiName: string): DependencyTree | null
+    visualizeDependencyTree(tree: DependencyTree | null): string
 }
 
 export interface RepluggableHMR {
