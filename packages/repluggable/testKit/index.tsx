@@ -128,6 +128,9 @@ function createShell(host: AppHost): PrivateShell {
         getHostOptions: () => host.options,
         log: createShellLogger(host, entryPoint),
         lazyEvaluator: func => ({ get: func }),
+        getColdAPI(key) {
+            return { get: () => host.getAPI(key) }
+        },
         [INTERNAL_DONT_USE_SHELL_GET_APP_HOST]: () => {
             return host
         }

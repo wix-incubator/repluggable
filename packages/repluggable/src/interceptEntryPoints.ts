@@ -17,6 +17,9 @@ function applyInterceptor(inner: EntryPoint, interceptor: EntryPointInterceptor)
         getDependencyAPIs: interceptor.interceptGetDependencyAPIs
             ? interceptor.interceptGetDependencyAPIs(inner.getDependencyAPIs)
             : inner.getDependencyAPIs,
+        getColdDependencyAPIs: interceptor.interceptGetColdDependencyAPIs
+            ? interceptor.interceptGetColdDependencyAPIs(inner.getColdDependencyAPIs)
+            : inner.getColdDependencyAPIs,
         declareAPIs: interceptor.interceptDeclareAPIs ? interceptor.interceptDeclareAPIs(inner.declareAPIs) : inner.declareAPIs,
         attach: interceptor.interceptAttach ? interceptor.interceptAttach(inner.attach) : inner.attach,
         detach: interceptor.interceptDetach ? interceptor.interceptDetach(inner.detach) : inner.detach,
