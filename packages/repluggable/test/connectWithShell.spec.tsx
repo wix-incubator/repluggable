@@ -4,7 +4,7 @@ import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 import { act, create, ReactTestInstance, ReactTestRenderer } from 'react-test-renderer'
 import { AnyAction } from 'redux'
 import { ObservedSelectorsMap, observeWithShell } from '../src'
-import { AnySlotKey, AppHost, EntryPoint, ObservableState, Shell, SlotKey } from '../src/API'
+import { AnySlotKey, AppHost, EntryPoint, ObservableState, Shell, ShellLogger, SlotKey } from '../src/API'
 import {
     collectAllTexts,
     connectWithShell,
@@ -15,6 +15,7 @@ import {
     MockState,
     renderInHost,
     TOGGLE_MOCK_VALUE,
+    withConsoleErrors,
     withThrowOnError
 } from '../testKit'
 
@@ -52,6 +53,20 @@ const dispatchAndFlush = (action: AnyAction, { getStore }: AppHost) => {
     })
 }
 
+const createShellLoggerMock = (): ShellLogger =>
+    ({
+        log: jest.fn(),
+        verbose: jest.fn(),
+        debug: jest.fn(),
+        info: jest.fn(),
+        warning: jest.fn(),
+        error: jest.fn(),
+        critical: jest.fn(),
+        spanChild: jest.fn(() => ({ end: jest.fn() })),
+        spanRoot: jest.fn(() => ({ end: jest.fn() })),
+        monitor: jest.fn((messageId: string, keyValuePairs: Object, monitoredCode: () => unknown) => monitoredCode())
+    } as ShellLogger)
+
 describe('connectWithShell', () => {
     it('should pass exact shell to mapStateToProps', () => {
         const { shell, renderInShellContext } = createMocks(mockPackage)
@@ -65,6 +80,96 @@ describe('connectWithShell', () => {
 
         const { parentWrapper } = renderInShellContext(<ConnectedComp />)
         expect(collectAllTexts(parentWrapper)).toContain(mockPackage.name)
+    })
+
+    it('should use custom logger for map callbacks without mutating the original shell', () => {
+        const { shell, renderInShellContext } = createMocks(mockPackage)
+        const originalLogger = shell.log
+        const logger = createShellLoggerMock()
+        const receivedShells: Shell[] = []
+
+        const PureComp = ({
+            stateLoggerMatches,
+            dispatchLoggerMatches
+        }: {
+            stateLoggerMatches: boolean
+            dispatchLoggerMatches: boolean
+        }) => <div>{`${stateLoggerMatches}:${dispatchLoggerMatches}`}</div>
+        const mapStateToProps = (s: Shell) => {
+            receivedShells.push(s)
+            s.log.info('mapStateToProps')
+            return { stateLoggerMatches: s.log === logger }
+        }
+        const mapDispatchToProps = (s: Shell) => {
+            receivedShells.push(s)
+            s.log.warning('mapDispatchToProps')
+            return { dispatchLoggerMatches: s.log === logger }
+        }
+
+        const ConnectedComp = connectWithShell(mapStateToProps, mapDispatchToProps, shell, {
+            allowOutOfEntryPoint: true,
+            logger
+        })(PureComp)
+
+        const { parentWrapper } = renderInShellContext(<ConnectedComp />)
+
+        expect(collectAllTexts(parentWrapper)).toContain('true:true')
+        expect(logger.monitor).toHaveBeenCalledWith(expect.stringContaining('connectWithShell.mapStateToProps'), {}, expect.any(Function))
+        expect(logger.monitor).toHaveBeenCalledWith(
+            expect.stringContaining('connectWithShell.mapDispatchToProps'),
+            {},
+            expect.any(Function)
+        )
+        expect(logger.info).toHaveBeenCalledWith('mapStateToProps')
+        expect(logger.warning).toHaveBeenCalledWith('mapDispatchToProps')
+        expect(shell.log).toBe(originalLogger)
+        expect(receivedShells.every(s => s.log === logger)).toBe(true)
+        expect(receivedShells.every(s => s !== shell)).toBe(true)
+    })
+
+    it('should use custom logger in shouldComponentUpdate', () => {
+        const { shell, renderInShellContext } = createMocks(mockPackage)
+        const logger = createShellLoggerMock()
+        const receivedShells: Shell[] = []
+
+        const PureComp: FunctionComponent<{ ownProp: boolean }> = () => <div>Pure Comp</div>
+        const ConnectedComp = connectWithShell<{}, { ownProp: boolean }>(undefined, undefined, shell, {
+            allowOutOfEntryPoint: true,
+            logger,
+            shouldComponentUpdate: s => {
+                receivedShells.push(s)
+                return true
+            }
+        })(PureComp)
+
+        renderInShellContext(<ConnectedComp ownProp={true} />)
+
+        expect(receivedShells.length).toBeGreaterThan(0)
+        expect(receivedShells.every(s => s.log === logger)).toBe(true)
+        expect(shell.log).not.toBe(logger)
+    })
+
+    it('should use custom logger for connected error boundary errors', () => {
+        const { shell, renderInShellContext } = createMocks(mockPackage)
+        const logger = createShellLoggerMock()
+        const FailingComp = () => {
+            throw new Error('Test error')
+        }
+
+        const ConnectedComp = connectWithShell(undefined, undefined, shell, {
+            allowOutOfEntryPoint: true,
+            componentName: 'FailingComp',
+            logger
+        })(FailingComp)
+
+        withConsoleErrors(() => renderInShellContext(<ConnectedComp />))
+
+        expect(logger.error).toHaveBeenCalledWith(
+            expect.stringContaining('ErrorBoundary'),
+            expect.any(Error),
+            expect.objectContaining({ componentName: 'FailingComp' })
+        )
+        expect(shell.log).not.toBe(logger)
     })
 
     it('should have shell context outside of main view with renderOutsideProvider option', () => {
