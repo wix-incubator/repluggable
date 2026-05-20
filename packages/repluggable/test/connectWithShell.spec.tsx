@@ -3,7 +3,7 @@ import React, { FunctionComponent, ReactElement, useEffect } from 'react'
 
 import { act, create, ReactTestInstance, ReactTestRenderer } from 'react-test-renderer'
 import { AnyAction } from 'redux'
-import { ObservedSelectorsMap, observeWithShell } from '../src'
+import { ErrorBoundary, ObservedSelectorsMap, observeWithShell } from '../src'
 import { AnySlotKey, AppHost, EntryPoint, ObservableState, Shell, ShellLogger, SlotKey } from '../src/API'
 import {
     collectAllTexts,
@@ -15,7 +15,6 @@ import {
     MockState,
     renderInHost,
     TOGGLE_MOCK_VALUE,
-    withConsoleErrors,
     withThrowOnError
 } from '../testKit'
 
@@ -152,22 +151,28 @@ describe('connectWithShell', () => {
     it('should use custom logger for connected error boundary errors', () => {
         const { shell, renderInShellContext } = createMocks(mockPackage)
         const logger = createShellLoggerMock()
-        const FailingComp = () => {
-            throw new Error('Test error')
-        }
+        const PureComp = () => <div>Pure Comp</div>
 
         const ConnectedComp = connectWithShell(undefined, undefined, shell, {
             allowOutOfEntryPoint: true,
-            componentName: 'FailingComp',
+            componentName: 'PureComp',
             logger
-        })(FailingComp)
+        })(PureComp)
 
-        withConsoleErrors(() => renderInShellContext(<ConnectedComp />))
+        const { testKit } = renderInShellContext(<ConnectedComp />)
+        const boundary = testKit.root
+            .findAll(x => _.get(x.type, 'name') === ErrorBoundary.name)
+            .find(x => x.props.componentName === 'PureComp')?.instance as ErrorBoundary
+        expect(boundary).toBeDefined()
+
+        act(() => {
+            boundary.componentDidCatch(new Error('Test error'), { componentStack: 'test stack' })
+        })
 
         expect(logger.error).toHaveBeenCalledWith(
             expect.stringContaining('ErrorBoundary'),
             expect.any(Error),
-            expect.objectContaining({ componentName: 'FailingComp' })
+            expect.objectContaining({ componentName: 'PureComp' })
         )
         expect(shell.log).not.toBe(logger)
     })
