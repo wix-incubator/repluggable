@@ -38,16 +38,6 @@ const reduxConnectOptions = {
     areOwnPropsEqual: propsDeepEqual
 }
 
-function createShellWithLogger(shell: Shell, logger?: ShellLogger): Shell {
-    return logger
-        ? new Proxy(shell, {
-              get(target, property, receiver) {
-                  return property === 'log' ? logger : Reflect.get(target, property, receiver)
-              }
-          })
-        : shell
-}
-
 function wrapWithShouldUpdate<Props extends unknown, F extends (next: Props, prev: Props) => void>(
     shouldUpdate: Maybe<(shell: Shell, ownProps?: Props) => boolean>,
     func: F,
@@ -90,7 +80,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     boundShell: Shell,
     options: ConnectWithShellOptions<OwnProps, StateProps> = {}
 ): ComponentWithChildrenProps<OwnProps> {
-    const effectiveShell = createShellWithLogger(boundShell, options.logger)
+    const logger = options.logger ?? boundShell.log;
 
     class ConnectedComponent
         extends React.Component<WrappedComponentOwnProps<OwnProps>>
@@ -104,26 +94,26 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
-                      return effectiveShell.log.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()})`, {}, () =>
-                          mapStateToProps(effectiveShell, effectiveShell.getStore<State>().getState(), ownProps)
+                      return logger.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()})`, {}, () =>
+                          mapStateToProps(this.props.shell, this.props.shell.getStore<State>().getState(), ownProps)
                       )
                   }
                 : (_.stubObject as Returns<StateProps>)
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => {
-                      return effectiveShell.log.monitor(`connectWithShell.mapDispatchToProps (${this.getQualifiedName()})`, {}, () =>
-                          mapDispatchToProps(effectiveShell, dispatch, ownProps)
+                      return logger.monitor(`connectWithShell.mapDispatchToProps (${this.getQualifiedName()})`, {}, () =>
+                          mapDispatchToProps(this.props.shell, dispatch, ownProps)
                       )
                   }
                 : (_.stubObject as Returns<DispatchProps>)
 
             const shouldComponentUpdate =
-                options.shouldComponentUpdate && boundShell.memoizeForState(options.shouldComponentUpdate, () => '*')
+                options.shouldComponentUpdate && this.props.shell.memoizeForState(options.shouldComponentUpdate, () => '*')
 
             const memoWithShouldUpdate = <F extends AnyFunction>(f: F): F => {
                 let last: ReturnType<F> | null = null
                 return ((...args) => {
-                    if (last && shouldComponentUpdate && !shouldComponentUpdate(effectiveShell, this.getOwnProps())) {
+                    if (last && shouldComponentUpdate && !shouldComponentUpdate(this.props.shell, this.getOwnProps())) {
                         return last
                     }
                     last = f(...args)
@@ -142,13 +132,13 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
                               shouldComponentUpdate,
                               reduxConnectOptions.areStatePropsEqual,
                               this.getOwnProps,
-                              effectiveShell
+                              boundShell
                           ),
                           areOwnPropsEqual: arePropsEqualFuncWrapper(
                               shouldComponentUpdate,
                               reduxConnectOptions.areOwnPropsEqual,
                               this.getOwnProps,
-                              effectiveShell
+                              boundShell
                           )
                       }
                     : reduxConnectOptions
@@ -182,8 +172,8 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
         <ShellContext.Consumer>
             {shell => {
                 return (
-                    <ErrorBoundary shell={effectiveShell} componentName={resolveComponentName(component, options.componentName)}>
-                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={effectiveShell} />}
+                    <ErrorBoundary shell={boundShell} logger={options.logger} componentName={resolveComponentName(component, options.componentName)}>
+                        {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
             }}
