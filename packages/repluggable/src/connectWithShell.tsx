@@ -2,7 +2,7 @@ import _ from 'lodash'
 import React from 'react'
 import { connect as reduxConnect } from 'react-redux'
 import { Action, Dispatch } from 'redux'
-import { AnyFunction, ObservableState, StateObserverUnsubscribe, PrivateShell, Shell } from './API'
+import { AnyFunction, ObservableState, StateObserverUnsubscribe, PrivateShell, Shell, ShellLogger } from './API'
 import { ErrorBoundary } from './errorBoundary'
 import { ShellContext } from './shellContext'
 import { StoreContext } from './storeContext'
@@ -80,6 +80,8 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
     boundShell: Shell,
     options: ConnectWithShellOptions<OwnProps, StateProps> = {}
 ): ComponentWithChildrenProps<OwnProps> {
+    const logger = options.logger ?? boundShell.log;
+
     class ConnectedComponent
         extends React.Component<WrappedComponentOwnProps<OwnProps>>
         implements WrapperMembers<State, OwnProps, StateProps, DispatchProps>
@@ -92,14 +94,14 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
             super(props)
             this.mapStateToProps = mapStateToProps
                 ? (__, ownProps?) => {
-                      return this.props.shell.log.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()})`, {}, () =>
+                      return logger.monitor(`connectWithShell.mapStateToProps (${this.getQualifiedName()})`, {}, () =>
                           mapStateToProps(this.props.shell, this.props.shell.getStore<State>().getState(), ownProps)
                       )
                   }
                 : (_.stubObject as Returns<StateProps>)
             this.mapDispatchToProps = mapDispatchToProps
                 ? (dispatch, ownProps?) => {
-                      return this.props.shell.log.monitor(`connectWithShell.mapDispatchToProps (${this.getQualifiedName()})`, {}, () =>
+                      return logger.monitor(`connectWithShell.mapDispatchToProps (${this.getQualifiedName()})`, {}, () =>
                           mapDispatchToProps(this.props.shell, dispatch, ownProps)
                       )
                   }
@@ -170,7 +172,7 @@ function wrapWithShellContext<State, OwnProps, StateProps, DispatchProps>(
         <ShellContext.Consumer>
             {shell => {
                 return (
-                    <ErrorBoundary shell={boundShell} componentName={resolveComponentName(component, options.componentName)}>
+                    <ErrorBoundary shell={boundShell} logger={options.logger} componentName={resolveComponentName(component, options.componentName)}>
                         {<ConnectedComponent {...wrapChildrenIfNeeded(props, shell)} shell={boundShell} />}
                     </ErrorBoundary>
                 )
@@ -190,6 +192,7 @@ function wrapWithShellRenderer<OwnProps>(
 
 export interface ConnectWithShellOptions<OwnProps, StateProps> {
     readonly componentName?: string
+    readonly logger?: ShellLogger
     /**
      * Allow connecting the component outside of Entry Point lifecycle (use only when you really have no choice)
      */

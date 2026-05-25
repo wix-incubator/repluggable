@@ -1,11 +1,12 @@
 import _ from 'lodash'
 import React, { ErrorInfo } from 'react'
-import { Shell, PrivateShell, AppHostOptions } from './API'
+import { Shell, PrivateShell, AppHostOptions, ShellLogger } from './API'
 import { isErrorLikeObject } from './typeGuards'
 import { Unsubscribe } from 'redux'
 
 interface ErrorBoundaryProps {
     readonly shell: Shell
+    readonly logger?: ShellLogger
     readonly componentName?: string
     readonly errorClassName?: string
 }
@@ -51,6 +52,10 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<Error
         }
     }
 
+    private logger(): ShellLogger {
+        return this.props.logger ?? this.props.shell.log;
+    }
+
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         const { shell, componentName } = this.props
         const { enableStickyErrorBoundaries } = getHostOptions(shell)
@@ -58,7 +63,8 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<Error
         const errorType = isErrorLikeObject(error) ? error.name : 'UnknownError'
         const errorDescription = isErrorLikeObject(error) ? `${errorType} | ${error.message}` : errorType
         const qualifiedName = getQualifiedName(shell.name, componentName)
-        shell.log.error(
+
+        this.logger().error(
             `ErrorBoundary(${qualifiedName}): ${errorDescription}`,
             new Error(`ErrorBoundary(${qualifiedName}): ${errorDescription}`, { cause: error }),
             { componentName, componentStack: errorInfo.componentStack }
