@@ -36,57 +36,6 @@ function mapApiToEntryPoint(allPackages: EntryPoint[]) {
     return apiToEntryPoint
 }
 
-/**
- * a function that returns all the entry points in the system with their declared APIs and dependencies
- */
-const getAllEntryPoints = () => {
-    return [
-        ...globalThis.repluggableAppDebug.utils.unReadyEntryPoints(),
-        ...[...globalThis.repluggableAppDebug.addedShells].map(([_, shell]) => shell.entryPoint)
-    ]
-}
-
-/**
- * this function is used to get the root unready API in case there are too many to understand.
- * for example if you have 200 unready entry points, running this function will give you the first unready API that
- * will unblock the rest of the entry point (note that there might be more than one)
- *
- * this function basically takes the first unready entry point, get its dependencies and iterates over them to find an API that is not ready
- * at this point it follows the same process recursively until it reaced the target API.
- */
-const getRootUnreadyAPI = (host: AppHost) => {
-    return () => {
-        // get all unready entry points
-        const allEntryPoints = getAllEntryPoints()
-        const unReadyAPIsArray = []
-        // get the depdenencies of the first unready entry point
-        let dependenciesOfUnreadyEntryPoint = allEntryPoints?.[0]?.getDependencyAPIs?.()
-
-        while (dependenciesOfUnreadyEntryPoint?.length) {
-            const currentAPI = dependenciesOfUnreadyEntryPoint.pop()
-
-            if (!currentAPI) {
-                continue
-            }
-            // try to get the API from this host, we are looking for an API that is not ready
-            try {
-                const api = host.getAPI(currentAPI as SlotKey<any>)
-                if (api) {
-                    continue
-                }
-            } catch (e) {
-                unReadyAPIsArray.push(currentAPI)
-                // we found an API that is unready, lets find which entry point declares it
-                const declarer = allEntryPoints.find(entryPointData =>
-                    entryPointData.declareAPIs?.().some(api => currentAPI?.name === api.name)
-                )
-                dependenciesOfUnreadyEntryPoint = declarer?.getDependencyAPIs?.()
-            }
-        }
-        return unReadyAPIsArray.reverse()[0]
-    }
-}
-
 export type DependencyTree = {
     entryPoint: string
     deps: Array<{ api: string; subtree: DependencyTree | null }>
@@ -198,6 +147,17 @@ export function setupDebugInfo({
     shellInstallers,
     performance: { options, trace, memoizedArr }
 }: SetupDebugInfoParams) {
+    const getRootUnreadyAPIs = (): AnySlotKey[] => {
+        const unreadyEntryPoints = getUnreadyEntryPoints()
+        const unreadyEntryPointsDeclares = new Set(unreadyEntryPoints.flatMap(ep => (ep.declareAPIs?.() || []).map(key => key.name)))
+
+        const rootUnreadyAPIs = unreadyEntryPoints
+            .flatMap(ep => ep.getDependencyAPIs?.() || [])
+            .filter(key => !readyAPIs.has(getOwnSlotKey(key)) && !unreadyEntryPointsDeclares.has(key.name))
+
+        return _.uniqBy(rootUnreadyAPIs, 'name')
+    }
+
     const utils = {
         apis: () => {
             return Array.from(readyAPIs).map((apiKey: AnySlotKey) => {
@@ -207,7 +167,16 @@ export function setupDebugInfo({
                 }
             })
         },
-        getRootUnreadyAPI: getRootUnreadyAPI(host),
+        /**
+         * dependencies of unready entry points that are neither ready nor declared by another
+         * unready entry point - the APIs actually blocking the host from loading
+         * (missing entry point or a contribution that never completed)
+         */
+        getRootUnreadyAPIs,
+        /**
+         * @deprecated Use `getRootUnreadyAPIs` instead
+         */
+        getRootUnreadyAPI: () => getRootUnreadyAPIs()[0],
         unReadyEntryPoints: (): EntryPoint[] => getUnreadyEntryPoints(),
         whyEntryPointUnready: (name: string) => {
             const unreadyEntryPoint = _.find(
