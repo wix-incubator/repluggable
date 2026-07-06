@@ -4,7 +4,7 @@ const unreadAPI = { name: 'unreadyAPI' }
 
 const getUnreadyAPIs = async () => {
     await new Promise(resolve => setTimeout(resolve, 0))
-    return globalThis.repluggableAppDebug.utils.getRootUnreadyAPI()
+    return globalThis.repluggableAppDebug.utils.getRootUnreadyAPIs()
 }
 
 describe('RepluggableAppDebug', () => {
@@ -14,7 +14,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toBeUndefined()
+            expect(unreadyAPIs).toEqual([])
         })
 
         it('should not report any issues in case all entry points are loaded', async () => {
@@ -27,7 +27,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toBeUndefined()
+            expect(unreadyAPIs).toEqual([])
         })
 
         it('should return an API if its not ready', async () => {
@@ -40,7 +40,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
+            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
         })
 
         it('should return the root unready API when there are multiple entry points that depend on the same API', async () => {
@@ -61,7 +61,7 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
+            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
         })
 
         it('should return the root unready API when there is a graph of dependencies', async () => {
@@ -85,7 +85,29 @@ describe('RepluggableAppDebug', () => {
 
             const unreadyAPIs = await getUnreadyAPIs()
 
-            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
+            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
+        })
+
+        it('should return all root unready APIs, excluding transitively blocked ones', async () => {
+            createAppHost([
+                {
+                    name: 'entryPoint A',
+                    getDependencyAPIs: () => [{ name: 'API B' }]
+                },
+                {
+                    name: 'entryPoint B',
+                    declareAPIs: () => [{ name: 'API B' }],
+                    getDependencyAPIs: () => [{ name: 'missing B' }]
+                },
+                {
+                    name: 'entryPoint C',
+                    getDependencyAPIs: () => [{ name: 'missing C' }]
+                }
+            ])
+
+            const unreadyAPIs = await getUnreadyAPIs()
+
+            expect(unreadyAPIs).toEqual([{ name: 'missing B' }, { name: 'missing C' }])
         })
 
         it('should return all traversal paths from an entry point to a transitive API', () => {
@@ -242,7 +264,7 @@ describe('RepluggableAppDebug', () => {
             const unreadyAPIs = await getUnreadyAPIs()
             // because we take the first unready entry point, and in this case its the root,
             // we don't get the rest of the unready APIs
-            expect(unreadyAPIs).toEqual({ name: 'unreadyAPI' })
+            expect(unreadyAPIs).toEqual([{ name: 'unreadyAPI' }])
         })
     })
 })
