@@ -12,9 +12,10 @@ import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from 'repluggable-core'
 
 const ANONYMOUS_COMPONENT = 'Anonymous Component'
 
-// The shell context wrapper around `children` is created dynamically, so React cannot mark it as key-validated at
-// element creation time. Without an explicit key, rendering `{props.children}` alongside siblings makes React report
-// "Each child in a list should have a unique key prop" for the wrapper.
+// `wrapChildrenIfNeeded` builds this ShellContext.Provider around `children` dynamically, so React never
+// key-validates it at creation time. Once the wrapped children sit in a list position — a parent with several
+// children, or an array such as `.map` output — React key-checks every entry and reports
+// "Each child in a list should have a unique key prop" unless the wrapper carries a key.
 const SHELL_CONTEXT_CHILDREN_KEY = 'repluggable-shell-context'
 
 function resolveComponentName(component: React.ComponentType<any>, optionsComponentName?: string): string {
