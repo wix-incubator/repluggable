@@ -1,10 +1,12 @@
 import _ from 'lodash'
 import React, { FunctionComponent, PropsWithChildren } from 'react'
 import { SlotKey, ReactComponentContributor, Shell } from '../src/API'
-import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer } from '../testKit'
+import { createAppHost, addMockShell, renderInHost, connectWithShell, SlotRenderer, mockPackage, TOGGLE_MOCK_VALUE } from '../testKit'
 import { Provider } from 'react-redux'
 import { AnyAction, createStore } from 'redux'
 import { act, create, ReactTestRenderer } from 'react-test-renderer'
+import { StoreContext } from '../src/storeContext'
+import { SlotRenderer as DirectSlotRenderer } from '../src/renderSlotComponents'
 
 const CompA: FunctionComponent = () => <div id="A" className="mock-comp" />
 const CompB: FunctionComponent = () => <div id="B" className="mock-comp" />
@@ -94,6 +96,34 @@ describe('SlotRenderer', () => {
 
         expect(testKit.root.findAllByType(CompA).length).toBe(1)
         expect(testKit.root.findAllByType(CompB).length).toBe(0)
+    })
+
+    it('should not re-render when Redux state changes without changing slot items', () => {
+        const slotKey: SlotKey<ReactComponentContributor> = {
+            name: 'mock_key'
+        }
+        const host = createAppHost([mockPackage])
+        const shell = addMockShell(host)
+        const slot = shell.declareSlot(slotKey)
+        const filterFunc = jest.fn(() => true)
+
+        slot.contribute(shell, () => <CompA />)
+
+        act(() => {
+            create(
+                <Provider store={host.getStore()} context={StoreContext}>
+                    <DirectSlotRenderer slot={slot} filterFunc={filterFunc} />
+                </Provider>
+            )
+        })
+        const renderCountAfterMount = filterFunc.mock.calls.length
+
+        act(() => {
+            host.getStore().dispatch({ type: TOGGLE_MOCK_VALUE })
+            host.getStore().flush()
+        })
+
+        expect(filterFunc).toHaveBeenCalledTimes(renderCountAfterMount)
     })
 
     it('should sort slot items by sort function', () => {

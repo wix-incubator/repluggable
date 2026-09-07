@@ -70,12 +70,16 @@ function createSlotItemToShellRendererMap<T = any>(mapFunc?: SlotRendererIterato
 }
 
 type SlotRendererPure<T = any> = React.FunctionComponent<SlotRendererPureProps<T>>
+function areSlotItemsEqual<T>(next: ExtensionItem<T>[], previous: ExtensionItem<T>[]): boolean {
+    return next.length === previous.length && next.every((item, index) => item === previous[index])
+}
+
 const SlotRendererPure: SlotRendererPure = ({ items, mapFunc, filterFunc, sortFunc }) => (
     <>
         {_.flow(
             _.compact([
                 filterFunc && ((slotItems: typeof items) => slotItems.filter((item, index) => filterFunc(item.contribution, index))),
-                sortFunc && ((slotItems: typeof items) => slotItems.sort(sortFunc)),
+                sortFunc && ((slotItems: typeof items) => [...slotItems].sort(sortFunc)),
                 (slotItems: typeof items) => slotItems.map(createSlotItemToShellRendererMap(mapFunc))
             ])
         )(items)}
@@ -86,13 +90,23 @@ interface SlotRendererConnectedProps<T> extends SlotRendererIterators<T> {
     slot: ExtensionSlot<T>
 }
 
+function areSlotRendererStatePropsEqual<T>(
+    next: Pick<SlotRendererPureProps<T>, 'items'>,
+    previous: Pick<SlotRendererPureProps<T>, 'items'>
+): boolean {
+    return areSlotItemsEqual(next.items, previous.items)
+}
+
 const ConnectedSlot = connect(
     (state, { slot }: SlotRendererConnectedProps<any> & { renderCount: number }) => ({
         items: slot.getItems()
     }),
     undefined,
     undefined,
-    { context: StoreContext }
+    {
+        context: StoreContext,
+        areStatePropsEqual: areSlotRendererStatePropsEqual
+    }
 )(SlotRendererPure)
 
 export function SlotRenderer<T>(props: SlotRendererConnectedProps<T>): React.ReactElement<SlotRendererConnectedProps<T>> {
