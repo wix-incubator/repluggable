@@ -81,7 +81,11 @@ export function createAppHostWithPacts(packages: EntryPointOrPackage[], pacts: P
     })
 }
 
-export async function createAppHostAndWaitForLoading(packages: EntryPointOrPackage[], pacts: PactAPIBase[]): Promise<AppHost> {
+export async function createAppHostAndWaitForLoading(
+    packages: EntryPointOrPackage[],
+    pacts: PactAPIBase[],
+    timeout: number = 3000
+): Promise<AppHost> {
     const appHost = createAppHostWithPacts(packages, pacts)
     const declaredAPIs = _(packages)
         .flatten()
@@ -92,17 +96,19 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         setTimeout(() => {
             const readyAPIs = Array.from(globalThis.repluggableAppDebug.readyAPIs)
             const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
-            const rootUnreadyAPI = globalThis.repluggableAppDebug.utils.getRootUnreadyAPI()
+            const rootUnreadyAPIs = globalThis.repluggableAppDebug.utils.getRootUnreadyAPIs()
 
             reject(
                 new Error(
-                    `createAppHostAndWaitForLoading - waiting for loading timed out.
-there's a high chance this missing API is the main reason for it: ${JSON.stringify(rootUnreadyAPI)}
+                    `createAppHostAndWaitForLoading - waiting for loading timed out after ${timeout}ms.
+these root unready APIs are most likely the reason - unready entry points require them but nothing declares them (missing entry point or pact?): ${JSON.stringify(
+                        rootUnreadyAPIs
+                    )}
 
 in addition here's the full list of declared APIs that have not been contributed: ${JSON.stringify(unreadyAPIs)}`
                 )
             )
-        }, 3000)
+        }, timeout)
     })
 
     const loadingPromise = new Promise<void>(async resolve => {
