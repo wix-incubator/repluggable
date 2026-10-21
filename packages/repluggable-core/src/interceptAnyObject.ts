@@ -15,7 +15,7 @@ export function interceptAnyObject<T>(
     includeNestedLevels?: number
 ): T {
     if (isPlainObject(inner)) {
-        const result = _.mapValues(inner, (original, key) => {
+        const interceptValue = (original: any, key: string) => {
             if (typeof original === 'function' && typeof onFunction === 'function') {
                 return onFunction(key, original)
             }
@@ -31,9 +31,27 @@ export function interceptAnyObject<T>(
                 return onProperty(key, original)
             }
             return original
-        }) as T
+        }
 
-        return result
+        const innerObject: AnyObject = inner
+        const result: AnyObject = {}
+        for (const key of Object.keys(innerObject)) {
+            const descriptor = Object.getOwnPropertyDescriptor(innerObject, key)
+            if (descriptor && (descriptor.get || descriptor.set)) {
+                // Accessors may return different values over time (e.g. services initialized after the API is contributed),
+                // so they are delegated to the inner object on every access rather than read once and frozen
+                Object.defineProperty(result, key, {
+                    enumerable: true,
+                    configurable: true,
+                    get: descriptor.get && (() => innerObject[key]),
+                    set: descriptor.set && ((value: any) => (innerObject[key] = value))
+                })
+            } else {
+                result[key] = interceptValue(innerObject[key], key)
+            }
+        }
+
+        return result as T
     }
     return inner
 }

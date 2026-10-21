@@ -214,4 +214,57 @@ describe('interceptAnyObject', () => {
         const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
         expect(intercepted.get('key')).toEqual('value')
     })
+
+    it('should keep getters live instead of reading them once', () => {
+        const spy: LogSpy = jest.fn()
+        let current = 'initial'
+        const real = {
+            get liveProp() {
+                spy('liveProp')
+                return current
+            }
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+
+        expect(takeLog(spy)).toEqual([])
+        current = 'updated'
+        expect(intercepted.liveProp).toBe('updated')
+        expect(takeLog(spy)).toEqual(['liveProp'])
+    })
+
+    it('should delegate setters to the inner object', () => {
+        const spy: LogSpy = jest.fn()
+        let stored = 'initial'
+        const real = {
+            get value() {
+                return stored
+            },
+            set value(newValue: string) {
+                stored = newValue
+            }
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+
+        intercepted.value = 'updated'
+
+        expect(stored).toBe('updated')
+        expect(intercepted.value).toBe('updated')
+    })
+
+    it('should keep getters of nested objects live', () => {
+        const spy: LogSpy = jest.fn()
+        let current = 'initial'
+        const real = {
+            nested: {
+                get liveProp() {
+                    return current
+                }
+            }
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 1)
+
+        current = 'updated'
+
+        expect(intercepted.nested.liveProp).toBe('updated')
+    })
 })
