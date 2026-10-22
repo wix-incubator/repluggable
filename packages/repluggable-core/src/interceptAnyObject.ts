@@ -39,11 +39,11 @@ export function interceptAnyObject<T>(
             const descriptor = Object.getOwnPropertyDescriptor(innerObject, key)
             if (descriptor && (descriptor.get || descriptor.set)) {
                 // Accessors may return different values over time (e.g. services initialized after the API is contributed),
-                // so they are delegated to the inner object on every access rather than read once and frozen
+                // so they are delegated to the inner object (and intercepted) on every access rather than read once and frozen
                 Object.defineProperty(result, key, {
                     enumerable: true,
                     configurable: true,
-                    get: descriptor.get && (() => innerObject[key]),
+                    get: descriptor.get && (() => interceptValue(innerObject[key], key)),
                     set: descriptor.set && ((value: any) => (innerObject[key] = value))
                 })
             } else {

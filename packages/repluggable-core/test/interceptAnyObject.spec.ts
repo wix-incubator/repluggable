@@ -232,6 +232,44 @@ describe('interceptAnyObject', () => {
         expect(takeLog(spy)).toEqual(['liveProp'])
     })
 
+    it('should intercept values returned by getters', () => {
+        const spy: LogSpy = jest.fn()
+        const real = {
+            get scalarGetter() {
+                return 'original-getter'
+            },
+            get funcGetter() {
+                return () => {
+                    spy('funcGetter')
+                }
+            }
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy))
+
+        intercepted.funcGetter()
+
+        expect(intercepted.scalarGetter).toBe('INTERCEPTED[scalarGetter]-getter')
+        expect(takeLog(spy)).toEqual(['BEFORE:funcGetter()', 'funcGetter', 'AFTER:funcGetter(undefined)'])
+    })
+
+    it('should intercept nested objects returned by getters', () => {
+        const spy: LogSpy = jest.fn()
+        const real = {
+            get nested() {
+                return {
+                    nestedFunc() {
+                        spy('nested.nestedFunc')
+                    }
+                }
+            }
+        }
+        const intercepted = interceptAnyObject(real, createFuncInterceptor(spy), createPropInterceptor(spy), 1)
+
+        intercepted.nested.nestedFunc()
+
+        expect(takeLog(spy)).toEqual(['BEFORE:nested.nestedFunc()', 'nested.nestedFunc', 'AFTER:nested.nestedFunc(undefined)'])
+    })
+
     it('should delegate setters to the inner object', () => {
         const spy: LogSpy = jest.fn()
         let stored = 'initial'
