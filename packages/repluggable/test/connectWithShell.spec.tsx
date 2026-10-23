@@ -630,6 +630,28 @@ describe('connectWithShell', () => {
         expect(collectAllTexts(testKit.root)).toContain(getValueFromState(getMockShellState(host)))
     })
 
+    it('should provide a key for the shell context wrapper of children', () => {
+        const { shell, renderInShellContext } = createMocks(mockPackage)
+
+        const captured: { children?: React.ReactNode } = {}
+        const PureCompWithChildren: FunctionComponent<{ children?: React.ReactNode }> = ({ children }) => {
+            captured.children = children
+            return <div>{children}</div>
+        }
+        const ConnectedCompWithChildren = connectWithShell(undefined, undefined, shell, { allowOutOfEntryPoint: true })(PureCompWithChildren)
+
+        renderInShellContext(
+            <ConnectedCompWithChildren>
+                <span />
+            </ConnectedCompWithChildren>
+        )
+
+        // without a key, React reports "Each child in a list should have a unique key prop" whenever the wrapped
+        // children are rendered next to sibling elements
+        expect(React.isValidElement(captured.children)).toBe(true)
+        expect((captured.children as ReactElement).key).not.toBeNull()
+    })
+
     it('should render contributed boundary aspect', () => {
         // arrange
         const { host, shell } = createMocks({
