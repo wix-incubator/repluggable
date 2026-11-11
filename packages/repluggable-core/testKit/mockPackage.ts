@@ -108,3 +108,18 @@ export const mockPackageWithSlot: EntryPoint = {
         shell.declareSlot(MockSlot)
     }
 }
+
+export const mockPackageWithColdDependency: EntryPoint = {
+    name: 'MOCK_PACKAGE_WITH_COLD_DEPENDENCY',
+    getColdDependencyAPIs() {
+        return [MockAPI]
+    },
+    declareAPIs() {
+        return [MockPublicAPI]
+    },
+    attach(shell: Shell) {
+        shell.contributeAPI(MockPublicAPI, () => ({
+            stubTrue: () => true
+        }))
+    }
+}

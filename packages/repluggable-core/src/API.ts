@@ -1,7 +1,7 @@
 import * as Redux from 'redux'
-import { ThrottledStore } from './throttledStore'
 import { INTERNAL_DONT_USE_SHELL_GET_APP_HOST } from './__internal'
 import { CustomCreateExtensionSlot } from './extensionSlot'
+import { ThrottledStore } from './throttledStore'
 
 export interface AnySlotKey {
     readonly name: string
@@ -77,6 +77,11 @@ export interface EntryPoint {
      * @return {SlotKey<any>[]} API keys to wait for implementation
      */
     getDependencyAPIs?(): SlotKey<any>[]
+    /**
+     * Define which API keys (a.k.a. contracts) are required for implementation but optional for this entry point to be executed
+     * @return {SlotKey<any>[]} API keys that may be used but don't block loading
+     */
+    getColdDependencyAPIs?(): SlotKey<any>[]
     /**
      * Define which API keys (a.k.a. contracts) this entry point is going to implement and contribute
      * @return {SlotKey<any>[]} API keys that will be contributed
@@ -331,7 +336,7 @@ interface AppHostPlugins {
     }
 }
 
-export type {CustomCreateExtensionSlot}
+export type { CustomCreateExtensionSlot }
 
 export interface AppHostOptions {
     readonly logger?: HostLogger
@@ -406,6 +411,15 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
      * @return {*}  {boolean}
      */
     canUseAPIs(): boolean
+    /**
+     * Get a lazy accessor for a cold dependency API.
+     * The API is only resolved when called, allowing safe usage during attach phase.
+     *
+     * @template TAPI
+     * @param {SlotKey<TAPI>} key API Key for the cold dependency
+     * @return {Lazy<TAPI>} Lazy wrapper that resolves the API on access
+     */
+    getColdAPI<TAPI>(key: SlotKey<TAPI>): Lazy<TAPI>
     /**
      * Is store ready to be requested
      *
@@ -525,6 +539,7 @@ export interface Shell extends Pick<AppHost, Exclude<keyof AppHost, 'getStore' |
 export interface PrivateShell extends Shell {
     readonly entryPoint: EntryPoint
     setDependencyAPIs(APIs: AnySlotKey[]): void
+    setColdDependencyAPIs(APIs: AnySlotKey[]): void
     setLifecycleState(enableStore: boolean, enableAPIs: boolean, initCompleted: boolean): void
     getBoundaryAspects(): ShellBoundaryAspect[]
     getHostOptions(): AppHostOptions
@@ -541,6 +556,7 @@ export interface EntryPointInterceptor {
     interceptName?(innerName: string): string
     interceptTags?(innerTags?: EntryPointTags): EntryPointTags
     interceptGetDependencyAPIs?(innerGetDependencyAPIs?: EntryPoint['getDependencyAPIs']): EntryPoint['getDependencyAPIs']
+    interceptGetColdDependencyAPIs?(innerGetColdDependencyAPIs?: EntryPoint['getColdDependencyAPIs']): EntryPoint['getColdDependencyAPIs']
     interceptDeclareAPIs?(innerDeclareAPIs?: EntryPoint['declareAPIs']): EntryPoint['declareAPIs']
     interceptAttach?(innerAttach?: EntryPoint['attach']): EntryPoint['attach']
     interceptDetach?(innerDetach?: EntryPoint['detach']): EntryPoint['detach']
