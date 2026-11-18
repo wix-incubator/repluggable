@@ -26,6 +26,10 @@ export interface DependencyTree {
 export interface RepluggableDebugUtils {
     apis(): APIDebugInfo[]
     unReadyEntryPoints(): EntryPoint[]
+    getRootUnreadyAPIs(): AnySlotKey[]
+    /**
+     * @deprecated Use `getRootUnreadyAPIs` instead
+     */
     getRootUnreadyAPI(): SlotKey<any>
     whyEntryPointUnready(name: string): void
     findAPI(name: string): APIDebugInfo[]

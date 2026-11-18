@@ -149,5 +149,47 @@ describe('App Host TestKit', () => {
             jest.runAllTimers()
             await expect(hostPromise).rejects.toThrow(new RegExp(MockPublicAPI.name))
         })
+
+        it('should report all root unready APIs of independent unready entry points', async () => {
+            const hostPromise = createAppHostAndWaitForLoading(
+                [
+                    {
+                        name: 'entryPoint A',
+                        declareAPIs: () => [{ name: 'API A' }],
+                        getDependencyAPIs: () => [{ name: 'missing A' }]
+                    },
+                    {
+                        name: 'entryPoint B',
+                        declareAPIs: () => [{ name: 'API B' }],
+                        getDependencyAPIs: () => [{ name: 'missing B' }]
+                    }
+                ],
+                []
+            )
+            jest.runAllTimers()
+            const error: Error = await hostPromise.then(
+                () => {
+                    throw new Error('expected hostPromise to reject')
+                },
+                e => e
+            )
+
+            expect(error.message).toContain('"missing A"')
+            expect(error.message).toContain('"missing B"')
+        })
+
+        it('should respect a custom loading timeout', async () => {
+            let settled = false
+            const hostPromise = createAppHostAndWaitForLoading([dependsOnMockPackageEntryPoint], [], 10000)
+            hostPromise.catch(() => (settled = true))
+
+            jest.advanceTimersByTime(9999)
+            await Promise.resolve()
+            await Promise.resolve()
+            expect(settled).toBe(false)
+
+            jest.advanceTimersByTime(1)
+            await expect(hostPromise).rejects.toThrow('timed out after 10000ms')
+        })
     })
 })
