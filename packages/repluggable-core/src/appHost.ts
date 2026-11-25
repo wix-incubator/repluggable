@@ -41,7 +41,6 @@ import { IterableWeakMap } from './IterableWeakMap'
 import { ConsoleHostLogger, createShellLogger } from './loggers'
 import { monitorAPI } from './monitorAPI'
 import { setupDebugInfo } from './repluggableAppDebug'
-import { getCycle, Graph, Tarjan } from './tarjanGraph'
 import {
     createObservable,
     createThrottledStore,
@@ -124,6 +123,15 @@ export function createAppHost(initialEntryPointsOrPackages: EntryPointOrPackage[
     let shouldFlushMemoizationSync = false
     let isBatchingDeclarationsChangedCallbacks = false
     const entryPointsInstallationEndCallbacks: Map<string, () => void> = new Map()
+
+    // An entry point's declarations are read once per host: the install loop re-checks every
+    // unready entry point after each wave, and the circular check runs on every addShells call.
+    const dependencyAPIsCache = new WeakMap<AnyEntryPoint, AnySlotKey[]>()
+    const declaredAPIsCache = new WeakMap<AnyEntryPoint, AnySlotKey[]>()
+    // API name -> names of the APIs its declaring entry point depends on, for every entry point checked so far.
+    const circularCheckGraph = new Map<string, Set<string>>()
+    const circularCheckDeclarers = new Map<string, AnyEntryPoint>()
+    const circularCheckedEntryPoints = new WeakSet<AnyEntryPoint>()
 
     verifyLayersUniqueness(options.layers)
 
@@ -399,13 +407,13 @@ miss: ${memoizedWithMissHit.miss}
         passed: SlotKey<any>[] = []
     ): boolean {
         // TODO: Avoid iterating N (cycle length) times for the same cycle
-        const declarers = pendingEntryPoints.flatMap(ep => (ep.declareAPIs?.() || []).map(k => [k, ep] as const))
+        const declarers = pendingEntryPoints.flatMap(ep => getDeclaredAPIsOf(ep).map(k => [k, ep] as const))
         const [, keyDeclarerEntryPoint] = declarers.find(([k, ep]) => _.isEqual(k, checkedKey)) || []
         if (!keyDeclarerEntryPoint) {
             return false
         }
 
-        const dependencies = keyDeclarerEntryPoint.getDependencyAPIs && keyDeclarerEntryPoint.getDependencyAPIs()
+        const dependencies = getDependencyAPIsOf(keyDeclarerEntryPoint)
         const uncheckDependencies = _.differenceWith(dependencies, passed, _.isEqual)
 
         const everyDependenciesReadyOrPending = _.every(
@@ -427,9 +435,27 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
+    function getDependencyAPIsOf(entryPoint: AnyEntryPoint): AnySlotKey[] {
+        let apis = dependencyAPIsCache.get(entryPoint)
+        if (!apis) {
+            apis = dependentAPIs(entryPoint)
+            dependencyAPIsCache.set(entryPoint, apis)
+        }
+        return apis
+    }
+
+    function getDeclaredAPIsOf(entryPoint: AnyEntryPoint): AnySlotKey[] {
+        let apis = declaredAPIsCache.get(entryPoint)
+        if (!apis) {
+            apis = declaredAPIs(entryPoint)
+            declaredAPIsCache.set(entryPoint, apis)
+        }
+        return apis
+    }
+
     function executeInstallShell(entryPoints: EntryPoint[]): void {
         const [readyEntryPoints, currentUnReadyEntryPoints] = _.partition(entryPoints, entryPoint => {
-            const dependencies = entryPoint.getDependencyAPIs && entryPoint.getDependencyAPIs()
+            const dependencies = getDependencyAPIsOf(entryPoint)
             return _.every(
                 dependencies,
                 k =>
@@ -438,7 +464,11 @@ miss: ${memoizedWithMissHit.miss}
             )
         })
 
-        unReadyEntryPointsStore.set(_.union(_.difference(unReadyEntryPointsStore.get(), readyEntryPoints), currentUnReadyEntryPoints))
+        const ready = new Set(readyEntryPoints)
+        const stillUnready = new Set<EntryPoint>()
+        unReadyEntryPointsStore.get().forEach(entryPoint => !ready.has(entryPoint) && stillUnready.add(entryPoint))
+        currentUnReadyEntryPoints.forEach(entryPoint => stillUnready.add(entryPoint))
+        unReadyEntryPointsStore.set([...stillUnready])
         if (store && _.isEmpty(readyEntryPoints)) {
             onInstallShellsEnd()
             return
@@ -661,50 +691,72 @@ miss: ${memoizedWithMissHit.miss}
         }
     }
 
+    // Entry points already checked formed an acyclic graph, so a new cycle has to pass through an
+    // API declared by a newly checked entry point: only those APIs are searched.
     function validateCircularDependency(entryPoints: AnyEntryPoint[]): void {
-        const allDeclaredAPIs = new Map<string, AnyEntryPoint>()
+        const newlyDeclared: string[] = []
         for (const ep of entryPoints) {
-            const apis = declaredAPIs(ep)
-            for (const api of apis) {
-                const existingDeclaration = allDeclaredAPIs.get(api.name)
+            if (circularCheckedEntryPoints.has(ep)) {
+                continue
+            }
+            circularCheckedEntryPoints.add(ep)
+            const dependencies = getDependencyAPIsOf(ep).map(x => slotKeyToName(x))
+            for (const api of getDeclaredAPIsOf(ep)) {
+                const existingDeclaration = circularCheckDeclarers.get(api.name)
                 if (existingDeclaration) {
                     host.log.log(
                         'warning',
                         `The API: ${api.name} is declared in multiple endpoints: ${existingDeclaration.name} and ${ep.name}`
                     )
                 } else {
-                    allDeclaredAPIs.set(api.name, ep)
+                    circularCheckDeclarers.set(api.name, ep)
                 }
+                const name = slotKeyToName(api)
+                let edges = circularCheckGraph.get(name)
+                if (!edges) {
+                    edges = new Set()
+                    circularCheckGraph.set(name, edges)
+                }
+                for (const dependency of dependencies) {
+                    // an API depending on itself is not reported, as before
+                    dependency !== name && edges.add(dependency)
+                }
+                newlyDeclared.push(name)
             }
         }
 
-        const graph = new Graph()
-        entryPoints.forEach(ep => {
-            const declaredApis = declaredAPIs(ep).map(x => slotKeyToName(x))
-            const dependencies = dependentAPIs(ep).map(x => slotKeyToName(x))
-            declaredApis.forEach(d => dependencies.forEach(y => graph.addConnection(d, y)))
-        })
-
-        const tarjan = new Tarjan(graph)
-        const sccs = tarjan.run()
-
-        for (const scc of sccs) {
-            if (scc.length > 1) {
-                const dependentGraph: { [key: string]: string[] } = {}
-                entryPoints.forEach(ep => {
-                    const declaredApis = declaredAPIs(ep).map(child => child.name)
-                    const dependencies = dependentAPIs(ep).map(child => child.name)
-                    declaredApis.forEach(d => {
-                        dependentGraph[d] = dependencies
-                    })
-                })
-
-                const circle = getCycle(dependentGraph)
-                if (circle) {
-                    const reversedCircle = circle.reverse()
-                    host.log.log('error', `Circular API dependency found: ${reversedCircle.join(' -> ')}`)
-                    throw new Error(`Circular API dependency found`)
+        const ON_PATH = 1
+        const DONE = 2
+        const visitState = new Map<string, number>()
+        const path: string[] = []
+        const findCycleFrom = (node: string): string[] | undefined => {
+            visitState.set(node, ON_PATH)
+            path.push(node)
+            for (const next of circularCheckGraph.get(node) || []) {
+                const state = visitState.get(next)
+                if (state === ON_PATH) {
+                    return path.slice(path.indexOf(next)).concat(next)
                 }
+                if (state === undefined) {
+                    const cycle = findCycleFrom(next)
+                    if (cycle) {
+                        return cycle
+                    }
+                }
+            }
+            path.pop()
+            visitState.set(node, DONE)
+            return undefined
+        }
+
+        for (const name of newlyDeclared) {
+            if (visitState.has(name)) {
+                continue
+            }
+            const cycle = findCycleFrom(name)
+            if (cycle) {
+                host.log.log('error', `Circular API dependency found: ${cycle.join(' -> ')}`)
+                throw new Error(`Circular API dependency found`)
             }
         }
     }
