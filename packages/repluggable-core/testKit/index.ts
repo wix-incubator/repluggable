@@ -88,8 +88,9 @@ export async function createAppHostAndWaitForLoading(packages: EntryPointOrPacka
         .value()
         .flatMap((entryPoint: EntryPoint) => (entryPoint.declareAPIs ? entryPoint.declareAPIs() : []))
 
+    let timeout: ReturnType<typeof setTimeout> | undefined
     const timeoutPromise = new Promise((resolve, reject) => {
-        setTimeout(() => {
+        timeout = setTimeout(() => {
             const readyAPIs = Array.from(globalThis.repluggableAppDebug.readyAPIs)
             const unreadyAPIs = declaredAPIs.filter(api => !readyAPIs.some(readyAPI => readyAPI.name === api.name))
             const rootUnreadyAPI = globalThis.repluggableAppDebug.utils.getRootUnreadyAPI()
@@ -119,7 +120,9 @@ in addition here's the full list of declared APIs that have not been contributed
         ])
     })
 
-    return Promise.race([timeoutPromise, loadingPromise]).then(() => appHost)
+    return Promise.race([timeoutPromise, loadingPromise])
+        .then(() => appHost)
+        .finally(() => clearTimeout(timeout))
 }
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
